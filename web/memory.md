@@ -11,11 +11,12 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 - **Meta Crítica:** Apresentação da **Pré-Banca** em **15 de Outubro de 2026**
 - **Estado Atual:**
   - Projeto base inicializado com Vite (`react-ts`), React 19 e TypeScript.
-  - Tailwind CSS (v4) configurado e integrado com `@tailwindcss/vite` e `src/index.css`.
-  - Dependências essenciais instaladas: `react-router-dom`, `axios`, `lucide-react`.
+  - Tailwind CSS (v4) configurado com `tailwind.config.js`, PostCSS, Autoprefixer e integrado com `@tailwindcss/vite` e `src/index.css`.
+  - Dependências visuais e de comunicação instaladas e validadas: `react-router-dom`, `axios`, `lucide-react`.
   - Build de produção testado e validado (`npm run build`).
+  - Skill `git_commit` importada em `.agents/skills/git_commit`.
   - Diretrizes do front-end formalizadas em `agent.md` (arquitetura de componentes, Tailwind CSS, rotas protegidas JWT/RBAC e consumo de API).
-  - Repositório Git inicializado na branch `main`, vinculado ao GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`) e commit inicial realizado com sucesso.
+  - Repositório Git sincronizado na branch `main` no GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`).
 - **Data da Última Atualização:** 2026-10-07
 
 ---
