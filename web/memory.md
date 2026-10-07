@@ -15,6 +15,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Dependências essenciais instaladas: `react-router-dom`, `axios`, `lucide-react`.
   - Build de produção testado e validado (`npm run build`).
   - Diretrizes do front-end formalizadas em `agent.md` (arquitetura de componentes, Tailwind CSS, rotas protegidas JWT/RBAC e consumo de API).
+  - Repositório Git inicializado na branch `main`, vinculado ao GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`) e commit inicial realizado com sucesso.
 - **Data da Última Atualização:** 2026-10-07
 
 ---
