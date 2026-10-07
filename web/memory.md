@@ -45,8 +45,9 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 - [x] **Inicialização do Projeto Web:** Scaffold Vite React TS, Tailwind CSS, Axios, Lucide React e React Router.
 - [x] **Diretrizes e Memória do Agente:** Criação de `agent.md` e `memory.md` estabelecendo padrões de código e arquitetura.
-- [ ] **Configuração do Cliente HTTP (`src/services/api.ts`):** Instância Axios com interceptors de autenticação e refresh token.
-- [ ] **Módulo de Autenticação (`src/contexts/AuthContext.tsx` e tela `/login`):** Login com e-mail/senha, validação de papéis permitidos (`PROFISSIONAL_SAUDE` / `ADMIN`) e persistência segura de tokens.
+- [x] **Configuração do Cliente HTTP & Serviço de Autenticação (`src/services/api.ts` e `src/services/auth.ts`):** Chamada POST pronta para `/sessions` (com suporte e fallback para `/auth/login`), tipagens em `src/types/auth.ts` e persistência de sessão.
+- [x] **Tela de Login/Autenticação (`src/pages/auth/Login.tsx`):** Componente visual responsivo baseado na referência de design, com validações de formulário, exibição dinâmica de erros, loading states e proteção RBAC contra acesso de cidadãos.
+- [ ] **Contexto Global de Autenticação (`src/contexts/AuthContext.tsx`):** Estado reativo de sessão, restauração automática e métodos `signIn`/`signOut`.
 - [ ] **Layout do Gerenciador Web (`AppLayout`):** Sidebar responsiva com rotas administrativas, header com perfil do profissional logado e botão de logout.
 - [ ] **Dashboard Principal (`/dashboard`):** Cards com contagem de UBSs cadastradas, vacinas disponíveis no catálogo e atalhos rápidos.
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
@@ -57,7 +58,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 ## 4. Próximos Passos Imediatos
 
-1. Criar a estrutura inicial de pastas (`src/components/`, `src/services/`, `src/contexts/`, `src/pages/`, `src/routes/`, `src/types/`).
-2. Implementar `src/services/api.ts` com base URL apontando para `http://localhost:3333`.
-3. Criar os tipos base de autenticação e usuário (`src/types/auth.ts`).
-4. Desenvolver o `AuthContext` e a página de login integrada à rota `POST /auth/login` do backend.
+1. Desenvolver o `AuthContext` (`src/contexts/AuthContext.tsx`) para gerenciar estado reativo de login e sincronização de usuário.
+2. Criar o componente `ProtectedRoute` para proteger rotas privadas do painel web.
+3. Desenvolver o layout base da aplicação (`src/layouts/AppLayout.tsx`) com sidebar e navegação.
+4. Implementar o Dashboard com indicadores e métricas (`/dashboard`).
