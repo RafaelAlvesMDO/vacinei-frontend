@@ -15,4 +15,4 @@
 2. **Formato:** `tipo(escopo): descrição concisa`.
 3. **Escopo:** Sempre em minúsculas e entre parênteses.
 4. **Sem Ponto Final:** A mensagem de cabeçalho não deve terminar com ponto.
-5. **Automação:** Sempre executar `git add .`, `git commit` e `git push origin main`.
+5. **Automação:** Trabalhar na branch `dev`: `git add <arquivos alterados>`, `git commit` e `git push origin dev`. Nunca fazer push na `main`; PR `dev` → `main` apenas quando o usuário pedir.

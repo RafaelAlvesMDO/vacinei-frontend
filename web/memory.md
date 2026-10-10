@@ -14,7 +14,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Tailwind CSS (v4) configurado com `tailwind.config.js`, PostCSS, Autoprefixer e integrado com `@tailwindcss/vite` e `src/index.css`.
   - Dependências visuais e de comunicação instaladas e validadas: `react-router-dom`, `axios`, `lucide-react`.
   - Build de produção testado e validado (`npm run build`).
-  - Skill `git_commit` importada em `.agents/skills/git_commit`.
+  - Skill `git_commit` em `.claude/skills/git_commit` (fluxo na branch `dev`) e `CLAUDE.md` na raiz do repositório.
   - Diretrizes do front-end formalizadas em `agent.md` (arquitetura de componentes, Tailwind CSS, rotas protegidas JWT/RBAC e consumo de API).
   - Repositório Git sincronizado na branch `main` no GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`).
   - Desenvolvimento ocorre na branch `dev`; PRs para `main` apenas sob solicitação.
