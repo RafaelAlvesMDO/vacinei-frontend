@@ -42,3 +42,28 @@ export interface RequestAccessResponse {
 export interface ForgotPasswordResponse {
   message: string;
 }
+
+export interface ResetPasswordPayload {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+// Formato de erros de validação retornado pelo Zod (format())
+export type ValidationIssues = Record<string, { _errors?: string[] } | undefined>;
+
+export interface ApiErrorResponse {
+  status: 'error';
+  message: string;
+  issues?: ValidationIssues;
+}
+
+export interface ParsedApiError {
+  status: number | null;
+  message: string;
+  fieldErrors: Record<string, string>;
+}

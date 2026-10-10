@@ -1,11 +1,16 @@
+import { isAxiosError } from 'axios';
 import { api } from './api';
 import type {
   LoginCredentials,
   AuthResponse,
   ApiSuccessResponse,
+  ApiErrorResponse,
+  ParsedApiError,
   User,
   RequestAccessResponse,
   ForgotPasswordResponse,
+  ResetPasswordPayload,
+  ResetPasswordResponse,
 } from '../types/auth';
 
 const TOKEN_KEY = '@vacinei:token';
@@ -122,35 +127,68 @@ export async function requestAccess(email: string): Promise<RequestAccessRespons
 }
 
 /**
- * Solicita redefinição de senha para o e-mail informado
+ * Solicita o envio de um código de recuperação de senha para o e-mail informado
  */
 export async function forgotPassword(email: string): Promise<ForgotPasswordResponse> {
-  const payload = { email: email.trim() };
+  const response = await api.post<ForgotPasswordResponse>('/auth/forgot-password', {
+    email: email.trim(),
+  });
 
-  try {
-    const response = await api.post<ApiSuccessResponse<ForgotPasswordResponse> | ForgotPasswordResponse>(
-      '/auth/forgot-password',
-      payload
-    );
+  return {
+    message:
+      response.data?.message ||
+      'Se o e-mail estiver cadastrado, você receberá um código de recuperação.',
+  };
+}
 
-    if (
-      response.data &&
-      'data' in response.data &&
-      typeof (response.data as any).data === 'object' &&
-      (response.data as any).data !== null
-    ) {
-      return (response.data as ApiSuccessResponse<ForgotPasswordResponse>).data;
-    }
+/**
+ * Redefine a senha a partir do código de recuperação recebido por e-mail
+ */
+export async function resetPassword({
+  email,
+  code,
+  newPassword,
+}: ResetPasswordPayload): Promise<ResetPasswordResponse> {
+  const response = await api.post<ResetPasswordResponse>('/auth/reset-password', {
+    email: email.trim(),
+    code: code.trim(),
+    newPassword,
+  });
 
-    return (response.data as ForgotPasswordResponse) || {
-      message: 'E-mail para redefinição de senha enviado com sucesso.',
-    };
-  } catch (error: any) {
-    if (error.response?.status === 404 || !error.response) {
-      return {
-        message: 'E-mail para redefinição de senha enviado com sucesso.',
-      };
-    }
-    throw error;
+  return {
+    message: response.data?.message || 'Senha redefinida com sucesso.',
+  };
+}
+
+/**
+ * Normaliza erros do Axios no formato padrão da API ({ status, message, issues })
+ */
+export function parseApiError(error: unknown, fallbackMessage: string): ParsedApiError {
+  if (!isAxiosError<ApiErrorResponse>(error)) {
+    return { status: null, message: fallbackMessage, fieldErrors: {} };
   }
+
+  if (!error.response) {
+    return {
+      status: null,
+      message: 'Não foi possível conectar ao servidor da API. Verifique sua conexão.',
+      fieldErrors: {},
+    };
+  }
+
+  const { status, data } = error.response;
+  const fieldErrors: Record<string, string> = {};
+
+  if (data?.issues) {
+    for (const [field, issue] of Object.entries(data.issues)) {
+      const firstError = issue?._errors?.[0];
+      if (firstError) fieldErrors[field] = firstError;
+    }
+  }
+
+  return {
+    status,
+    message: data?.message || fallbackMessage,
+    fieldErrors,
+  };
 }
