@@ -415,6 +415,13 @@ export const Login: React.FC = () => {
       <ForgotPasswordModal
         isOpen={isForgotPasswordOpen}
         onClose={() => setIsForgotPasswordOpen(false)}
+        onSuccess={(resetEmail) => {
+          setEmail(resetEmail);
+          setPassword('');
+          setErrors({});
+          setApiError(null);
+          setSuccessMessage('Senha redefinida com sucesso! Entre com sua nova senha.');
+        }}
       />
     </div>
   );
