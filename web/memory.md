@@ -17,7 +17,8 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Skill `git_commit` importada em `.agents/skills/git_commit`.
   - Diretrizes do front-end formalizadas em `agent.md` (arquitetura de componentes, Tailwind CSS, rotas protegidas JWT/RBAC e consumo de API).
   - Repositório Git sincronizado na branch `main` no GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`).
-- **Data da Última Atualização:** 2026-10-07
+  - Desenvolvimento ocorre na branch `dev`; PRs para `main` apenas sob solicitação.
+- **Data da Última Atualização:** 2026-10-10
 
 ---
 
@@ -48,6 +49,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 - [x] **Configuração do Cliente HTTP & Serviço de Autenticação (`src/services/api.ts` e `src/services/auth.ts`):** Chamada POST pronta para `/sessions` (com suporte e fallback para `/auth/login`), tipagens em `src/types/auth.ts` e persistência de sessão.
 - [x] **Tela de Login/Autenticação (`src/pages/auth/Login.tsx`):** Componente visual responsivo baseado na referência de design, com validações de formulário, exibição dinâmica de erros, loading states e proteção RBAC contra acesso de cidadãos.
 - [x] **Modais de Autenticação Complementar (`src/pages/auth/RequestAccessModal.tsx`, `ForgotPasswordModal.tsx` e `src/components/ui/Modal.tsx`):** Fluxos fiéis ao design do "Criar conta" / "Solicitar Acesso", estado de confirmação "Solicitação Enviada" com ícone de envio e modal "Esqueci a Senha", integrados ao login e com métodos de API preparados em `src/services/auth.ts`.
+- [x] **Recuperação de Senha Integrada ao Backend (`ForgotPasswordModal.tsx`):** Fluxo em etapas conectado a `POST /auth/forgot-password` e `POST /auth/reset-password` (código de 6 dígitos + nova senha), com reenvio de código (cooldown de 30s), erros de validação por campo (`issues` do Zod), tratamento de `429` (aguardar 15 min e solicitar novo código) e retorno ao login após sucesso. Helper `parseApiError` em `src/services/auth.ts` normaliza erros da API.
 - [ ] **Contexto Global de Autenticação (`src/contexts/AuthContext.tsx`):** Estado reativo de sessão, restauração automática e métodos `signIn`/`signOut`.
 - [ ] **Layout do Gerenciador Web (`AppLayout`):** Sidebar responsiva com rotas administrativas, header com perfil do profissional logado e botão de logout.
 - [ ] **Dashboard Principal (`/dashboard`):** Cards com contagem de UBSs cadastradas, vacinas disponíveis no catálogo e atalhos rápidos.
