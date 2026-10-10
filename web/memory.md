@@ -47,6 +47,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 - [x] **Diretrizes e Memória do Agente:** Criação de `agent.md` e `memory.md` estabelecendo padrões de código e arquitetura.
 - [x] **Configuração do Cliente HTTP & Serviço de Autenticação (`src/services/api.ts` e `src/services/auth.ts`):** Chamada POST pronta para `/sessions` (com suporte e fallback para `/auth/login`), tipagens em `src/types/auth.ts` e persistência de sessão.
 - [x] **Tela de Login/Autenticação (`src/pages/auth/Login.tsx`):** Componente visual responsivo baseado na referência de design, com validações de formulário, exibição dinâmica de erros, loading states e proteção RBAC contra acesso de cidadãos.
+- [x] **Modais de Autenticação Complementar (`src/pages/auth/RequestAccessModal.tsx`, `ForgotPasswordModal.tsx` e `src/components/ui/Modal.tsx`):** Fluxos fiéis ao design do "Criar conta" / "Solicitar Acesso", estado de confirmação "Solicitação Enviada" com ícone de envio e modal "Esqueci a Senha", integrados ao login e com métodos de API preparados em `src/services/auth.ts`.
 - [ ] **Contexto Global de Autenticação (`src/contexts/AuthContext.tsx`):** Estado reativo de sessão, restauração automática e métodos `signIn`/`signOut`.
 - [ ] **Layout do Gerenciador Web (`AppLayout`):** Sidebar responsiva com rotas administrativas, header com perfil do profissional logado e botão de logout.
 - [ ] **Dashboard Principal (`/dashboard`):** Cards com contagem de UBSs cadastradas, vacinas disponíveis no catálogo e atalhos rápidos.

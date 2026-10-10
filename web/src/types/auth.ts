@@ -34,3 +34,11 @@ export interface ApiSuccessResponse<T> {
   status: 'success';
   data: T;
 }
+
+export interface RequestAccessResponse {
+  message: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+}

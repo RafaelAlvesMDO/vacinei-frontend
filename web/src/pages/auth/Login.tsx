@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { authenticate } from '../../services/auth';
 import type { UserRole } from '../../types/auth';
+import { RequestAccessModal } from './RequestAccessModal';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
 
 interface FormErrors {
   email?: string;
@@ -25,6 +27,10 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Estados dos modais complementares
+  const [isRequestAccessOpen, setIsRequestAccessOpen] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -343,17 +349,14 @@ export const Login: React.FC = () => {
 
             {/* Opções: Esqueci minha senha & Lembrar de mim (referência exata do layout) */}
             <div className="flex items-center justify-between text-xs pt-1">
-              <a
-                href="#forgot-password"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Para recuperação de senha institucional, contate o administrador do sistema.');
-                }}
-                className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+              <button
+                type="button"
+                onClick={() => setIsForgotPasswordOpen(true)}
+                className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-medium transition-colors cursor-pointer"
               >
                 <HelpCircle className="size-3.5 text-indigo-500" />
                 <span>Esqueci minha senha</span>
-              </a>
+              </button>
 
               <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600 hover:text-slate-800">
                 <input
@@ -388,12 +391,13 @@ export const Login: React.FC = () => {
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-500">
               Não tem acesso?{' '}
-              <a
-                href="mailto:suporte.vacinei@saude.maceio.br"
-                className="text-sky-600 hover:text-sky-700 font-medium hover:underline transition-colors"
+              <button
+                type="button"
+                onClick={() => setIsRequestAccessOpen(true)}
+                className="text-sky-600 hover:text-sky-700 font-medium hover:underline transition-colors cursor-pointer"
               >
                 Entre em contato com a administração
-              </a>
+              </button>
             </p>
             <p className="text-[11px] text-slate-400 mt-2">
               Cidadãos devem acessar sua caderneta pelo aplicativo móvel <strong>VACINEI!?</strong>.
@@ -401,6 +405,17 @@ export const Login: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modais Complementares de Autenticação */}
+      <RequestAccessModal
+        isOpen={isRequestAccessOpen}
+        onClose={() => setIsRequestAccessOpen(false)}
+      />
+
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+      />
     </div>
   );
 };

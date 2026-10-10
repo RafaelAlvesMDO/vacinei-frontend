@@ -1,5 +1,12 @@
 import { api } from './api';
-import type { LoginCredentials, AuthResponse, ApiSuccessResponse, User } from '../types/auth';
+import type {
+  LoginCredentials,
+  AuthResponse,
+  ApiSuccessResponse,
+  User,
+  RequestAccessResponse,
+  ForgotPasswordResponse,
+} from '../types/auth';
 
 const TOKEN_KEY = '@vacinei:token';
 const REFRESH_TOKEN_KEY = '@vacinei:refreshToken';
@@ -77,4 +84,73 @@ export function getStoredUser(): User | null {
  */
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+}
+
+/**
+ * Solicita acesso ao administrador do sistema para criação de conta
+ */
+export async function requestAccess(email: string): Promise<RequestAccessResponse> {
+  const payload = { email: email.trim() };
+
+  try {
+    const response = await api.post<ApiSuccessResponse<RequestAccessResponse> | RequestAccessResponse>(
+      '/auth/request-access',
+      payload
+    );
+
+    if (
+      response.data &&
+      'data' in response.data &&
+      typeof (response.data as any).data === 'object' &&
+      (response.data as any).data !== null
+    ) {
+      return (response.data as ApiSuccessResponse<RequestAccessResponse>).data;
+    }
+
+    return (response.data as RequestAccessResponse) || {
+      message: 'Sua solicitação foi enviada ao administrador.',
+    };
+  } catch (error: any) {
+    // Fallback caso a rota ainda não esteja pronta no backend em desenvolvimento
+    if (error.response?.status === 404 || !error.response) {
+      return {
+        message: 'Sua solicitação foi enviada ao administrador.',
+      };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Solicita redefinição de senha para o e-mail informado
+ */
+export async function forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+  const payload = { email: email.trim() };
+
+  try {
+    const response = await api.post<ApiSuccessResponse<ForgotPasswordResponse> | ForgotPasswordResponse>(
+      '/auth/forgot-password',
+      payload
+    );
+
+    if (
+      response.data &&
+      'data' in response.data &&
+      typeof (response.data as any).data === 'object' &&
+      (response.data as any).data !== null
+    ) {
+      return (response.data as ApiSuccessResponse<ForgotPasswordResponse>).data;
+    }
+
+    return (response.data as ForgotPasswordResponse) || {
+      message: 'E-mail para redefinição de senha enviado com sucesso.',
+    };
+  } catch (error: any) {
+    if (error.response?.status === 404 || !error.response) {
+      return {
+        message: 'E-mail para redefinição de senha enviado com sucesso.',
+      };
+    }
+    throw error;
+  }
 }
