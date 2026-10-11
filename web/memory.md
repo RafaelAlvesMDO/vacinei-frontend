@@ -19,6 +19,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Diretrizes do front-end formalizadas em `agent.md` (arquitetura de componentes, Tailwind CSS, rotas protegidas JWT/RBAC e consumo de API).
   - Repositório Git sincronizado na branch `main` no GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`).
   - Desenvolvimento ocorre na branch `dev`; PRs para `main` apenas sob solicitação.
+  - Etapa 3 concluída: `AppLayout` reutilizável e dashboard por perfil (`recharts` instalado).
 - **Data da Última Atualização:** 2026-10-10
 
 ---
@@ -65,8 +66,11 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - `src/contexts/AuthContext.tsx` + `src/hooks/useAuth.ts` expõem `signIn`, `signOut` e `refreshProfile` e restauram a sessão via `/auth/me`. Cidadãos são barrados (`CitizenAccessError`).
   - `ProtectedRoute` (`allowedRoles`), `PublicRoute`, `React.lazy` + `Suspense` e um dashboard provisório com aviso de registro pendente ou recusado.
 - [x] **Identidade Visual Vacinei!?:** `docs/DESIGN.md`, tokens de cor e fonte Inter no Tailwind, login redesenhado no estilo do app (logo oficial, "Boas-vindas", inputs arredondados, botão primário largo, caixa de aviso verde-clara), modais, dashboard provisório e spinner na paleta nova. Favicon e título "Vacinei!? | Gerenciador Web".
-- [ ] **Layout do Gerenciador Web (`AppLayout`):** Sidebar responsiva com rotas administrativas, header com perfil do profissional logado e botão de logout.
-- [ ] **Dashboard Principal (`/dashboard`):** Cards com contagem de UBSs cadastradas, vacinas disponíveis no catálogo e atalhos rápidos.
+- [x] **Layout do Gerenciador Web (`src/layouts/AppLayout.tsx`):** rota-layout com `<Outlet />` dentro do `ProtectedRoute`. `components/layout/`: `Sidebar` (menu filtrado por perfil, drawer no mobile e "Sair" no rodapé), `Topbar` ("Vacinei!?" + nome/perfil), `PageHeader` (título, subtítulo e slot de ações) e `Footer`.
+- [x] **Dashboard (`/dashboard`, RF009):** 4 `StatCard`s (`/dashboard/summary` + último mês do `/dashboard/monthly`), gráfico de linha mensal com `recharts`, atalhos rápidos e card direito por perfil (LGPD): `RecentDosesCard` para o profissional e `PendingProfessionalsCard` (`GET /professionals?verified=false`) para o ADMIN. Busca de cidadãos (`GET /citizens`, debounce, mín. 2 caracteres) só para o profissional, levando a `/confirmar-vacina?citizenId=<id>`. Profissional não verificado (ou `403` da API) vê apenas o `VerificationNotice`.
+  - Reutilizáveis: `hooks/useAsync` (dados, erro normalizado por `parseApiError`, `reload`), `hooks/useDebounce`, `utils/format` (`formatMonthLabel` → "nov/25", datas pt-BR), `utils/roles`, `components/ui/{Card,StatCard,CardState,Badge}`.
+  - Badges de `VaccineStatus`: `EM_DIA` success, `ATRASADA` danger, `COMPLETA` primary, `CONFIRMADO` accent; valor desconhecido mostra o texto cru.
+  - `/confirmar-vacina` (só PROF) e `/profissionais` (só ADMIN) usam `pages/UnderConstruction.tsx` até as etapas 4 e 5.
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
 - [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.
 - [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
@@ -77,7 +81,6 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-1. **Etapa 3:** `AppLayout` com sidebar e dashboard do profissional (RF009): cards de resumo, doses recentes e gráfico mensal com recharts.
-2. **Etapa 4:** Confirmação de vacina (RF010): busca de cidadão com debounce, caderneta e modal de confirmação (201 / 200 `CONFIRMED_EXISTING` / 409).
-3. **Etapa 5:** Administração de profissionais pendentes (verificar/recusar), exclusiva para `ADMIN`.
-4. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`.
+1. **Etapa 4:** Confirmação de vacina (RF010) em `/confirmar-vacina`: ler `?citizenId=` para abrir a caderneta direto, reaproveitar `services/citizens.ts` e `useDebounce`, e modal de confirmação (201 / 200 `CONFIRMED_EXISTING` / 409).
+2. **Etapa 5:** Administração de profissionais pendentes (verificar/recusar) em `/profissionais`, exclusiva para `ADMIN`; ampliar `services/professionals.ts`.
+3. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`.

@@ -21,7 +21,9 @@ Legenda: `[x]` concluída · `[ ]` pendente
 - `AuthContext` + `useAuth`: `signIn`, `signOut`, `refreshProfile` e restauração da sessão na inicialização. Cidadãos são bloqueados.
 - `ProtectedRoute` (com `allowedRoles`) e `PublicRoute`, rotas com `React.lazy` e um dashboard provisório.
 
-## [ ] Etapa 3: Dashboard do profissional (RF009)
+## [x] Etapa 3: Dashboard do profissional (RF009)
+
+> Concluída em 10/10/2026. Layout baseado no template do orientador (sidebar, barra superior, cabeçalho com busca, 4 cards, duas colunas e rodapé). O card direito muda por perfil (LGPD): doses recentes para o profissional e profissionais pendentes para o ADMIN. Rotas `/confirmar-vacina` e `/profissionais` apontam para uma página "em construção" até as etapas 4 e 5. A busca de cidadãos leva a `/confirmar-vacina?citizenId=<id>`.
 
 - Criar o `AppLayout` (`src/layouts/AppLayout.tsx`) com sidebar responsiva (links por perfil), header com o usuário logado e botão de sair. Todas as rotas protegidas usam esse layout.
 - `services/dashboard.ts` com:
