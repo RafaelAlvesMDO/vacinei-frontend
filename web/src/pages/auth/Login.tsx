@@ -12,8 +12,9 @@ import {
   Loader2,
   Stethoscope,
 } from 'lucide-react';
-import { authenticate } from '../../services/auth';
-import type { UserRole } from '../../types/auth';
+import { CitizenAccessError } from '../../contexts/auth-context';
+import { useAuth } from '../../hooks/useAuth';
+import { parseApiError } from '../../services/auth';
 import { RequestAccessModal } from './RequestAccessModal';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 
@@ -23,6 +24,7 @@ interface FormErrors {
 }
 
 export const Login: React.FC = () => {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -70,43 +72,21 @@ export const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await authenticate({
+      // Após o login, o PublicRoute redireciona para o dashboard (ou para a página de origem)
+      await signIn({
         email: email.trim(),
         password,
         rememberMe,
       });
-
-      const userRole: UserRole = response.user.role;
-
-      // Validação de RBAC para acesso ao gerenciador web
-      if (userRole === 'CIDADAO') {
-        setApiError(
-          'Acesso exclusivo: Este gerenciador web é destinado apenas a Profissionais de Saúde e Administradores. Por favor, utilize o aplicativo móvel VACINEI!?'
-        );
-        setIsLoading(false);
-        return;
+    } catch (err) {
+      // Validação de RBAC: cidadãos não acessam o gerenciador web
+      if (err instanceof CitizenAccessError) {
+        setApiError(err.message);
+      } else {
+        // A API devolve mensagens próprias para 401 (credenciais) e 403 (conta desativada)
+        const { message } = parseApiError(err, 'Ocorreu um erro ao realizar login. Tente novamente.');
+        setApiError(message);
       }
-
-      setSuccessMessage(`Bem-vindo(a), ${response.user.name}! Redirecionando...`);
-
-      // Se houver navegação ou reload
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 1200);
-    } catch (err: any) {
-      const backendMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        (err.response?.status === 401
-          ? 'Credenciais inválidas. Verifique seu e-mail e senha.'
-          : err.response?.status === 403
-          ? 'Sua conta de usuário está inativa no sistema.'
-          : !err.response
-          ? 'Não foi possível conectar ao servidor da API. Verifique se o backend está em execução.'
-          : 'Ocorreu um erro ao realizar login. Tente novamente.');
-
-      setApiError(backendMessage);
-    } finally {
       setIsLoading(false);
     }
   };
