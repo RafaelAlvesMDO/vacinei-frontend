@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, ShieldAlert, Send, Loader2, AlertCircle } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
-import { requestAccess } from '../../services/auth';
+import { parseApiError, requestAccess } from '../../services/auth';
 
 interface RequestAccessModalProps {
   isOpen: boolean;
@@ -52,11 +52,8 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
     try {
       await requestAccess(email);
       setStatus('sent');
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        'Não foi possível enviar a solicitação. Tente novamente mais tarde.';
+    } catch (err) {
+      const { message } = parseApiError(err, 'Não foi possível enviar a solicitação. Tente novamente mais tarde.');
       setError(message);
     } finally {
       setIsLoading(false);

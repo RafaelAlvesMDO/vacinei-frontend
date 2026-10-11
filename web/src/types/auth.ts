@@ -1,21 +1,37 @@
 export type UserRole = 'PROFISSIONAL_SAUDE' | 'ADMIN' | 'CIDADAO';
 
+export type ProfessionalVerificationStatus = 'PENDENTE' | 'VERIFICADO' | 'RECUSADO';
+
+// Presente apenas para PROFISSIONAL_SAUDE; null para os demais perfis
 export interface ProfessionalRegistry {
-  id: string;
-  councilType: string;
-  councilNumber: string;
-  councilState: string;
-  occupation: string;
+  isVerified: boolean;
+  status: ProfessionalVerificationStatus;
 }
 
+// Usuário retornado por POST /auth/login
 export interface User {
   id: string;
   name: string;
   email: string;
-  cpf: string;
+  cpf: string | null;
   role: UserRole;
-  avatarUrl?: string | null;
-  professionalRegistry?: ProfessionalRegistry | null;
+  professionalRegistry: ProfessionalRegistry | null;
+}
+
+export interface Dependent {
+  id: string;
+  name: string;
+  birthDate: string;
+}
+
+// Perfil completo retornado por GET /auth/me
+export interface UserProfile extends User {
+  phone: string | null;
+  birthDate: string | null;
+  avatarUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+  dependents: Dependent[];
 }
 
 export interface LoginCredentials {
@@ -30,9 +46,19 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+export interface RefreshResponse {
+  token: string;
+  refreshToken: string;
+}
+
 export interface ApiSuccessResponse<T> {
   status: 'success';
   data: T;
+}
+
+export interface ApiMessageResponse {
+  status: 'success';
+  message: string;
 }
 
 export interface RequestAccessResponse {
