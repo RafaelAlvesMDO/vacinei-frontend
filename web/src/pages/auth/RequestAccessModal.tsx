@@ -64,28 +64,25 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
     <Modal isOpen={isOpen} onClose={handleClose} title="Criar conta">
       {status === 'form' ? (
         <form onSubmit={handleSubmit} noValidate className="flex flex-col items-center">
-          {/* Ícone de Escudo de Alerta (vermelho) */}
-          <div className="mb-4">
-            <ShieldAlert className="size-20 text-red-500 stroke-[1.5]" />
+          {/* Ícone de destaque */}
+          <div className="mb-4 size-20 rounded-full bg-surface text-primary flex items-center justify-center">
+            <ShieldAlert className="size-10 stroke-[1.5]" />
           </div>
 
           {/* Texto descritivo */}
-          <p className="text-sm text-slate-600 text-center max-w-[280px] leading-relaxed mb-6">
+          <p className="text-sm text-muted text-center max-w-[280px] leading-relaxed mb-6">
             Solicitar acesso ao administrador do sistema para criar sua conta
           </p>
 
           {/* Campo de e-mail */}
           <div className="w-full">
             <div
-              className={`relative flex items-center rounded-2xl bg-stone-50 border transition-all ${
+              className={`relative flex items-center rounded-xl bg-white border transition-all ${
                 error
-                  ? 'border-red-400 ring-2 ring-red-100 bg-red-50/20'
-                  : 'border-slate-300 focus-within:border-sky-600 focus-within:ring-2 focus-within:ring-sky-100 focus-within:bg-white'
+                  ? 'border-danger ring-2 ring-danger/15'
+                  : 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
               }`}
             >
-              <div className="pl-4 pr-2 text-slate-400 flex items-center pointer-events-none">
-                <Mail className="size-5" />
-              </div>
               <input
                 id="request-access-email"
                 type="email"
@@ -94,15 +91,18 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
                   setEmail(e.target.value);
                   if (error) setError(null);
                 }}
-                placeholder="Digite seu email"
+                placeholder="Digite seu e-mail"
                 autoComplete="email"
                 disabled={isLoading}
-                className="w-full py-3 pr-4 text-sm bg-transparent border-0 text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
+                className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50"
               />
+              <div className="pr-4 text-muted flex items-center pointer-events-none">
+                <Mail className="size-5" />
+              </div>
             </div>
 
             {error && (
-              <p className="mt-2 text-xs text-red-600 text-center flex items-center justify-center gap-1 animate-in fade-in">
+              <p className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1 animate-in fade-in">
                 <AlertCircle className="size-3.5 shrink-0" />
                 <span>{error}</span>
               </p>
@@ -110,12 +110,12 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
           </div>
 
           {/* Botões de Ação */}
-          <div className="flex items-center justify-center gap-4 mt-8 w-full">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch gap-3 mt-8 w-full">
             <button
               type="button"
               onClick={handleClose}
               disabled={isLoading}
-              className="px-8 py-2.5 rounded-full border border-red-500 text-red-500 font-medium text-sm hover:bg-red-50 active:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 py-3.5 rounded-xl border border-border bg-white text-primary-dark font-semibold text-sm hover:bg-background transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -123,7 +123,7 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
             <button
               type="submit"
               disabled={isLoading}
-              className="px-10 py-2.5 rounded-full bg-[#005c9e] hover:bg-[#004d84] active:bg-[#003e6b] text-white font-medium text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 py-3.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -139,11 +139,11 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
       ) : (
         /* Estado de Confirmação: Solicitação Enviada */
         <div className="py-6 flex flex-col items-center text-center animate-in fade-in duration-300">
-          <div className="mb-6">
-            <Send className="size-20 text-[#005c9e] stroke-[1.5] -rotate-12" />
+          <div className="mb-6 size-24 rounded-full bg-surface text-primary flex items-center justify-center">
+            <Send className="size-11 stroke-[1.5] -rotate-12" />
           </div>
 
-          <p className="text-base text-slate-800 font-medium leading-relaxed max-w-[280px] mb-4">
+          <p className="text-base text-primary-dark font-medium leading-relaxed max-w-[280px] mb-4">
             Sua solicitação foi enviada ao administrador.
           </p>
         </div>

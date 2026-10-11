@@ -46,9 +46,9 @@ const MODAL_TITLES: Record<Step, string> = {
 };
 
 const BANNER_STYLES: Record<Banner['type'], string> = {
-  info: 'bg-sky-50 border-sky-200 text-sky-800',
-  error: 'bg-rose-50 border-rose-200 text-rose-800',
-  warning: 'bg-amber-50 border-amber-200 text-amber-800',
+  info: 'bg-surface border-surface text-primary-dark',
+  error: 'bg-danger-soft border-danger/20 text-danger',
+  warning: 'bg-warning-soft border-warning/25 text-warning',
 };
 
 const BANNER_ICONS: Record<Banner['type'], React.ElementType> = {
@@ -67,25 +67,27 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 const Field: React.FC<FieldProps> = ({ icon: Icon, error, trailing, ...inputProps }) => (
   <div className="w-full">
     <div
-      className={`relative flex items-center rounded-2xl bg-stone-50 border transition-all ${
+      className={`relative flex items-center rounded-xl bg-white border transition-all ${
         error
-          ? 'border-red-400 ring-2 ring-red-100 bg-red-50/20'
-          : 'border-slate-300 focus-within:border-sky-600 focus-within:ring-2 focus-within:ring-sky-100 focus-within:bg-white'
+          ? 'border-danger ring-2 ring-danger/15'
+          : 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
       }`}
     >
-      <div className="pl-4 pr-2 text-slate-400 flex items-center pointer-events-none">
-        <Icon className="size-5" />
-      </div>
       <input
         {...inputProps}
         aria-invalid={!!error}
-        className="w-full py-3 pr-4 text-sm bg-transparent border-0 text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:opacity-50"
+        className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50"
       />
-      {trailing}
+      {/* Ação à direita (ex.: exibir senha) substitui o ícone decorativo */}
+      {trailing ?? (
+        <div className="pr-4 text-muted flex items-center pointer-events-none">
+          <Icon className="size-5" />
+        </div>
+      )}
     </div>
 
     {error && (
-      <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1 animate-in fade-in">
+      <p className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1 animate-in fade-in">
         <AlertCircle className="size-3.5 shrink-0" />
         <span>{error}</span>
       </p>
@@ -309,19 +311,19 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
       tabIndex={-1}
       disabled={isBusy}
       title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-      className="pr-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
+      className="pr-4 text-muted hover:text-primary-dark transition-colors focus:outline-none cursor-pointer"
     >
       {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
     </button>
   );
 
   const actionButtons = (submitLabel: string, loadingLabel: string) => (
-    <div className="flex items-center justify-center gap-4 mt-8 w-full">
+    <div className="flex flex-col-reverse sm:flex-row items-stretch gap-3 mt-8 w-full">
       <button
         type="button"
         onClick={handleClose}
         disabled={isBusy}
-        className="px-8 py-2.5 rounded-full border border-red-500 text-red-500 font-medium text-sm hover:bg-red-50 active:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+        className="flex-1 py-3.5 rounded-xl border border-border bg-white text-primary-dark font-semibold text-sm hover:bg-background transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
       >
         Cancelar
       </button>
@@ -329,7 +331,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
       <button
         type="submit"
         disabled={isBusy}
-        className="px-10 py-2.5 rounded-full bg-[#005c9e] hover:bg-[#004d84] active:bg-[#003e6b] text-white font-medium text-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex-1 py-3.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <>
@@ -347,12 +349,12 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
     <Modal isOpen={isOpen} onClose={handleClose} title={MODAL_TITLES[step]}>
       {step === 'email' && (
         <form onSubmit={handleRequestCode} noValidate className="flex flex-col items-center">
-          {/* Ícone de Escudo de Dúvida (vermelho) */}
-          <div className="mb-4">
-            <ShieldQuestion className="size-20 text-red-500 stroke-[1.5]" />
+          {/* Ícone de destaque */}
+          <div className="mb-4 size-20 rounded-full bg-surface text-primary flex items-center justify-center">
+            <ShieldQuestion className="size-10 stroke-[1.5]" />
           </div>
 
-          <p className="text-sm text-slate-600 text-center max-w-[310px] leading-relaxed mb-6">
+          <p className="text-sm text-muted text-center max-w-[310px] leading-relaxed mb-6">
             Digite seu e-mail e clique em &quot;Enviar&quot; para receber um código de recuperação de senha.
           </p>
 
@@ -379,19 +381,19 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
 
       {step === 'reset' && (
         <form onSubmit={handleResetPassword} noValidate className="flex flex-col items-center">
-          <div className="mb-4">
-            <KeyRound className="size-16 text-[#005c9e] stroke-[1.5]" />
+          <div className="mb-4 size-20 rounded-full bg-surface text-primary flex items-center justify-center">
+            <KeyRound className="size-10 stroke-[1.5]" />
           </div>
 
-          <p className="text-sm text-slate-600 text-center max-w-[330px] leading-relaxed mb-1">
+          <p className="text-sm text-muted text-center max-w-[330px] leading-relaxed mb-1">
             Informe o código de 6 dígitos enviado para
           </p>
-          <p className="text-sm font-semibold text-slate-800 text-center break-all mb-1">{email.trim()}</p>
+          <p className="text-sm font-semibold text-primary-dark text-center break-all mb-1">{email.trim()}</p>
           <button
             type="button"
             onClick={handleChangeEmail}
             disabled={isBusy}
-            className="text-xs text-sky-600 hover:text-sky-700 hover:underline font-medium mb-5 cursor-pointer disabled:opacity-50"
+            className="text-xs text-primary hover:text-primary-dark font-semibold mb-5 cursor-pointer disabled:opacity-50"
           >
             Trocar e-mail
           </button>
@@ -440,7 +442,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                   <li
                     key={label}
                     className={`flex items-center gap-1.5 text-xs transition-colors ${
-                      isMet ? 'text-emerald-600' : 'text-slate-500'
+                      isMet ? 'text-success' : 'text-muted'
                     }`}
                   >
                     {isMet ? <CheckCircle2 className="size-3.5 shrink-0" /> : <Circle className="size-3.5 shrink-0" />}
@@ -471,7 +473,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
             type="button"
             onClick={handleResendCode}
             disabled={resendCooldown > 0 || isBusy}
-            className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-700 transition-colors cursor-pointer disabled:text-slate-400 disabled:cursor-not-allowed"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-dark transition-colors cursor-pointer disabled:text-muted/60 disabled:cursor-not-allowed"
           >
             {isResending ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCw className="size-3.5" />}
             <span>
@@ -490,14 +492,14 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
       {step === 'success' && (
         /* Estado de Confirmação: Senha Redefinida */
         <div className="py-6 flex flex-col items-center text-center animate-in fade-in duration-300">
-          <div className="mb-6">
-            <CheckCircle2 className="size-20 text-emerald-600 stroke-[1.5]" />
+          <div className="mb-6 size-24 rounded-full bg-success-soft text-success flex items-center justify-center">
+            <CheckCircle2 className="size-11 stroke-[1.5]" />
           </div>
 
-          <p className="text-base text-slate-800 font-medium leading-relaxed max-w-[300px] mb-2">
+          <p className="text-base text-primary-dark font-medium leading-relaxed max-w-[300px] mb-2">
             Senha redefinida com sucesso!
           </p>
-          <p className="text-sm text-slate-500 max-w-[300px]">
+          <p className="text-sm text-muted max-w-[300px]">
             Você será redirecionado para o login para entrar com a nova senha.
           </p>
         </div>

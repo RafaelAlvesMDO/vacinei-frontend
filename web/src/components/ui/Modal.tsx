@@ -48,17 +48,17 @@ export const Modal: React.FC<ModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary-dark/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className={`relative w-full ${maxWidth} bg-white rounded-3xl p-7 sm:p-9 shadow-2xl border border-slate-100 flex flex-col transition-all animate-in zoom-in-95 duration-200`}
+        className={`relative w-full ${maxWidth} bg-white rounded-3xl p-7 sm:p-9 shadow-xl flex flex-col transition-all animate-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho do Modal */}
         <div className="flex items-center justify-between mb-6">
           {title ? (
-            <h2 id="modal-title" className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h2 id="modal-title" className="text-2xl font-bold text-primary-dark tracking-tight">
               {title}
             </h2>
           ) : (
@@ -69,7 +69,7 @@ export const Modal: React.FC<ModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Fechar modal"
-            className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-full transition-colors cursor-pointer"
+            className="text-muted hover:text-primary-dark hover:bg-surface p-1.5 rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             <X className="size-5" />
           </button>
