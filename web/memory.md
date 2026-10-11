@@ -14,10 +14,13 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Tailwind CSS (v4) configurado com `tailwind.config.js`, PostCSS, Autoprefixer e integrado com `@tailwindcss/vite` e `src/index.css`.
   - Dependências visuais e de comunicação instaladas e validadas: `react-router-dom`, `axios`, `lucide-react`.
   - Build de produção testado e validado (`npm run build`).
-  - Skill `git_commit` importada em `.agents/skills/git_commit`.
+  - Skill `git_commit` em `.claude/skills/git_commit` (fluxo na branch `dev`) e `CLAUDE.md` na raiz do repositório.
+  - Identidade visual oficial registrada em `docs/DESIGN.md` e aplicada via tokens do Tailwind.
   - Diretrizes do front-end formalizadas em `agent.md` (arquitetura de componentes, Tailwind CSS, rotas protegidas JWT/RBAC e consumo de API).
   - Repositório Git sincronizado na branch `main` no GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`).
-- **Data da Última Atualização:** 2026-10-07
+  - Desenvolvimento ocorre na branch `dev`; PRs para `main` apenas sob solicitação.
+  - Etapa 3 concluída: `AppLayout` reutilizável e dashboard por perfil (`recharts` instalado).
+- **Data da Última Atualização:** 2026-10-10
 
 ---
 
@@ -39,6 +42,11 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 4. **Controle de Acesso e Segurança (RBAC):**
    - Middleware/componente `ProtectedRoute` para bloquear acessos não autorizados e redirecionar perfis incompatíveis.
 
+5. **Identidade Visual (`docs/DESIGN.md`):**
+   - O web segue a identidade do app mobile: nome **Vacinei!?**, primária `#087F6B`, fonte Inter (Google Fonts no `index.html`).
+   - Tokens no `tailwind.config.js`: `primary`, `primary-dark`, `accent`, `surface`, `background`, `muted`, `border`, `danger`/`danger-soft`, `warning`/`warning-soft`, `success`/`success-soft`. Novas telas devem usar os tokens, e não as cores padrão do Tailwind (`sky`, `slate` etc.).
+   - Logos: `src/assets/logo-vacinei.svg` (login/sidebar) e `src/assets/icone-vacinei.svg` (favicon).
+
 ---
 
 ## 3. Roteiro para Apresentação da Pré-Banca (Até 15/Outubro/2026)
@@ -48,9 +56,21 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 - [x] **Configuração do Cliente HTTP & Serviço de Autenticação (`src/services/api.ts` e `src/services/auth.ts`):** Chamada POST pronta para `/sessions` (com suporte e fallback para `/auth/login`), tipagens em `src/types/auth.ts` e persistência de sessão.
 - [x] **Tela de Login/Autenticação (`src/pages/auth/Login.tsx`):** Componente visual responsivo baseado na referência de design, com validações de formulário, exibição dinâmica de erros, loading states e proteção RBAC contra acesso de cidadãos.
 - [x] **Modais de Autenticação Complementar (`src/pages/auth/RequestAccessModal.tsx`, `ForgotPasswordModal.tsx` e `src/components/ui/Modal.tsx`):** Fluxos fiéis ao design do "Criar conta" / "Solicitar Acesso", estado de confirmação "Solicitação Enviada" com ícone de envio e modal "Esqueci a Senha", integrados ao login e com métodos de API preparados em `src/services/auth.ts`.
-- [ ] **Contexto Global de Autenticação (`src/contexts/AuthContext.tsx`):** Estado reativo de sessão, restauração automática e métodos `signIn`/`signOut`.
-- [ ] **Layout do Gerenciador Web (`AppLayout`):** Sidebar responsiva com rotas administrativas, header com perfil do profissional logado e botão de logout.
-- [ ] **Dashboard Principal (`/dashboard`):** Cards com contagem de UBSs cadastradas, vacinas disponíveis no catálogo e atalhos rápidos.
+- [x] **Recuperação de Senha Integrada ao Backend (`ForgotPasswordModal.tsx`):** Fluxo em etapas conectado a `POST /auth/forgot-password` e `POST /auth/reset-password` (código de 6 dígitos + nova senha), com reenvio de código (cooldown de 30s), erros de validação por campo (`issues` do Zod), tratamento de `429` (aguardar 15 min e solicitar novo código) e retorno ao login após sucesso. Helper `parseApiError` em `src/services/auth.ts` normaliza erros da API.
+- [x] **Regra de Senha RF001 (`src/utils/password.ts`):** `validatePassword()` e `PASSWORD_REQUIREMENTS` (mín. 8 caracteres, maiúscula, minúscula, número e símbolo) aplicados na redefinição de senha, com checklist visual. O login só exige a senha preenchida.
+- [x] **Base de Sessão (Contexto Global de Autenticação):**
+  - Tipos alinhados ao contrato: `professionalRegistry: { isVerified, status } | null` (login e `/auth/me`) e `UserProfile` para o `/auth/me`.
+  - `src/services/tokenStorage.ts` centraliza tokens e usuário (localStorage com "Lembrar de mim", senão sessionStorage).
+  - `src/services/api.ts` renova o token no `401` via `POST /auth/refresh` (requisição única compartilhada e nova tentativa). Se falhar, limpa a sessão e chama o callback `onSessionExpired`.
+  - O login usa apenas `POST /auth/login`; a chamada a `/sessions` foi removida.
+  - `src/contexts/AuthContext.tsx` + `src/hooks/useAuth.ts` expõem `signIn`, `signOut` e `refreshProfile` e restauram a sessão via `/auth/me`. Cidadãos são barrados (`CitizenAccessError`).
+  - `ProtectedRoute` (`allowedRoles`), `PublicRoute`, `React.lazy` + `Suspense` e um dashboard provisório com aviso de registro pendente ou recusado.
+- [x] **Identidade Visual Vacinei!?:** `docs/DESIGN.md`, tokens de cor e fonte Inter no Tailwind, login redesenhado no estilo do app (logo oficial, "Boas-vindas", inputs arredondados, botão primário largo, caixa de aviso verde-clara), modais, dashboard provisório e spinner na paleta nova. Favicon e título "Vacinei!? | Gerenciador Web".
+- [x] **Layout do Gerenciador Web (`src/layouts/AppLayout.tsx`):** rota-layout com `<Outlet />` dentro do `ProtectedRoute`. `components/layout/`: `Sidebar` (menu filtrado por perfil, drawer no mobile e "Sair" no rodapé), `Topbar` ("Vacinei!?" + nome/perfil), `PageHeader` (título, subtítulo e slot de ações) e `Footer`.
+- [x] **Dashboard (`/dashboard`, RF009):** 4 `StatCard`s (`/dashboard/summary` + último mês do `/dashboard/monthly`), gráfico de linha mensal com `recharts`, atalhos rápidos e card direito por perfil (LGPD): `RecentDosesCard` para o profissional e `PendingProfessionalsCard` (`GET /professionals?verified=false`) para o ADMIN. Busca de cidadãos (`GET /citizens`, debounce, mín. 2 caracteres) só para o profissional, levando a `/confirmar-vacina?citizenId=<id>`. Profissional não verificado (ou `403` da API) vê apenas o `VerificationNotice`.
+  - Reutilizáveis: `hooks/useAsync` (dados, erro normalizado por `parseApiError`, `reload`), `hooks/useDebounce`, `utils/format` (`formatMonthLabel` → "nov/25", datas pt-BR), `utils/roles`, `components/ui/{Card,StatCard,CardState,Badge}`.
+  - Doses recentes: `CONFIRMADO` mostra badge accent "Confirmado"; qualquer outro status mostra "Aguardando confirmação" (warning), pois é registro do cidadão ainda não confirmado (RF007 nota 7). O `/dashboard/recent-doses` não retorna `origin`.
+  - `/confirmar-vacina` (só PROF) e `/profissionais` (só ADMIN) usam `pages/UnderConstruction.tsx` até as etapas 4 e 5.
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
 - [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.
 - [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
@@ -59,7 +79,8 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 ## 4. Próximos Passos Imediatos
 
-1. Desenvolver o `AuthContext` (`src/contexts/AuthContext.tsx`) para gerenciar estado reativo de login e sincronização de usuário.
-2. Criar o componente `ProtectedRoute` para proteger rotas privadas do painel web.
-3. Desenvolver o layout base da aplicação (`src/layouts/AppLayout.tsx`) com sidebar e navegação.
-4. Implementar o Dashboard com indicadores e métricas (`/dashboard`).
+O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
+
+1. **Etapa 4:** Confirmação de vacina (RF010) em `/confirmar-vacina`: ler `?citizenId=` para abrir a caderneta direto, reaproveitar `services/citizens.ts` e `useDebounce`, e modal de confirmação (201 / 200 `CONFIRMED_EXISTING` / 409).
+2. **Etapa 5:** Administração de profissionais pendentes (verificar/recusar) em `/profissionais`, exclusiva para `ADMIN`; ampliar `services/professionals.ts`.
+3. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`.
