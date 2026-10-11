@@ -2,11 +2,13 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Spinner } from './components/ui/Spinner';
 import { AuthProvider } from './contexts/AuthContext';
+import { AppLayout } from './layouts/AppLayout';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { PublicRoute } from './routes/PublicRoute';
 
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
+const UnderConstruction = lazy(() => import('./pages/UnderConstruction'));
 
 export function App() {
   return (
@@ -19,7 +21,35 @@ export function App() {
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['PROFISSIONAL_SAUDE', 'ADMIN']} />}>
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+
+                {/* Etapa 4: confirmação de vacina (RF010) */}
+                <Route element={<ProtectedRoute allowedRoles={['PROFISSIONAL_SAUDE']} />}>
+                  <Route
+                    path="/confirmar-vacina"
+                    element={
+                      <UnderConstruction
+                        title="Confirmar vacina"
+                        description="Confirmação presencial de doses aplicadas"
+                      />
+                    }
+                  />
+                </Route>
+
+                {/* Etapa 5: verificação de profissionais (RS001) */}
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                  <Route
+                    path="/profissionais"
+                    element={
+                      <UnderConstruction
+                        title="Profissionais"
+                        description="Verificação dos registros profissionais"
+                      />
+                    }
+                  />
+                </Route>
+              </Route>
             </Route>
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
