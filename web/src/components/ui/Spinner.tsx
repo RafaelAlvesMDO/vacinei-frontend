@@ -9,11 +9,11 @@ interface SpinnerProps {
 export const Spinner: React.FC<SpinnerProps> = ({ label = 'Carregando...', fullScreen = false }) => (
   <div
     role="status"
-    className={`flex flex-col items-center justify-center gap-3 text-slate-500 ${
-      fullScreen ? 'min-h-screen w-full bg-slate-50' : 'py-12'
+    className={`flex flex-col items-center justify-center gap-3 text-muted ${
+      fullScreen ? 'min-h-screen w-full bg-background' : 'py-12'
     }`}
   >
-    <Loader2 className="size-8 animate-spin text-sky-600" />
+    <Loader2 className="size-8 animate-spin text-primary" />
     <span className="text-sm font-medium">{label}</span>
   </div>
 );

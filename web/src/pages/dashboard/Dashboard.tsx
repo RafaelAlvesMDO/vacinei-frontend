@@ -1,5 +1,6 @@
 import React from 'react';
-import { AlertTriangle, LogOut, ShieldCheck, Syringe, XCircle } from 'lucide-react';
+import { AlertTriangle, LogOut, ShieldCheck, XCircle } from 'lucide-react';
+import iconeVacinei from '../../assets/icone-vacinei.svg';
 import { useAuth } from '../../hooks/useAuth';
 import type { ProfessionalVerificationStatus, UserRole } from '../../types/auth';
 
@@ -15,13 +16,13 @@ const VERIFICATION_NOTICES: Record<
 > = {
   PENDENTE: {
     icon: AlertTriangle,
-    className: 'bg-amber-50 border-amber-200 text-amber-800',
+    className: 'bg-warning-soft border-warning/25 text-warning',
     title: 'Registro profissional em análise',
     text: 'Seu registro ainda não foi verificado pela administração. Até a verificação, o painel e a confirmação de doses ficam indisponíveis.',
   },
   RECUSADO: {
     icon: XCircle,
-    className: 'bg-rose-50 border-rose-200 text-rose-800',
+    className: 'bg-danger-soft border-danger/20 text-danger',
     title: 'Registro profissional recusado',
     text: 'A administração recusou a verificação do seu registro. Entre em contato com a administração para regularizar o acesso.',
   },
@@ -38,20 +39,18 @@ export const Dashboard: React.FC = () => {
   const NoticeIcon = notice?.icon;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased">
-      <header className="bg-white border-b border-slate-200 shadow-sm">
+    <div className="min-h-screen bg-background font-sans text-primary-dark antialiased">
+      <header className="bg-white border-b border-border shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="inline-flex items-center justify-center size-10 rounded-xl bg-sky-600 text-white shadow-sm">
-              <Syringe className="size-5" />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900">VACINEI!?</span>
+            <img src={iconeVacinei} alt="Logo Vacinei!?" className="size-10 rounded-xl" />
+            <span className="text-lg font-bold tracking-tight text-primary-dark">Vacinei!?</span>
           </div>
 
           <button
             type="button"
             onClick={signOut}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium text-muted hover:bg-surface hover:text-primary-dark transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             <LogOut className="size-4" />
             <span>Sair</span>
@@ -70,14 +69,14 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-          <div className="flex items-center gap-2 text-sky-700 text-xs font-semibold uppercase tracking-wide">
+        <div className="bg-white rounded-2xl border border-border shadow-sm p-8">
+          <div className="flex items-center gap-2 text-primary text-xs font-semibold uppercase tracking-wide">
             <ShieldCheck className="size-4" />
             <span>{ROLE_LABELS[user.role]}</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-2">Olá, {user.name}!</h1>
-          <p className="text-sm text-slate-500 mt-2">
-            Você está conectado ao gerenciador web do VACINEI!?. Os indicadores do painel serão exibidos aqui.
+          <h1 className="text-2xl font-bold text-primary-dark mt-2">Olá, {user.name}!</h1>
+          <p className="text-sm text-muted mt-2">
+            Você está conectado ao gerenciador web do Vacinei!?. Os indicadores do painel serão exibidos aqui.
           </p>
         </div>
       </main>
