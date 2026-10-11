@@ -100,7 +100,7 @@ export const Login: React.FC = () => {
             {/* Badge institucional */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white text-primary text-xs font-semibold shadow-sm mb-10">
               <ShieldCheck className="size-4" />
-              <span>Sistema seguro de imunização • SUS Maceió</span>
+              <span>Sistema seguro de imunização • Maceió</span>
             </div>
 
             {/* Logo em destaque sobre círculo, no estilo do onboarding */}
@@ -130,7 +130,7 @@ export const Login: React.FC = () => {
                 </div>
                 <div className="text-left">
                   <p className="text-xs font-semibold text-primary-dark">Controle do SUS</p>
-                  <p className="text-[11px] text-muted">Gestão de UBSs e estoque</p>
+                  <p className="text-[11px] text-muted">Gestão de UBSs e catálogo vacinal</p>
                 </div>
               </div>
             </div>

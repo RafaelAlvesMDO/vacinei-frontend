@@ -1,32 +1,23 @@
 import React from 'react';
 import { Syringe } from 'lucide-react';
-import { Badge, type BadgeVariant } from '../../../components/ui/Badge';
+import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../../components/ui/CardState';
 import { useAsync } from '../../../hooks/useAsync';
 import { getRecentDoses } from '../../../services/dashboard';
-import type { VaccineStatus } from '../../../types/dashboard';
 import { formatDate } from '../../../utils/format';
-
-const STATUS_BADGES: Record<VaccineStatus, { label: string; variant: BadgeVariant }> = {
-  EM_DIA: { label: 'Em dia', variant: 'success' },
-  ATRASADA: { label: 'Atrasada', variant: 'danger' },
-  COMPLETA: { label: 'Completa', variant: 'primary' },
-  CONFIRMADO: { label: 'Confirmado', variant: 'accent' },
-};
 
 const RECENT_DOSES_LIMIT = 8;
 const fetchRecentDoses = () => getRecentDoses(RECENT_DOSES_LIMIT);
 
-function isVaccineStatus(status: string): status is VaccineStatus {
-  return Object.hasOwn(STATUS_BADGES, status);
-}
-
-// Valores fora do enum conhecido aparecem como texto cru
+// Registro sem CONFIRMADO foi lançado pelo cidadão e aguarda um profissional (RF007, nota 7).
+// O /dashboard/recent-doses não retorna `origin`, então a distinção é feita pelo status.
 function StatusBadge({ status }: { status: string }) {
-  if (!isVaccineStatus(status)) return <Badge>{status}</Badge>;
-  const { label, variant } = STATUS_BADGES[status];
-  return <Badge variant={variant}>{label}</Badge>;
+  return status === 'CONFIRMADO' ? (
+    <Badge variant="accent">Confirmado</Badge>
+  ) : (
+    <Badge variant="warning">Aguardando confirmação</Badge>
+  );
 }
 
 // Exclusivo do PROFISSIONAL_SAUDE: identifica cidadãos com dados de saúde (LGPD)
