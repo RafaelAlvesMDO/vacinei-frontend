@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-:root {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+@layer base {
+  body {
+    @apply bg-background font-sans text-primary-dark antialiased;
+  }
 }
