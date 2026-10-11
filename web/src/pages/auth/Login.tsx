@@ -52,8 +52,6 @@ export const Login: React.FC = () => {
 
     if (!password) {
       newErrors.password = 'A senha de acesso é obrigatória.';
-    } else if (password.length < 6) {
-      newErrors.password = 'A senha deve conter no mínimo 6 caracteres.';
     }
 
     setErrors(newErrors);

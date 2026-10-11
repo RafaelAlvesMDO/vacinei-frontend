@@ -11,10 +11,12 @@ import {
   AlertTriangle,
   Info,
   CheckCircle2,
+  Circle,
   RotateCw,
 } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { forgotPassword, resetPassword, parseApiError } from '../../services/auth';
+import { PASSWORD_MIN_LENGTH, PASSWORD_REQUIREMENTS, validatePassword } from '../../utils/password';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -216,10 +218,9 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
     if (!CODE_REGEX.test(code)) {
       errors.code = 'Informe o código de 6 dígitos enviado para o seu e-mail.';
     }
-    if (!newPassword) {
-      errors.newPassword = 'Informe a nova senha.';
-    } else if (newPassword.length < 6) {
-      errors.newPassword = 'A senha deve conter no mínimo 6 caracteres.';
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      errors.newPassword = passwordError;
     }
     if (!confirmPassword) {
       errors.confirmPassword = 'Confirme a nova senha.';
@@ -425,11 +426,29 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
                 setNewPassword(e.target.value);
                 clearFieldError('newPassword');
               }}
-              placeholder="Nova senha (mín. 6 caracteres)"
+              placeholder={`Nova senha (mín. ${PASSWORD_MIN_LENGTH} caracteres)`}
               disabled={isBusy}
               error={fieldErrors.newPassword}
               trailing={passwordToggle}
             />
+
+            {/* Requisitos da senha (RF001) atualizados conforme a digitação */}
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 px-1" aria-label="Requisitos da senha">
+              {PASSWORD_REQUIREMENTS.map(({ label, test }) => {
+                const isMet = test(newPassword);
+                return (
+                  <li
+                    key={label}
+                    className={`flex items-center gap-1.5 text-xs transition-colors ${
+                      isMet ? 'text-emerald-600' : 'text-slate-500'
+                    }`}
+                  >
+                    {isMet ? <CheckCircle2 className="size-3.5 shrink-0" /> : <Circle className="size-3.5 shrink-0" />}
+                    <span>{label}</span>
+                  </li>
+                );
+              })}
+            </ul>
 
             <Field
               id="reset-password-confirm"
