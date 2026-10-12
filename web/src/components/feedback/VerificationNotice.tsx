@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, XCircle } from 'lucide-react';
-import type { ProfessionalVerificationStatus } from '../../../types/auth';
+import type { ProfessionalVerificationStatus } from '../../types/auth';
 
 const VERIFICATION_NOTICES: Record<
   Exclude<ProfessionalVerificationStatus, 'VERIFICADO'>,

@@ -2,11 +2,11 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isCancel } from 'axios';
 import { AlertCircle, Loader2, Search, UserRound } from 'lucide-react';
-import { useDebounce } from '../../../hooks/useDebounce';
-import { parseApiError } from '../../../services/auth';
-import { searchCitizens } from '../../../services/citizens';
-import type { CitizenSearchResult } from '../../../types/citizen';
-import { formatCalendarDate } from '../../../utils/format';
+import { useDebounce } from '../../hooks/useDebounce';
+import { parseApiError } from '../../services/auth';
+import { searchCitizens } from '../../services/citizens';
+import type { CitizenSearchResult } from '../../types/citizen';
+import { formatCalendarDate } from '../../utils/format';
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_LENGTH = 100;
