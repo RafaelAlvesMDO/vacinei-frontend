@@ -52,7 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={onClose}
     >
       <div
-        className={`relative w-full ${maxWidth} bg-white rounded-3xl p-7 sm:p-9 shadow-xl flex flex-col transition-all animate-in zoom-in-95 duration-200`}
+        className={`relative w-full ${maxWidth} max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-3xl p-7 sm:p-9 shadow-xl flex flex-col transition-all animate-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho do Modal */}
