@@ -23,7 +23,7 @@ export const PendingProfessionalsCard: React.FC = () => {
       className="h-full"
       action={
         <Link
-          to="/profissionais"
+          to="/profissionais?status=pendentes"
           className="text-sm font-semibold text-primary hover:text-primary-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
           Ver todos
