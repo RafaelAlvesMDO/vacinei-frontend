@@ -37,7 +37,9 @@ Legenda: `[x]` concluída · `[ ]` pendente
 - Exige profissional verificado: se a API responder `403`, mostrar um aviso de registro pendente ou recusado em vez dos dados. O ADMIN também precisa de um tratamento para essa tela.
 - Estados de carregamento, vazio e erro.
 
-## [ ] Etapa 4: Confirmação de vacina (RF010)
+## [x] Etapa 4: Confirmação de vacina (RF010)
+
+> Concluída em 12/10/2026. Tela `pages/records/ConfirmVaccination.tsx` no `AppLayout`. `?citizenId=` abre a caderneta direto; sem ele, a busca do cabeçalho (`components/citizens/CitizenSearch`, compartilhada com o dashboard) leva ao cidadão. A caderneta mostra 3 cards de resumo e as vacinas ordenadas (atrasadas primeiro e destacadas), com doses aplicadas/total, próxima dose e registros (confirmado ou aguardando confirmação). O modal (`ConfirmDoseModal`) sugere a vacina e a próxima dose (RF010 notas 2 e 3, editáveis), exige o lote (alfanumérico, até 20, em maiúsculas) e mostra a data de hoje e o profissional logado sem edição (RS006). "Registrar outra vacina" permite qualquer vacina do `GET /vaccines`. Após o sucesso: aviso "Dose registrada" ou "Registro do cidadão confirmado", destaque da vacina atualizada e recarga da caderneta (RNF03). O `409` mostra "Esta dose já foi confirmada" e recarrega a caderneta.
 
 - Busca de cidadão com debounce (hook `useDebounce`) em `GET /citizens?search=` (2 a 100 caracteres, máximo de 20 resultados, CPF mascarado).
 - Ao selecionar o cidadão, abrir a caderneta: `GET /citizens/:id/vaccination-records` (resumo + vacinas com status `EM_DIA`/`ATRASADA`/`COMPLETA`, doses e registros).
@@ -63,8 +65,39 @@ Legenda: `[x]` concluída · `[ ]` pendente
 ## [ ] Etapa 6: Cadastro de profissional (aguardando o orientador)
 
 - O `RequestAccessModal` passa a ser o cadastro de profissional via `POST /users`:
-  - `{ name, email, password, cpf?, phone?, birthDate?, role: "PROFISSIONAL_SAUDE", professionalRegistry: { council, registryNumber, uf } }`.
-  - Senha validada com a regra RF001 (`validatePassword`).
+  - `{ name, email, password, cpf?, phone, birthDate?, role: "PROFISSIONAL_SAUDE", professionalRegistry: { category, council, registryNumber, uf } }`.
+  - Validações do RF001:
+    - **Nome:** obrigatório, com no mínimo duas palavras (nome e sobrenome).
+    - **Celular:** obrigatório, DDD + 9 dígitos (ex.: `(82) 98765-4321`), com máscara.
+    - **Categoria profissional:** select obrigatório (Médico(a), Enfermeiro(a), Técnico(a) de Enfermagem, Farmacêutico(a), Cirurgião(ã)-Dentista). O conselho é preenchido automaticamente a partir dela: CRM, COREN, COREN, CRF e CRO, respectivamente.
+    - **Senha:** regra RF001 (`validatePassword`).
+  - **Dependência do backend:** o `professionalRegistry` precisa de um campo `category`, porque Enfermeiro(a) e Técnico(a) de Enfermagem têm o mesmo conselho (COREN). O backend também deve validar o celular e o nome com essas regras.
   - Tratamento de `400` (erros por campo) e `409` (e-mail, CPF ou registro já cadastrado).
   - Mensagem final informando que a conta fica pendente de verificação pelo administrador.
 - Remover o endpoint provisório `/auth/request-access`.
+
+## [ ] Etapa 5b: Catálogo de vacinas (só ADMIN)
+
+- Rota restrita a `ADMIN`, com link na sidebar.
+- Listar as vacinas (`GET /vaccines`, com busca, filtro por público-alvo e opção de ver as inativas), cadastrar (`POST /vaccines`, com as doses) e editar (`PUT /vaccines/:id`).
+- Tratamento de `409` (nome duplicado).
+
+## [ ] Etapa 5c: Gestão de usuários (só ADMIN)
+
+- Listar usuários com `GET /users` (filtro por perfil, busca e paginação).
+- Ativar/desativar contas: `PUT /users/:id` com `{ isActive }` e `DELETE /users/:id` (exclusão lógica), com confirmação.
+
+## [ ] Etapa 5d: Gestão de UBS (só ADMIN)
+
+- Listar (`GET /ubs`, com busca), cadastrar (`POST /ubs`), editar (`PUT /ubs/:id`) e desativar/remover (`DELETE /ubs/:id`).
+- Tratamento de `409` (CNES duplicado).
+
+## [ ] Etapa 5e: Perfil do usuário (RF003)
+
+- Ver e editar os próprios dados (`GET /users/me` e `PUT /users/me`: nome, celular e data de nascimento).
+- Trocar a senha informando a senha atual, com a nova senha validada pelo RF001. **Dependência do backend:** a API ainda não tem uma rota de troca de senha autenticada.
+
+## [ ] Etapa 5f: Cidadãos com doses atrasadas
+
+- Ao clicar no card "Doses atrasadas" do dashboard, abrir a lista de cidadãos com doses atrasadas. Cada cidadão leva à caderneta em `/confirmar-vacina?citizenId=`.
+- **Dependência do backend:** a API ainda não tem um endpoint que liste esses cidadãos.

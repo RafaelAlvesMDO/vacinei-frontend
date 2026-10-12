@@ -20,7 +20,8 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Repositório Git sincronizado na branch `main` no GitHub (`https://github.com/RafaelAlvesMDO/vacinei-frontend.git`).
   - Desenvolvimento ocorre na branch `dev`; PRs para `main` apenas sob solicitação.
   - Etapa 3 concluída: `AppLayout` reutilizável e dashboard por perfil (`recharts` instalado).
-- **Data da Última Atualização:** 2026-10-10
+  - Etapa 4 concluída: confirmação de vacina (RF010) em `/confirmar-vacina`.
+- **Data da Última Atualização:** 2026-10-12
 
 ---
 
@@ -70,7 +71,15 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 - [x] **Dashboard (`/dashboard`, RF009):** 4 `StatCard`s (`/dashboard/summary` + último mês do `/dashboard/monthly`), gráfico de linha mensal com `recharts`, atalhos rápidos e card direito por perfil (LGPD): `RecentDosesCard` para o profissional e `PendingProfessionalsCard` (`GET /professionals?verified=false`) para o ADMIN. Busca de cidadãos (`GET /citizens`, debounce, mín. 2 caracteres) só para o profissional, levando a `/confirmar-vacina?citizenId=<id>`. Profissional não verificado (ou `403` da API) vê apenas o `VerificationNotice`.
   - Reutilizáveis: `hooks/useAsync` (dados, erro normalizado por `parseApiError`, `reload`), `hooks/useDebounce`, `utils/format` (`formatMonthLabel` → "nov/25", datas pt-BR), `utils/roles`, `components/ui/{Card,StatCard,CardState,Badge}`.
   - Doses recentes: `CONFIRMADO` mostra badge accent "Confirmado"; qualquer outro status mostra "Aguardando confirmação" (warning), pois é registro do cidadão ainda não confirmado (RF007 nota 7). O `/dashboard/recent-doses` não retorna `origin`.
-  - `/confirmar-vacina` (só PROF) e `/profissionais` (só ADMIN) usam `pages/UnderConstruction.tsx` até as etapas 4 e 5.
+  - `/profissionais` (só ADMIN) usa `pages/UnderConstruction.tsx` até a etapa 5.
+- [x] **Confirmação de Vacina (`/confirmar-vacina`, RF010/RS006):** `pages/records/ConfirmVaccination.tsx` (só PROF verificado; senão `VerificationNotice`). `?citizenId=` abre `CitizenVaccinationCard` (com `key` por cidadão); sem ele, a busca do cabeçalho.
+  - `CitizenSearch` e `VerificationNotice` foram movidos para `components/citizens/` e `components/feedback/` (usados pelo dashboard e pela confirmação).
+  - Serviços: `getVaccinationCard` (`services/citizens.ts`), `listVaccines` (`services/vaccines.ts`) e `confirmDose` (`services/vaccinationRecords.ts`). Tipos em `types/vaccination.ts`.
+  - A caderneta da API não traz o esquema de doses da vacina, então o modal usa o `GET /vaccines` para listar as doses. Doses já `CONFIRMADO` ficam desabilitadas e doses registradas pelo cidadão aparecem marcadas.
+  - Sugestão (RF010 notas 2 e 3): a vacina vem do botão clicado (ou o profissional escolhe, com as pendentes primeiro) e a dose vem do `nextDose` ou é a primeira não confirmada. As duas são editáveis.
+  - Lote convertido para maiúsculas ao digitar e validado por `^[A-Z0-9]{1,20}$`. Data e profissional (usuário logado) somente leitura.
+  - Feedback (RNF03): banner `success-soft` por 8 s ("Dose registrada" / "Registro do cidadão confirmado"), badge "Atualizada agora" na vacina e recarga da caderneta mantendo os dados na tela. `409` → "Esta dose já foi confirmada" no modal e recarga da caderneta.
+  - `Modal` ganhou `max-h` e rolagem interna para formulários longos no celular.
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
 - [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.
 - [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
@@ -81,6 +90,6 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-1. **Etapa 4:** Confirmação de vacina (RF010) em `/confirmar-vacina`: ler `?citizenId=` para abrir a caderneta direto, reaproveitar `services/citizens.ts` e `useDebounce`, e modal de confirmação (201 / 200 `CONFIRMED_EXISTING` / 409).
-2. **Etapa 5:** Administração de profissionais pendentes (verificar/recusar) em `/profissionais`, exclusiva para `ADMIN`; ampliar `services/professionals.ts`.
-3. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`.
+1. **Etapa 5:** Administração de profissionais pendentes (verificar/recusar) em `/profissionais`, exclusiva para `ADMIN`; ampliar `services/professionals.ts`.
+2. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`, com as regras do RF001: nome com duas palavras, celular obrigatório e categoria profissional que define o conselho. Depende do campo `category` no backend.
+3. **Etapas 5b a 5f:** catálogo de vacinas, usuários e UBS (só ADMIN), perfil (RF003) e lista de cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.

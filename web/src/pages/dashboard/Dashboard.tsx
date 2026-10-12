@@ -6,12 +6,12 @@ import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
 import { getDashboardSummary, getMonthlyTotals } from '../../services/dashboard';
 import { formatMonthLong, formatNumber } from '../../utils/format';
-import { CitizenSearch } from './components/CitizenSearch';
+import { CitizenSearch } from '../../components/citizens/CitizenSearch';
 import { MonthlyChart } from './components/MonthlyChart';
 import { PendingProfessionalsCard } from './components/PendingProfessionalsCard';
 import { QuickActions } from './components/QuickActions';
 import { RecentDosesCard } from './components/RecentDosesCard';
-import { VerificationNotice } from './components/VerificationNotice';
+import { VerificationNotice } from '../../components/feedback/VerificationNotice';
 
 const PAGE_TITLE = 'Dashboard';
 const PAGE_SUBTITLE = 'Visão geral da vacinação';
