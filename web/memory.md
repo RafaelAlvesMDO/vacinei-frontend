@@ -21,6 +21,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Desenvolvimento ocorre na branch `dev`; PRs para `main` apenas sob solicitação.
   - Etapa 3 concluída: `AppLayout` reutilizável e dashboard por perfil (`recharts` instalado).
   - Etapa 4 concluída: confirmação de vacina (RF010) em `/confirmar-vacina`.
+  - Etapa 5 concluída: administração de profissionais (RS001) em `/profissionais`.
 - **Data da Última Atualização:** 2026-10-12
 
 ---
@@ -80,6 +81,11 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Lote convertido para maiúsculas ao digitar e validado por `^[A-Z0-9]{1,20}$`. Data e profissional (usuário logado) somente leitura.
   - Feedback (RNF03): banner `success-soft` por 8 s ("Dose registrada" / "Registro do cidadão confirmado"), badge "Atualizada agora" na vacina e recarga da caderneta mantendo os dados na tela. `409` → "Esta dose já foi confirmada" no modal e recarga da caderneta.
   - `Modal` ganhou `max-h` e rolagem interna para formulários longos no celular.
+- [x] **Administração de Profissionais (`/profissionais`, RS001):** `pages/professionals/Professionals.tsx` (só ADMIN), substituindo o `UnderConstruction`, que foi mantido para as próximas etapas.
+  - Filtro na URL (`?status=pendentes|verificados|recusados`, padrão Pendentes). A API só filtra por `verified`: `false` traz pendentes e recusados, separados no cliente por `verificationStatus`.
+  - Serviços `verifyProfessional` e `rejectProfessional(id, reason?)` em `services/professionals.ts`. `utils/councils.ts` tem `formatRegistry` ("COREN 654321/AL") e `getCouncilInfo` (conselho federal, só a página inicial oficial).
+  - `VerifyProfessionalDialog` lembra de conferir o registro no site do conselho. `RejectProfessionalModal` tem motivo opcional (3 a 500 caracteres, `trim`). Para um verificado, a ação vira "Revogar" e exige marcar a ciência da perda de acesso.
+  - `404`/`409` fecham o modal com um aviso warning ("lista desatualizada") e recarregam. O sucesso mostra um banner `success-soft` por 8 s e recarrega.
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
 - [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.
 - [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
@@ -90,6 +96,5 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-1. **Etapa 5:** Administração de profissionais pendentes (verificar/recusar) em `/profissionais`, exclusiva para `ADMIN`; ampliar `services/professionals.ts`.
-2. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`, com as regras do RF001: nome com duas palavras, celular obrigatório e categoria profissional que define o conselho. Depende do campo `category` no backend.
-3. **Etapas 5b a 5f:** catálogo de vacinas, usuários e UBS (só ADMIN), perfil (RF003) e lista de cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
+1. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`, com as regras do RF001: nome com duas palavras, celular obrigatório e categoria profissional que define o conselho. Depende do campo `category` no backend.
+2. **Etapas 5b a 5f:** catálogo de vacinas, usuários e UBS (só ADMIN), perfil (RF003) e lista de cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.

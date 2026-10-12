@@ -51,7 +51,9 @@ Legenda: `[x]` concluída · `[ ]` pendente
   - `400`/`404`: erros de validação, dose que não pertence à vacina, cidadão ou vacina inexistente.
 - Depois de confirmar, recarregar a caderneta.
 
-## [ ] Etapa 5: Administração de profissionais (RS001)
+## [x] Etapa 5: Administração de profissionais (RS001)
+
+> Concluída em 12/10/2026. Tela `pages/professionals/Professionals.tsx` no `AppLayout`, só para ADMIN. Filtro por status na URL (`?status=pendentes|verificados|recusados`, Pendentes por padrão). Pendentes e recusados vêm de `?verified=false` e são separados no cliente. A lista mostra nome, e-mail, conselho/registro/UF, badge de status, data de cadastro e, nos recusados, o motivo. "Verificar" (pendentes e recusados) abre um diálogo que lembra o admin de conferir o registro no site oficial do conselho (só a página inicial: CFM, Cofen, CFF e CFO, em `utils/councils.ts`). "Recusar" abre um modal com motivo opcional (3 a 500 caracteres). Nos verificados, a ação vira "Revogar" e exige marcar a ciência de que o profissional perderá o acesso às funções de profissional. `404` e `409` fecham o modal, mostram um aviso de lista desatualizada e recarregam. O sucesso mostra um aviso por 8 s e recarrega a lista (RNF03). O "Ver todos" do dashboard leva a `/profissionais?status=pendentes`.
 
 - Rota restrita a `ADMIN` (`ProtectedRoute allowedRoles={['ADMIN']}`), com link na sidebar só para esse perfil.
 - `services/professionals.ts`:

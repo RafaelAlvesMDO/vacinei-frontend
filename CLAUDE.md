@@ -1,5 +1,7 @@
 # VACINEI!? - Front-end
 
+**Idioma:** responder sempre em português do Brasil.
+
 Repositório das aplicações front-end da plataforma **VACINEI!?** (TCC CESMAC), que consomem a API Express do backend (porta `3333`).
 
 - **`web/`**: Gerenciador Web para `PROFISSIONAL_SAUDE` e `ADMIN`. Stack: Vite + React 19 + TypeScript, React Router DOM v7, Tailwind CSS v4, Axios e Lucide React. Comandos (em `web/`): `npm run dev`, `npm run build`, `npm run lint` (oxlint).
