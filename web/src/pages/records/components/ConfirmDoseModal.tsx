@@ -1,12 +1,12 @@
 import React, { useId, useMemo, useState } from 'react';
-import { AlertCircle, CalendarDays, Loader2, ShieldCheck, Syringe, UserRound } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CalendarDays, Loader2, ShieldCheck, Syringe, UserRound } from 'lucide-react';
 import { CardError, CardLoading } from '../../../components/ui/CardState';
 import { Modal } from '../../../components/ui/Modal';
 import type { UseAsyncResult } from '../../../hooks/useAsync';
 import { parseApiError } from '../../../services/auth';
 import { confirmDose } from '../../../services/vaccinationRecords';
-import type { CardVaccine, ConfirmDoseResult, Vaccine } from '../../../types/vaccination';
-import { formatDate } from '../../../utils/format';
+import type { CardRecord, CardVaccine, ConfirmDoseResult, Vaccine } from '../../../types/vaccination';
+import { formatCalendarDate, formatDate } from '../../../utils/format';
 
 const LOT_MAX_LENGTH = 20;
 const LOT_PATTERN = /^[A-Z0-9]+$/;
@@ -14,17 +14,29 @@ const LOT_PATTERN = /^[A-Z0-9]+$/;
 const SELECT_CLASSES =
   'w-full h-12 rounded-xl border bg-white px-4 text-sm text-primary-dark focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer';
 
+export interface PendingRecord {
+  vaccineId: string;
+  vaccineName: string;
+  record: CardRecord;
+}
+
 interface ConfirmDoseModalProps {
   citizen: { id: string; name: string };
   cardVaccines: CardVaccine[];
   catalog: UseAsyncResult<Vaccine[]>;
   // Vacina sugerida ao abrir (botão da caderneta); null abre o registro de qualquer vacina
   initialVaccineId: string | null;
+  // Registro do cidadão aguardando confirmação: vacina e dose ficam fixas (RF007 nota 7)
+  pendingRecord?: PendingRecord | null;
   professionalName: string;
   onClose: () => void;
   onSuccess: (result: ConfirmDoseResult) => void;
   // 409: a caderneta exibida está desatualizada
   onConflict: () => void;
+}
+
+function sanitizeLot(value: string): string {
+  return value.toUpperCase().slice(0, LOT_MAX_LENGTH);
 }
 
 function validateLot(lot: string): string | null {
@@ -39,6 +51,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
   cardVaccines,
   catalog,
   initialVaccineId,
+  pendingRecord = null,
   professionalName,
   onClose,
   onSuccess,
@@ -46,7 +59,8 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
 }) => {
   const fieldId = useId();
   // Data da confirmação: definida pela API no envio, exibida só para conferência
-  const [today] = useState(() => formatDate(new Date().toISOString()));
+  const [todayIso] = useState(() => new Date().toISOString());
+  const today = formatDate(todayIso);
 
   const cardByVaccineId = useMemo(
     () => new Map(cardVaccines.map((item) => [item.vaccine.id, item])),
@@ -83,10 +97,10 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
     return doses.find((dose) => recordStatusByDoseId.get(dose.id) !== 'CONFIRMADO')?.id ?? '';
   };
 
-  const [vaccineId, setVaccineId] = useState(initialVaccineId ?? '');
+  const [vaccineId, setVaccineId] = useState(pendingRecord?.vaccineId ?? initialVaccineId ?? '');
   // null = segue a sugestão; preenchido quando o profissional escolhe outra dose
-  const [chosenDoseId, setChosenDoseId] = useState<string | null>(null);
-  const [lot, setLot] = useState('');
+  const [chosenDoseId, setChosenDoseId] = useState<string | null>(pendingRecord?.record.dose.id ?? null);
+  const [lot, setLot] = useState(() => sanitizeLot(pendingRecord?.record.lotNumber ?? ''));
   const [lotError, setLotError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,6 +110,16 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
   const doseId = chosenDoseId ?? (vaccineId ? suggestDoseId(vaccineId) : '');
   const suggestedDoseId = vaccineId ? suggestDoseId(vaccineId) : '';
   const selectedDoseStatus = doseId ? recordStatusByDoseId.get(doseId) : undefined;
+
+  // Aviso, sem bloqueio, para a próxima dose confirmada antes da data prevista (dia em UTC, como na API)
+  const cardItem = cardByVaccineId.get(vaccineId);
+  const earlyDoseDate =
+    !pendingRecord &&
+    cardItem?.nextDose?.id === doseId &&
+    cardItem.nextDoseDate &&
+    cardItem.nextDoseDate.slice(0, 10) > todayIso.slice(0, 10)
+      ? cardItem.nextDoseDate
+      : null;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -127,86 +151,126 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
     }
   };
 
-  const renderForm = () => {
-    if (catalog.isLoading) return <CardLoading label="Carregando vacinas..." />;
-    if (catalog.error) return <CardError message={catalog.error.message} onRetry={catalog.reload} />;
+  // Registro do cidadão: vacina e dose fixas, sem depender do catálogo
+  const renderPendingRecord = ({ vaccineName, record }: PendingRecord) => (
+    <div className="flex flex-col gap-3 rounded-xl border border-warning/25 bg-warning-soft p-4 text-sm">
+      <dl className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <dt className="text-xs text-muted">Vacina</dt>
+          <dd className="font-semibold text-primary-dark">{vaccineName}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Dose</dt>
+          <dd className="font-semibold text-primary-dark">{record.dose.doseName}</dd>
+        </div>
+      </dl>
+      <p className="text-xs text-warning">
+        Registrado pelo cidadão
+        {record.applicationDate ? ` com aplicação em ${formatDate(record.applicationDate)}` : ''}. Ao confirmar, o
+        registro passa a constar como confirmado e a data de aplicação é mantida.
+      </p>
+    </div>
+  );
 
-    return (
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${fieldId}-vaccine`} className="text-sm font-semibold text-primary-dark">
-            Vacina
-          </label>
-          <select
-            id={`${fieldId}-vaccine`}
-            value={vaccineId}
-            disabled={isSubmitting}
-            onChange={(event) => {
-              setVaccineId(event.target.value);
-              setChosenDoseId(null);
-              setSubmitError(null);
-            }}
-            className={`${SELECT_CLASSES} border-border`}
-          >
-            <option value="" disabled>
-              Selecione a vacina
-            </option>
-            {pendingVaccines.length > 0 && (
-              <optgroup label="Pendentes na caderneta">
-                {pendingVaccines.map((vaccine) => (
-                  <option key={vaccine.id} value={vaccine.id}>
-                    {vaccine.name}
-                    {cardByVaccineId.get(vaccine.id)?.status === 'ATRASADA' ? ' (atrasada)' : ''}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            <optgroup label={pendingVaccines.length > 0 ? 'Demais vacinas' : 'Vacinas'}>
-              {otherVaccines.map((vaccine) => (
+  const renderSelection = () => (
+    <>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={`${fieldId}-vaccine`} className="text-sm font-semibold text-primary-dark">
+          Vacina
+        </label>
+        <select
+          id={`${fieldId}-vaccine`}
+          value={vaccineId}
+          disabled={isSubmitting}
+          onChange={(event) => {
+            setVaccineId(event.target.value);
+            setChosenDoseId(null);
+            setSubmitError(null);
+          }}
+          className={`${SELECT_CLASSES} border-border`}
+        >
+          <option value="" disabled>
+            Selecione a vacina
+          </option>
+          {pendingVaccines.length > 0 && (
+            <optgroup label="Pendentes na caderneta">
+              {pendingVaccines.map((vaccine) => (
                 <option key={vaccine.id} value={vaccine.id}>
                   {vaccine.name}
+                  {cardByVaccineId.get(vaccine.id)?.status === 'ATRASADA' ? ' (atrasada)' : ''}
                 </option>
               ))}
             </optgroup>
-          </select>
-          {selectedVaccine && <p className="text-xs text-muted">Previne: {selectedVaccine.targetDisease}</p>}
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${fieldId}-dose`} className="text-sm font-semibold text-primary-dark">
-            Dose
-          </label>
-          <select
-            id={`${fieldId}-dose`}
-            value={doseId}
-            disabled={!selectedVaccine || isSubmitting}
-            onChange={(event) => {
-              setChosenDoseId(event.target.value);
-              setSubmitError(null);
-            }}
-            className={`${SELECT_CLASSES} border-border`}
-          >
-            <option value="" disabled>
-              {selectedVaccine ? 'Selecione a dose' : 'Escolha a vacina primeiro'}
-            </option>
-            {doses.map((dose) => {
-              const status = recordStatusByDoseId.get(dose.id);
-              return (
-                <option key={dose.id} value={dose.id} disabled={status === 'CONFIRMADO'}>
-                  {dose.doseName}
-                  {dose.id === suggestedDoseId ? ' (sugerida)' : ''}
-                  {status === 'CONFIRMADO' ? ' (já confirmada)' : ''}
-                  {status === 'PENDENTE' ? ' (registrada pelo cidadão)' : ''}
-                </option>
-              );
-            })}
-          </select>
-          {selectedDoseStatus === 'PENDENTE' && (
-            <p className="text-xs text-muted">
-              O cidadão já registrou esta dose. Ao confirmar, o registro dele passa a ser confirmado.
-            </p>
           )}
-        </div>
+          <optgroup label={pendingVaccines.length > 0 ? 'Demais vacinas' : 'Vacinas'}>
+            {otherVaccines.map((vaccine) => (
+              <option key={vaccine.id} value={vaccine.id}>
+                {vaccine.name}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+        {selectedVaccine && <p className="text-xs text-muted">Previne: {selectedVaccine.targetDisease}</p>}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={`${fieldId}-dose`} className="text-sm font-semibold text-primary-dark">
+          Dose
+        </label>
+        <select
+          id={`${fieldId}-dose`}
+          value={doseId}
+          disabled={!selectedVaccine || isSubmitting}
+          onChange={(event) => {
+            setChosenDoseId(event.target.value);
+            setSubmitError(null);
+          }}
+          className={`${SELECT_CLASSES} border-border`}
+        >
+          <option value="" disabled>
+            {selectedVaccine ? 'Selecione a dose' : 'Escolha a vacina primeiro'}
+          </option>
+          {doses.map((dose) => {
+            const status = recordStatusByDoseId.get(dose.id);
+            return (
+              <option key={dose.id} value={dose.id} disabled={status === 'CONFIRMADO'}>
+                {dose.doseName}
+                {dose.id === suggestedDoseId ? ' (sugerida)' : ''}
+                {status === 'CONFIRMADO' ? ' (já confirmada)' : ''}
+                {status === 'PENDENTE' ? ' (registrada pelo cidadão)' : ''}
+              </option>
+            );
+          })}
+        </select>
+        {selectedDoseStatus === 'PENDENTE' && (
+          <p className="text-xs text-muted">
+            O cidadão já registrou esta dose. Ao confirmar, o registro dele passa a ser confirmado.
+          </p>
+        )}
+      </div>
+
+      {earlyDoseDate && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-warning/25 bg-warning-soft p-3 text-sm text-warning"
+        >
+          <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+          Esta dose está sendo registrada antes do prazo recomendado ({formatCalendarDate(earlyDoseDate)}). Confira
+          se a dose selecionada está correta.
+        </p>
+      )}
+    </>
+  );
+
+  const renderForm = () => {
+    if (!pendingRecord) {
+      if (catalog.isLoading) return <CardLoading label="Carregando vacinas..." />;
+      if (catalog.error) return <CardError message={catalog.error.message} onRetry={catalog.reload} />;
+    }
+
+    return (
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        {pendingRecord ? renderPendingRecord(pendingRecord) : renderSelection()}
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${fieldId}-lot`} className="text-sm font-semibold text-primary-dark">
@@ -222,7 +286,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
             value={lot}
             disabled={isSubmitting}
             onChange={(event) => {
-              setLot(event.target.value.toUpperCase().slice(0, LOT_MAX_LENGTH));
+              setLot(sanitizeLot(event.target.value));
               setLotError(null);
             }}
             aria-invalid={lotError ? true : undefined}

@@ -18,9 +18,9 @@ import { useAsync } from '../../../hooks/useAsync';
 import { useAuth } from '../../../hooks/useAuth';
 import { getVaccinationCard } from '../../../services/citizens';
 import { listVaccines } from '../../../services/vaccines';
-import type { CardVaccine, ConfirmDoseResult, VaccineScheduleStatus } from '../../../types/vaccination';
+import type { CardRecord, CardVaccine, ConfirmDoseResult, VaccineScheduleStatus } from '../../../types/vaccination';
 import { formatCalendarDate, formatNumber } from '../../../utils/format';
-import { ConfirmDoseModal } from './ConfirmDoseModal';
+import { ConfirmDoseModal, type PendingRecord } from './ConfirmDoseModal';
 import { VaccineCardItem } from './VaccineCardItem';
 
 const FEEDBACK_DURATION_MS = 8000;
@@ -71,8 +71,8 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
   const card = useAsync(fetchCard, 'Não foi possível carregar a caderneta do cidadão.');
   const catalog = useAsync(listVaccines, 'Não foi possível carregar o catálogo de vacinas.');
 
-  // undefined = modal fechado; null = registrar qualquer vacina; string = vacina sugerida
-  const [modalVaccineId, setModalVaccineId] = useState<string | null | undefined>(undefined);
+  // null = modal fechado; vaccineId null = registrar qualquer vacina; pendingRecord = confirmar registro do cidadão
+  const [modal, setModal] = useState<{ vaccineId: string | null; pendingRecord?: PendingRecord } | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   // 403: a verificação do profissional mudou desde o login; sincroniza o perfil
@@ -89,11 +89,20 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
 
   const sortedVaccines = useMemo(() => sortVaccines(card.data?.vaccines ?? []), [card.data]);
 
-  const closeModal = useCallback(() => setModalVaccineId(undefined), []);
+  const closeModal = useCallback(() => setModal(null), []);
+  const openForVaccine = useCallback((vaccineId: string) => setModal({ vaccineId }), []);
+  const openForRecord = useCallback(
+    (item: CardVaccine, record: CardRecord) =>
+      setModal({
+        vaccineId: item.vaccine.id,
+        pendingRecord: { vaccineId: item.vaccine.id, vaccineName: item.vaccine.name, record },
+      }),
+    []
+  );
 
   const handleSuccess = (result: ConfirmDoseResult) => {
     const { dose, lotNumber } = result.record;
-    setModalVaccineId(undefined);
+    setModal(null);
     setFeedback({
       title: FEEDBACK_TITLES[result.action],
       detail: `${dose.vaccine.name} · ${dose.doseName}${lotNumber ? ` · Lote ${lotNumber}` : ''}`,
@@ -173,7 +182,7 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
             </Link>
             <button
               type="button"
-              onClick={() => setModalVaccineId(null)}
+              onClick={() => setModal({ vaccineId: null })}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <Plus className="size-4" />
@@ -218,19 +227,21 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
                 key={item.vaccine.id}
                 item={item}
                 isHighlighted={feedback?.vaccineId === item.vaccine.id}
-                onConfirm={setModalVaccineId}
+                onConfirm={openForVaccine}
+                onConfirmRecord={openForRecord}
               />
             ))}
           </ul>
         )}
       </Card>
 
-      {modalVaccineId !== undefined && (
+      {modal && (
         <ConfirmDoseModal
           citizen={citizen}
           cardVaccines={card.data.vaccines}
           catalog={catalog}
-          initialVaccineId={modalVaccineId}
+          initialVaccineId={modal.vaccineId}
+          pendingRecord={modal.pendingRecord}
           professionalName={user?.name ?? '—'}
           onClose={closeModal}
           onSuccess={handleSuccess}
