@@ -131,8 +131,10 @@ export function validateSlots(slots: OpeningSlot[]): Record<string, string> {
       errors[slot.id] = 'Selecione ao menos um dia.';
     } else if (slot.days.some((day) => seenDays.has(day))) {
       errors[slot.id] = 'Um dia não pode estar em duas faixas.';
-    } else if (!TIME_REGEX.test(slot.opensAt) || !TIME_REGEX.test(slot.closesAt)) {
+    } else if (!slot.opensAt || !slot.closesAt) {
       errors[slot.id] = 'Informe os horários de abertura e fechamento.';
+    } else if (!TIME_REGEX.test(slot.opensAt) || !TIME_REGEX.test(slot.closesAt)) {
+      errors[slot.id] = 'Horário inválido. Use o formato 24h, ex.: 17:00';
     } else if (slot.closesAt <= slot.opensAt) {
       errors[slot.id] = 'O fechamento precisa ser depois da abertura.';
     }

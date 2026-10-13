@@ -67,6 +67,15 @@ export function formatPhone(value: string): string {
 }
 
 /**
+ * Máscara de horário 24h durante a digitação: "0700" → "07:00" e "1730" → "17:30"
+ */
+export function formatTime(value: string): string {
+  const digits = onlyDigits(value).slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+/**
  * Máscara de CEP durante a digitação: "57051000" → "57051-000"
  */
 export function formatCep(value: string): string {

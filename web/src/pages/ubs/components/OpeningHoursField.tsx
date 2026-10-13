@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle, History, Plus, Trash2 } from 'lucide-react';
-import { TimeSelect } from '../../../components/ui/TimeSelect';
+import { TimeInput } from '../../../components/ui/TimeInput';
 import {
   createSlot,
   formatOpeningHours,
@@ -113,7 +113,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <TimeSelect
+              <TimeInput
                 id={`${slot.id}-opens`}
                 label="Abre às"
                 value={slot.opensAt}
@@ -122,7 +122,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
                 invalid={!!slotError && !isValidTime(slot.opensAt)}
                 describedBy={slotError ? errorId : undefined}
               />
-              <TimeSelect
+              <TimeInput
                 id={`${slot.id}-closes`}
                 label="Fecha às"
                 value={slot.closesAt}
