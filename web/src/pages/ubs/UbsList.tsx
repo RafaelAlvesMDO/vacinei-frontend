@@ -11,6 +11,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { listAllUbs } from '../../services/ubs';
 import type { Ubs } from '../../types/ubs';
 import { formatPhone } from '../../utils/format';
+import { OpeningHoursLines } from './components/OpeningHoursLines';
 import { UbsFormModal } from './components/UbsFormModal';
 import { UbsStatusDialog } from './components/UbsStatusDialog';
 import { formatUbsAddress, normalizeSearch } from './utils';
@@ -34,7 +35,7 @@ const FILTERS: FilterOption[] = [
 ];
 
 const GRID_COLUMNS =
-  'lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_9rem_5.5rem_minmax(12rem,auto)]';
+  'lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(11.5rem,auto)_9rem_5.5rem_minmax(12rem,auto)]';
 
 type ModalState = { type: 'form'; ubs?: Ubs } | { type: 'status'; ubs: Ubs } | null;
 
@@ -206,10 +207,10 @@ export const UbsList: React.FC = () => {
                 <span className="text-xs text-muted lg:hidden">Bairro: </span>
                 {ubs.neighborhood || '—'}
               </p>
-              <p className="text-sm text-primary-dark">
-                <span className="text-xs text-muted lg:hidden">Horário: </span>
-                {ubs.openingHours || '—'}
-              </p>
+              <div className="text-sm text-primary-dark">
+                <span className="text-xs text-muted lg:hidden">Horário:</span>
+                <OpeningHoursLines text={ubs.openingHours} />
+              </div>
               <p className="text-sm text-primary-dark whitespace-nowrap">
                 <span className="text-xs text-muted lg:hidden">Telefone: </span>
                 {ubs.phone ? formatPhone(ubs.phone) : '—'}

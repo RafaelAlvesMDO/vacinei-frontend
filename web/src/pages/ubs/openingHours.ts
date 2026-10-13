@@ -18,6 +18,10 @@ const TIME_RANGE_REGEX = /(\d{2}:\d{2}) às (\d{2}:\d{2})/;
 
 let nextSlotId = 0;
 
+export function isValidTime(value: string): boolean {
+  return TIME_REGEX.test(value);
+}
+
 export function createSlot(slot: Partial<Omit<OpeningSlot, 'id'>> = {}): OpeningSlot {
   nextSlotId += 1;
   return { id: `slot-${nextSlotId}`, days: [], opensAt: '', closesAt: '', ...slot };
@@ -54,6 +58,16 @@ export function formatOpeningHours(slots: OpeningSlot[]): string {
     .sort((a, b) => Math.min(...a.days) - Math.min(...b.days))
     .map((slot) => `${formatDays(slot.days)}: ${slot.opensAt} às ${slot.closesAt}`)
     .join(SLOT_SEPARATOR);
+}
+
+/**
+ * Faixas do texto salvo, uma por linha na exibição. Textos antigos voltam como uma linha só
+ */
+export function splitOpeningHours(text: string): string[] {
+  return text
+    .split(SLOT_SEPARATOR)
+    .map((part) => part.trim())
+    .filter(Boolean);
 }
 
 function parseDays(text: string): number[] | null {

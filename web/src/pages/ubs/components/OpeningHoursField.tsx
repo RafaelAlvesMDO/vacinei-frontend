@@ -1,7 +1,15 @@
 import React from 'react';
-import { AlertCircle, Clock, History, Plus, Trash2 } from 'lucide-react';
-import { FormField } from '../../../components/ui/FormField';
-import { createSlot, formatOpeningHours, validateSlots, WEEKDAYS, type OpeningSlot } from '../openingHours';
+import { AlertCircle, History, Plus, Trash2 } from 'lucide-react';
+import { TimeSelect } from '../../../components/ui/TimeSelect';
+import {
+  createSlot,
+  formatOpeningHours,
+  isValidTime,
+  validateSlots,
+  WEEKDAYS,
+  type OpeningSlot,
+} from '../openingHours';
+import { OpeningHoursLines } from './OpeningHoursLines';
 
 interface OpeningHoursFieldProps {
   slots: OpeningSlot[];
@@ -55,6 +63,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
 
       {slots.map((slot, index) => {
         const slotError = slotErrors[slot.id];
+        const errorId = `${slot.id}-error`;
         return (
           <div
             key={slot.id}
@@ -104,30 +113,31 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <FormField
+              <TimeSelect
                 id={`${slot.id}-opens`}
                 label="Abre às"
-                icon={Clock}
-                type="time"
                 value={slot.opensAt}
-                onChange={(e) => updateSlot(slot.id, { opensAt: e.target.value })}
+                onChange={(opensAt) => updateSlot(slot.id, { opensAt })}
                 disabled={disabled}
-                trailing={<span className="pr-2" />}
+                invalid={!!slotError && !isValidTime(slot.opensAt)}
+                describedBy={slotError ? errorId : undefined}
               />
-              <FormField
+              <TimeSelect
                 id={`${slot.id}-closes`}
                 label="Fecha às"
-                icon={Clock}
-                type="time"
                 value={slot.closesAt}
-                onChange={(e) => updateSlot(slot.id, { closesAt: e.target.value })}
+                onChange={(closesAt) => updateSlot(slot.id, { closesAt })}
                 disabled={disabled}
-                trailing={<span className="pr-2" />}
+                invalid={
+                  !!slotError &&
+                  (!isValidTime(slot.closesAt) || (isValidTime(slot.opensAt) && slot.closesAt <= slot.opensAt))
+                }
+                describedBy={slotError ? errorId : undefined}
               />
             </div>
 
             {slotError && (
-              <p className="flex items-center gap-1 text-xs font-medium text-danger">
+              <p id={errorId} className="flex items-center gap-1 text-xs font-medium text-danger">
                 <AlertCircle className="size-3.5 shrink-0" />
                 {slotError}
               </p>
@@ -136,7 +146,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
         );
       })}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <button
           type="button"
           onClick={() => onChange([...slots, createSlot()])}
@@ -148,9 +158,10 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
           Adicionar horário
         </button>
         {preview && (
-          <p className="text-xs text-muted">
-            Será exibido como: <span className="font-semibold text-primary-dark">{preview}</span>
-          </p>
+          <div className="text-xs text-muted sm:text-right">
+            <p>Será exibido como:</p>
+            <OpeningHoursLines text={preview} className="font-semibold text-primary-dark" />
+          </div>
         )}
       </div>
 
