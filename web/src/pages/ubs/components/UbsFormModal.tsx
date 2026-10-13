@@ -3,7 +3,6 @@ import {
   AlertCircle,
   Building2,
   CheckCircle2,
-  Clock,
   ExternalLink,
   Hash,
   Info,
@@ -24,6 +23,15 @@ import { lookupCep } from '../../../services/viaCep';
 import type { Ubs, UbsPayload } from '../../../types/ubs';
 import { BRAZILIAN_UFS } from '../../../utils/councils';
 import { formatCep, formatPhone, onlyDigits } from '../../../utils/format';
+import {
+  createSlot,
+  formatOpeningHours,
+  parseOpeningHours,
+  slotFromLegacy,
+  validateSlots,
+  type OpeningSlot,
+} from '../openingHours';
+import { OpeningHoursField } from './OpeningHoursField';
 
 interface UbsFormModalProps {
   // Sem `ubs`, o modal cadastra uma nova UBS
@@ -43,19 +51,22 @@ interface FormValues {
   neighborhood: string;
   city: string;
   state: string;
-  openingHours: string;
+  openingHours: OpeningSlot[];
   phone: string;
   latitude: string;
   longitude: string;
 }
 
 type FieldName = keyof FormValues;
+type TextFieldName = Exclude<FieldName, 'openingHours'>;
 type FieldErrors = Partial<Record<FieldName, string>>;
 type CepStatus = 'idle' | 'loading' | 'found' | 'not-found';
 
 // A maioria das UBS cadastradas é de Maceió/AL
 const DEFAULT_CITY = 'Maceió';
 const DEFAULT_STATE = 'AL';
+// Segunda a sexta, das 07:00 às 17:00 (horário mais comum entre as UBS)
+const DEFAULT_SLOT = { days: [0, 1, 2, 3, 4], opensAt: '07:00', closesAt: '17:00' };
 const CEP_LENGTH = 8;
 const CNES_LENGTH = 7;
 const NUMBER_MAX_LENGTH = 10;
@@ -97,13 +108,14 @@ function toFormValues(ubs?: Ubs): FormValues {
       neighborhood: '',
       city: DEFAULT_CITY,
       state: DEFAULT_STATE,
-      openingHours: '',
+      openingHours: [createSlot(DEFAULT_SLOT)],
       phone: '',
       latitude: '',
       longitude: '',
     };
   }
 
+  const savedHours = ubs.openingHours ?? '';
   return {
     name: ubs.name,
     cnes: ubs.cnes ?? '',
@@ -113,11 +125,17 @@ function toFormValues(ubs?: Ubs): FormValues {
     neighborhood: ubs.neighborhood ?? '',
     city: ubs.city,
     state: ubs.state,
-    openingHours: ubs.openingHours ?? '',
+    // Horário fora do padrão das faixas (dados antigos) é redefinido do zero
+    openingHours: parseOpeningHours(savedHours) ?? [slotFromLegacy(savedHours)],
     phone: formatPhone(ubs.phone ?? ''),
-    latitude: String(ubs.latitude),
-    longitude: String(ubs.longitude),
+    latitude: formatCoordinate(ubs.latitude),
+    longitude: formatCoordinate(ubs.longitude),
   };
+}
+
+// Exibe com vírgula decimal, no padrão brasileiro: -9.6658 → "-9,6658"
+function formatCoordinate(value: number): string {
+  return String(value).replace('.', ',');
 }
 
 // Aceita vírgula como separador decimal ("-9,6658")
@@ -151,7 +169,6 @@ function validateForm(values: FormValues, originalCnes: string | null): FieldErr
   if (values.neighborhood.trim().length < 2) errors.neighborhood = 'Informe o bairro.';
   if (values.city.trim().length < 2) errors.city = 'Informe a cidade.';
   if (!values.state) errors.state = 'Selecione a UF.';
-  if (values.openingHours.trim().length < 3) errors.openingHours = 'Informe o horário de funcionamento.';
 
   const phoneDigits = onlyDigits(values.phone);
   if (phoneDigits && phoneDigits.length !== 10 && phoneDigits.length !== 11) {
@@ -187,7 +204,8 @@ function buildPayload(values: FormValues): UbsPayload {
     state: values.state,
     latitude: parseCoordinate(values.latitude) ?? 0,
     longitude: parseCoordinate(values.longitude) ?? 0,
-    openingHours: values.openingHours.trim(),
+    // Texto sempre gerado a partir das faixas, nunca digitado
+    openingHours: formatOpeningHours(values.openingHours),
     // Telefone salvo com máscara, no mesmo formato do seed
     phone: values.phone ? formatPhone(values.phone) : undefined,
     cnes: values.cnes || undefined,
@@ -211,8 +229,13 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
   const [values, setValues] = useState<FormValues>(() => toFormValues(ubs));
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [bannerError, setBannerError] = useState<string | null>(null);
+  const [slotErrors, setSlotErrors] = useState<Record<string, string>>({});
   const [cepStatus, setCepStatus] = useState<CepStatus>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Horário salvo fora do padrão das faixas, exibido como referência na edição
+  const [legacyHours] = useState(() =>
+    ubs?.openingHours && !parseOpeningHours(ubs.openingHours) ? ubs.openingHours : null
+  );
 
   // Na edição, o CEP já salvo não é consultado de novo ao abrir o modal
   const lastCepRef = useRef(onlyDigits(ubs?.zipCode ?? ''));
@@ -229,9 +252,15 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
     });
   };
 
-  const setField = (field: FieldName, value: string) => {
+  const setField = (field: TextFieldName, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
     clearErrors([field]);
+  };
+
+  const handleSlotsChange = (slots: OpeningSlot[]) => {
+    setValues((prev) => ({ ...prev, openingHours: slots }));
+    setSlotErrors({});
+    clearErrors(['openingHours']);
   };
 
   const handleCepChange = (raw: string) => {
@@ -279,7 +308,11 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
   const handleLatitudeChange = (value: string) => {
     const pair = COORDINATE_PAIR_REGEX.exec(value);
     if (pair) {
-      setValues((prev) => ({ ...prev, latitude: pair[1], longitude: pair[2] }));
+      setValues((prev) => ({
+        ...prev,
+        latitude: formatCoordinate(Number(pair[1])),
+        longitude: formatCoordinate(Number(pair[2])),
+      }));
       clearErrors(['latitude', 'longitude']);
       return;
     }
@@ -291,13 +324,17 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
     setBannerError(null);
 
     const errors = validateForm(values, ubs?.cnes ?? null);
+    const hoursErrors = validateSlots(values.openingHours);
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    setSlotErrors(hoursErrors);
+    if (Object.keys(errors).length > 0 || Object.keys(hoursErrors).length > 0) return;
 
     const payload = buildPayload(values);
     let changes: Partial<UbsPayload> | null = null;
     if (ubs) {
-      changes = buildChanges(payload, buildPayload(toFormValues(ubs)));
+      // Compara com o horário salvo de fato, que pode estar fora do padrão das faixas
+      const original = { ...buildPayload(toFormValues(ubs)), openingHours: ubs.openingHours ?? '' };
+      changes = buildChanges(payload, original);
       if (Object.keys(changes).length === 0) {
         setBannerError('Nenhuma alteração para salvar.');
         return;
@@ -490,18 +527,15 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
 
         <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>Atendimento</legend>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              id="ubs-opening-hours"
-              label="Horário de funcionamento"
-              icon={Clock}
-              type="text"
-              maxLength={TEXT_MAX_LENGTH}
-              value={values.openingHours}
-              onChange={(e) => setField('openingHours', e.target.value)}
-              placeholder="07:00 às 17:00"
-              error={fieldErrors.openingHours}
-            />
+          <OpeningHoursField
+            slots={values.openingHours}
+            onChange={handleSlotsChange}
+            slotErrors={slotErrors}
+            error={fieldErrors.openingHours}
+            legacyText={legacyHours}
+            disabled={isSubmitting}
+          />
+          <div className="sm:max-w-[50%] sm:pr-2">
             <FormField
               id="ubs-phone"
               label="Telefone (opcional)"
@@ -529,7 +563,7 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
               autoComplete="off"
               value={values.latitude}
               onChange={(e) => handleLatitudeChange(e.target.value)}
-              placeholder="-9.6658"
+              placeholder="-9,6658"
               error={fieldErrors.latitude}
             />
             <FormField
@@ -541,7 +575,7 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
               autoComplete="off"
               value={values.longitude}
               onChange={(e) => setField('longitude', e.target.value)}
-              placeholder="-35.7353"
+              placeholder="-35,7353"
               error={fieldErrors.longitude}
             />
           </div>
@@ -550,8 +584,8 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
             <div className="flex flex-col gap-1.5">
               <p>
                 No OpenStreetMap, clique com o botão direito sobre a UBS e escolha “Mostrar endereço”. As coordenadas
-                aparecem no painel à esquerda (ex.: -9.6658, -35.7353). Se colar as duas na latitude, os campos são
-                separados automaticamente.
+                aparecem no painel à esquerda, com ponto decimal (-9.6658, -35.7353). Aqui vale vírgula ou ponto, e se
+                colar as duas na latitude, os campos são separados automaticamente.
               </p>
               <a
                 href={osmUrl}
