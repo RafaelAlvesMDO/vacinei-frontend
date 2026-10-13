@@ -8,6 +8,7 @@ import {
   Clock,
   Loader2,
   Plus,
+  ShieldAlert,
   UserRound,
   X,
 } from 'lucide-react';
@@ -133,6 +134,8 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
 
   const { citizen, summary } = card.data;
   const age = calculateAge(citizen.birthDate);
+  // RS006: o profissional não confirma a própria vacinação (D11)
+  const isOwnCard = user?.id === citizenId;
 
   return (
     <div className="flex flex-col gap-6">
@@ -180,17 +183,29 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
               <ArrowLeftRight className="size-4" />
               Trocar cidadão
             </Link>
-            <button
-              type="button"
-              onClick={() => setModal({ vaccineId: null })}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <Plus className="size-4" />
-              Registrar outra vacina
-            </button>
+            {!isOwnCard && (
+              <button
+                type="button"
+                onClick={() => setModal({ vaccineId: null })}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <Plus className="size-4" />
+                Registrar outra vacina
+              </button>
+            )}
           </div>
         </div>
       </Card>
+
+      {isOwnCard && (
+        <div
+          role="note"
+          className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-warning-soft p-4 text-sm font-medium text-warning"
+        >
+          <ShieldAlert className="size-5 shrink-0" />
+          <p>Você não pode confirmar a própria vacinação (RS006).</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-6">
         <StatCard title="Vacinas em dia" icon={Clock} value={formatNumber(summary.emDia)} />
@@ -218,7 +233,11 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
         {sortedVaccines.length === 0 ? (
           <CardEmpty
             icon={BookOpen}
-            message="Nenhuma vacina registrada na caderneta. Use “Registrar outra vacina” para lançar a primeira dose."
+            message={
+              isOwnCard
+                ? 'Nenhuma vacina registrada na sua caderneta.'
+                : 'Nenhuma vacina registrada na caderneta. Use “Registrar outra vacina” para lançar a primeira dose.'
+            }
           />
         ) : (
           <ul className="flex flex-col gap-3">
@@ -227,6 +246,7 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
                 key={item.vaccine.id}
                 item={item}
                 isHighlighted={feedback?.vaccineId === item.vaccine.id}
+                canConfirm={!isOwnCard}
                 onConfirm={openForVaccine}
                 onConfirmRecord={openForRecord}
               />

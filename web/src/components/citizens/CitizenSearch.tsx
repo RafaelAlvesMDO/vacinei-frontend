@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isCancel } from 'axios';
 import { AlertCircle, Loader2, Search, UserRound } from 'lucide-react';
+import { Badge } from '../ui/Badge';
 import { useDebounce } from '../../hooks/useDebounce';
 import { parseApiError } from '../../services/auth';
 import { searchCitizens } from '../../services/citizens';
@@ -131,7 +132,14 @@ export const CitizenSearch: React.FC = () => {
               <UserRound className="size-4" />
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-primary-dark truncate">{citizen.name}</span>
+              <span className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-primary-dark truncate">{citizen.name}</span>
+                {citizen.role === 'PROFISSIONAL_SAUDE' && (
+                  <Badge variant="accent" className="shrink-0 px-2 py-0 text-[11px]">
+                    Profissional
+                  </Badge>
+                )}
+              </span>
               <span className="block text-xs text-muted">
                 CPF {citizen.cpf ?? '—'} · Nasc. {formatCalendarDate(citizen.birthDate)}
               </span>
