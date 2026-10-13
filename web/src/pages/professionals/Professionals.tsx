@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, UserCheck, UserX, X } from 'lucide-react';
+import { Loader2, ShieldCheck, UserCheck, UserX } from 'lucide-react';
+import { FeedbackBanner, type Feedback } from '../../components/feedback/FeedbackBanner';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Badge, type BadgeVariant } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
@@ -45,12 +46,6 @@ const STATUS_BADGES: Record<ProfessionalVerificationStatus, { label: string; var
 // A API filtra só por `verified`: false traz pendentes e recusados, separados no cliente
 const fetchUnverified = () => listProfessionals({ verified: false });
 const fetchVerified = () => listProfessionals({ verified: true });
-
-interface Feedback {
-  variant: 'success' | 'warning';
-  title: string;
-  detail: string;
-}
 
 type ModalState = { type: 'verify' | 'reject'; professional: Professional } | null;
 
@@ -193,36 +188,11 @@ export const Professionals: React.FC = () => {
     );
   };
 
-  const FeedbackIcon = feedback?.variant === 'warning' ? AlertTriangle : CheckCircle2;
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Profissionais" subtitle="Verificação manual dos registros profissionais" />
 
-      {feedback && (
-        <div
-          role="status"
-          className={`flex items-start gap-3 rounded-2xl border p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300 ${
-            feedback.variant === 'warning'
-              ? 'border-warning/25 bg-warning-soft text-warning'
-              : 'border-success/30 bg-success-soft text-success'
-          }`}
-        >
-          <FeedbackIcon className="size-6 shrink-0" />
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold">{feedback.title}</p>
-            <p className="text-sm">{feedback.detail}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFeedback(null)}
-            aria-label="Fechar aviso"
-            className="rounded-full p-1 hover:bg-white/60 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
+      {feedback && <FeedbackBanner feedback={feedback} onClose={() => setFeedback(null)} />}
 
       <Card
         title="Registros profissionais"
