@@ -54,12 +54,23 @@ export function onlyDigits(value: string): string {
 }
 
 /**
- * Máscara de celular durante a digitação: "82999990002" → "(82) 99999-0002"
+ * Máscara de telefone durante a digitação, adaptada ao tamanho:
+ * fixo "8233150000" → "(82) 3315-0000" e celular "82999990002" → "(82) 99999-0002"
  */
 export function formatPhone(value: string): string {
   const digits = onlyDigits(value).slice(0, 11);
   if (digits.length === 0) return '';
   if (digits.length <= 2) return `(${digits}`;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  const splitAt = digits.length === 11 ? 7 : 6;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, splitAt)}-${digits.slice(splitAt)}`;
+}
+
+/**
+ * Máscara de CEP durante a digitação: "57051000" → "57051-000"
+ */
+export function formatCep(value: string): string {
+  const digits = onlyDigits(value).slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 }
