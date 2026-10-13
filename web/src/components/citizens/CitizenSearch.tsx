@@ -7,7 +7,8 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { parseApiError } from '../../services/auth';
 import { searchCitizens } from '../../services/citizens';
 import type { CitizenSearchResult } from '../../types/citizen';
-import { formatCalendarDate } from '../../utils/format';
+import { CPF_LENGTH, isValidCpf, looksLikeCpf } from '../../utils/cpf';
+import { formatCalendarDate, onlyDigits } from '../../utils/format';
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_LENGTH = 100;
@@ -29,10 +30,23 @@ export const CitizenSearch: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(-1);
   const [searchState, setSearchState] = useState<SearchState>({ term: '', results: [], error: null });
 
-  const debouncedQuery = useDebounce(query.trim(), 400);
+  const trimmedQuery = query.trim();
+  // CPF com ou sem máscara vai só com os números (busca exata pelo CPF completo)
+  const isCpfQuery = looksLikeCpf(trimmedQuery);
+  const cpfDigits = isCpfQuery ? onlyDigits(trimmedQuery) : '';
+  const cpfHint = !isCpfQuery
+    ? null
+    : cpfDigits.length < CPF_LENGTH
+      ? `Digite os ${CPF_LENGTH} dígitos do CPF para buscar.`
+      : isValidCpf(cpfDigits)
+        ? null
+        : 'CPF inválido. Confira os números digitados.';
+  const searchTerm = cpfHint ? '' : isCpfQuery ? cpfDigits : trimmedQuery;
+
+  const debouncedQuery = useDebounce(searchTerm, 400);
   const isQueryValid = debouncedQuery.length >= MIN_SEARCH_LENGTH;
   // A busca está pendente enquanto o resultado não corresponde ao termo digitado
-  const isSearching = query.trim().length >= MIN_SEARCH_LENGTH && searchState.term !== query.trim();
+  const isSearching = searchTerm.length >= MIN_SEARCH_LENGTH && searchState.term !== searchTerm;
 
   useEffect(() => {
     if (!isQueryValid) return;
@@ -86,11 +100,13 @@ export const CitizenSearch: React.FC = () => {
     }
   };
 
-  const trimmedLength = query.trim().length;
-  const showDropdown = isOpen && trimmedLength > 0;
+  const showDropdown = isOpen && trimmedQuery.length > 0;
 
   const renderDropdownContent = () => {
-    if (trimmedLength < MIN_SEARCH_LENGTH) {
+    if (cpfHint) {
+      return <p className="px-4 py-3 text-sm text-muted">{cpfHint}</p>;
+    }
+    if (trimmedQuery.length < MIN_SEARCH_LENGTH) {
       return <p className="px-4 py-3 text-sm text-muted">Digite ao menos 2 caracteres para buscar.</p>;
     }
     if (isSearching) {
@@ -110,7 +126,7 @@ export const CitizenSearch: React.FC = () => {
       );
     }
     if (results.length === 0) {
-      return <p className="px-4 py-3 text-sm text-muted">Nenhum cidadão encontrado para “{query.trim()}”.</p>;
+      return <p className="px-4 py-3 text-sm text-muted">Nenhum cidadão encontrado para “{trimmedQuery}”.</p>;
     }
 
     return (
