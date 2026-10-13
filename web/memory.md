@@ -23,7 +23,8 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 4 concluída: confirmação de vacina (RF010) em `/confirmar-vacina`.
   - Etapa 5 concluída: administração de profissionais (RS001) em `/profissionais`.
   - Etapa 6 concluída: cadastro de profissional (RF001) no "Criar conta" do login.
-- **Data da Última Atualização:** 2026-10-12
+  - Etapa 5d concluída: gestão de UBS (RF008 nota 8) em `/ubs`.
+- **Data da Última Atualização:** 2026-10-13
 
 ---
 
@@ -96,8 +97,15 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Login: o cartão "Controle do SUS" virou "Administração" (o sistema não é integrado ao SUS).
   - D14: o cadastro exige CPF (máscara `formatCpf`, validado por `isValidCpf` em `utils/cpf.ts`, enviado só com números) e data de nascimento (não futura). `409` de CPF marca o campo e mostra "Este CPF já está cadastrado". A busca de cidadãos aceita CPF com ou sem máscara: termos só com dígitos/pontuação são enviados só com números e exigem os 11 dígitos válidos.
   - D11 (o profissional também é cidadão): a busca mostra o badge "Profissional" (`role` no `CitizenSearchResult`). Na própria caderneta (`citizenId === user.id`), as ações de confirmar ficam ocultas (`canConfirm` no `VaccineCardItem`) e aparece o aviso RS006.
+- [x] **Gestão de UBS (`/ubs`, etapa 5d, RF008 nota 8):** `pages/ubs/UbsList.tsx` (só ADMIN, link "UBS" na sidebar).
+  - Lista completa via `GET /ubs?includeInactive=true` (`services/ubs.ts`: `listAllUbs`, `createUbs`, `updateUbs`, `setUbsStatus`). Busca por nome/bairro (sem acentos, `pages/ubs/utils.ts`) e filtro `?status=inativas|todas` no cliente, com contadores. Padrão: Ativas.
+  - `UbsFormModal`: cadastro e edição (o `PUT` leva só o que mudou). Inclui cidade e UF (exigidos pela API, padrão Maceió/AL) e CNES opcional (7 dígitos). O CNES não pode ser apagado na edição, porque vazio não é enviado. Telefone apagado vai como `""`.
+  - ViaCEP em `services/viaCep.ts` (`fetch` próprio, sem o Bearer token, timeout de 8 s, `null` em falha) preenche logradouro, bairro, cidade e UF. O CEP já salvo não é consultado ao abrir a edição.
+  - `formatPhone` (`utils/format.ts`) adapta a máscara: `(DD) XXXX-XXXX` com 10 dígitos e `(DD) XXXXX-XXXX` com 11. O telefone da UBS é salvo formatado (como no seed). O cadastro de profissional continua exigindo celular. `formatCep` foi adicionado.
+  - Coordenadas: vírgula decimal aceita, par colado na latitude é separado e o link do OpenStreetMap abre o ponto informado.
+  - `UbsStatusDialog` (`PATCH /ubs/:id/status`), com o aviso de que o histórico é mantido (D10). `404` → aviso de lista desatualizada; `409` → campo CNES.
+  - `components/feedback/FeedbackBanner` (aviso de 8 s, RNF03) extraído e reutilizado em Profissionais. A UBS alterada ganha o badge "Atualizada agora".
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
-- [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.
 - [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
 
 ---
@@ -106,7 +114,6 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-Ordem definida: **5d (UBS) → 5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
+Ordem definida: **5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
 
-1. **Etapa 5d:** gestão de UBS (só ADMIN). A UBS é desativada via `PATCH /ubs/:id/status` e nunca excluída (D10).
-2. **Etapas 5b, 5e, 5c e 5f:** catálogo de vacinas, perfil (RF003), usuários e cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
+1. **Etapas 5b, 5e, 5c e 5f:** catálogo de vacinas, perfil (RF003), usuários e cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
