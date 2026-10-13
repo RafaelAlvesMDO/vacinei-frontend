@@ -14,12 +14,20 @@ interface VaccineCardItemProps {
   item: CardVaccine;
   // Destaque temporário após uma confirmação (RNF03)
   isHighlighted: boolean;
+  // false na própria caderneta do profissional (RS006): esconde as ações de confirmar
+  canConfirm: boolean;
   onConfirm: (vaccineId: string) => void;
   // Registro do cidadão aguardando confirmação, mesmo em vacina COMPLETA (RF007 nota 7)
   onConfirmRecord: (item: CardVaccine, record: CardRecord) => void;
 }
 
-export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({ item, isHighlighted, onConfirm, onConfirmRecord }) => {
+export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({
+  item,
+  isHighlighted,
+  canConfirm,
+  onConfirm,
+  onConfirmRecord,
+}) => {
   const { vaccine, status, appliedDoses, totalDoses, nextDose, nextDoseDate, records } = item;
   const config = STATUS_CONFIG[status];
   const StatusIcon = config.icon;
@@ -78,7 +86,7 @@ export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({ item, isHighli
           )}
         </div>
 
-        {status !== 'COMPLETA' && (
+        {canConfirm && status !== 'COMPLETA' && (
           <button
             type="button"
             onClick={() => onConfirm(vaccine.id)}
@@ -109,15 +117,17 @@ export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({ item, isHighli
               ) : (
                 <span className="flex items-center gap-2">
                   <Badge variant="warning">Aguardando confirmação</Badge>
-                  <button
-                    type="button"
-                    onClick={() => onConfirmRecord(item, record)}
-                    aria-label={`Confirmar ${record.dose.doseName} de ${vaccine.name}`}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-primary px-3 text-xs font-semibold text-primary hover:bg-surface active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  >
-                    <CheckCircle2 className="size-4" />
-                    Confirmar
-                  </button>
+                  {canConfirm && (
+                    <button
+                      type="button"
+                      onClick={() => onConfirmRecord(item, record)}
+                      aria-label={`Confirmar ${record.dose.doseName} de ${vaccine.name}`}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-primary px-3 text-xs font-semibold text-primary hover:bg-surface active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      <CheckCircle2 className="size-4" />
+                      Confirmar
+                    </button>
+                  )}
                 </span>
               )}
             </li>

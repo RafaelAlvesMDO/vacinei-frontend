@@ -129,7 +129,7 @@ export const Login: React.FC = () => {
                   <Syringe className="size-5" />
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-semibold text-primary-dark">Controle do SUS</p>
+                  <p className="text-xs font-semibold text-primary-dark">Administração</p>
                   <p className="text-[11px] text-muted">Gestão de UBSs e catálogo vacinal</p>
                 </div>
               </div>
@@ -355,6 +355,13 @@ export const Login: React.FC = () => {
       <RequestAccessModal
         isOpen={isRequestAccessOpen}
         onClose={() => setIsRequestAccessOpen(false)}
+        onSuccess={(registeredEmail) => {
+          setEmail(registeredEmail);
+          setPassword('');
+          setErrors({});
+          setApiError(null);
+          setSuccessMessage('Cadastro enviado! Entre com o e-mail e a senha cadastrados.');
+        }}
       />
 
       <ForgotPasswordModal

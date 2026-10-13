@@ -4,6 +4,8 @@ Roteiro das etapas do front-end web (`web/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente
 
+Ordem das próximas etapas: 5d (UBS) → 5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão final.
+
 ---
 
 ## [x] Etapa 1: Regra de senha (RF001) na redefinição
@@ -51,7 +53,9 @@ Legenda: `[x]` concluída · `[ ]` pendente
   - `400`/`404`: erros de validação, dose que não pertence à vacina, cidadão ou vacina inexistente.
 - Depois de confirmar, recarregar a caderneta.
 
-## [ ] Etapa 5: Administração de profissionais (RS001)
+## [x] Etapa 5: Administração de profissionais (RS001)
+
+> Concluída em 12/10/2026. Tela `pages/professionals/Professionals.tsx` no `AppLayout`, só para ADMIN. Filtro por status na URL (`?status=pendentes|verificados|recusados`, Pendentes por padrão). Pendentes e recusados vêm de `?verified=false` e são separados no cliente. A lista mostra nome, e-mail, conselho/registro/UF, badge de status, data de cadastro e, nos recusados, o motivo. "Verificar" (pendentes e recusados) abre um diálogo que lembra o admin de conferir o registro no site oficial do conselho (só a página inicial: CFM, Cofen, CFF e CFO, em `utils/councils.ts`). "Recusar" abre um modal com motivo opcional (3 a 500 caracteres). Nos verificados, a ação vira "Revogar" e exige marcar a ciência de que o profissional perderá o acesso às funções de profissional. `404` e `409` fecham o modal, mostram um aviso de lista desatualizada e recarregam. O sucesso mostra um aviso por 8 s e recarrega a lista (RNF03). O "Ver todos" do dashboard leva a `/profissionais?status=pendentes`.
 
 - Rota restrita a `ADMIN` (`ProtectedRoute allowedRoles={['ADMIN']}`), com link na sidebar só para esse perfil.
 - `services/professionals.ts`:
@@ -62,19 +66,19 @@ Legenda: `[x]` concluída · `[ ]` pendente
 - Ação de verificar, com confirmação.
 - Ação de recusar, em um modal com motivo opcional.
 
-## [ ] Etapa 6: Cadastro de profissional (aguardando o orientador)
+## [x] Etapa 6: Cadastro de profissional (RF001)
 
-- O `RequestAccessModal` passa a ser o cadastro de profissional via `POST /users`:
-  - `{ name, email, password, cpf?, phone, birthDate?, role: "PROFISSIONAL_SAUDE", professionalRegistry: { category, council, registryNumber, uf } }`.
-  - Validações do RF001:
-    - **Nome:** obrigatório, com no mínimo duas palavras (nome e sobrenome).
-    - **Celular:** obrigatório, DDD + 9 dígitos (ex.: `(82) 98765-4321`), com máscara.
-    - **Categoria profissional:** select obrigatório (Médico(a), Enfermeiro(a), Técnico(a) de Enfermagem, Farmacêutico(a), Cirurgião(ã)-Dentista). O conselho é preenchido automaticamente a partir dela: CRM, COREN, COREN, CRF e CRO, respectivamente.
-    - **Senha:** regra RF001 (`validatePassword`).
-  - **Dependência do backend:** o `professionalRegistry` precisa de um campo `category`, porque Enfermeiro(a) e Técnico(a) de Enfermagem têm o mesmo conselho (COREN). O backend também deve validar o celular e o nome com essas regras.
-  - Tratamento de `400` (erros por campo) e `409` (e-mail, CPF ou registro já cadastrado).
-  - Mensagem final informando que a conta fica pendente de verificação pelo administrador.
-- Remover o endpoint provisório `/auth/request-access`.
+> Concluída em 12/10/2026, com aprovação do orientador. O `RequestAccessModal` ("Criar conta") virou o cadastro de profissional via `POST /users`, com `role: "PROFISSIONAL_SAUDE"` fixo: o Gerenciador Web não cadastra cidadãos, que usam o app. Campos: nome completo (nome e sobrenome), e-mail, celular com máscara `(DD) 9XXXX-XXXX` (enviado só com números), categoria profissional, número do registro, UF (27 UFs), senha e confirmação com o checklist da RF001. O conselho da categoria aparece só como informação, porque é o backend que o define (D12). O `400` mostra o erro em cada campo (o `parseApiError` passou a ler os campos aninhados do Zod, como `professionalRegistry.uf`). O `409` mostra a mensagem da API (e-mail ou registro já cadastrado). No sucesso, aparece a tela "Cadastro enviado!" e o login abre com o e-mail preenchido. O endpoint provisório `/auth/request-access` e o sucesso falso foram removidos, e o CRO saiu do `utils/councils.ts` (D13). No login, o cartão "Controle do SUS" passou a se chamar "Administração", porque o sistema não é integrado ao SUS. A busca de cidadãos mostra o badge "Profissional" para `PROFISSIONAL_SAUDE` (D11). Na própria caderneta, o profissional não vê as ações de confirmar e recebe o aviso "Você não pode confirmar a própria vacinação (RS006)".
+
+- Body: `{ name, email, password, phone, role: "PROFISSIONAL_SAUDE", professionalRegistry: { category, registryNumber, uf } }`, sem `council`.
+- Categorias (D13): Médico(a) → CRM; Enfermeiro(a), Técnico(a) de Enfermagem e Auxiliar de Enfermagem → COREN; Farmacêutico(a) → CRF.
+- Componentes reutilizáveis: `components/ui/FormField` (`FormField` e `FormSelect`) e `components/ui/PasswordChecklist`, também usados no `ForgotPasswordModal`.
+
+## [ ] Etapa 5d: Gestão de UBS (só ADMIN)
+
+- Listar (`GET /ubs`, com busca e `includeInactive=true` para ver as desativadas), cadastrar (`POST /ubs`), editar (`PUT /ubs/:id`) e desativar/reativar (`PATCH /ubs/:id/status`). A UBS nunca é excluída (D10).
+- Campos do cadastro (RF008): nome, CEP, logradouro, número (ou `s/n`), bairro, cidade, UF, latitude, longitude e horário de funcionamento; telefone e CNES são opcionais.
+- Tratamento de `409` (CNES duplicado).
 
 ## [ ] Etapa 5b: Catálogo de vacinas (só ADMIN)
 
@@ -82,22 +86,22 @@ Legenda: `[x]` concluída · `[ ]` pendente
 - Listar as vacinas (`GET /vaccines`, com busca, filtro por público-alvo e opção de ver as inativas), cadastrar (`POST /vaccines`, com as doses) e editar (`PUT /vaccines/:id`).
 - Tratamento de `409` (nome duplicado).
 
+## [ ] Etapa 5e: Perfil do usuário (RF003)
+
+- Ver e editar os próprios dados (`GET /users/me` e `PUT /users/me`: nome, celular e data de nascimento), com as mesmas regras de nome e celular do cadastro.
+- Trocar a senha informando a senha atual, com a nova senha validada pelo RF001. **Dependência do backend:** a API ainda não tem uma rota de troca de senha autenticada.
+
 ## [ ] Etapa 5c: Gestão de usuários (só ADMIN)
 
 - Listar usuários com `GET /users` (filtro por perfil, busca e paginação).
 - Ativar/desativar contas: `PUT /users/:id` com `{ isActive }` e `DELETE /users/:id` (exclusão lógica), com confirmação.
 
-## [ ] Etapa 5d: Gestão de UBS (só ADMIN)
-
-- Listar (`GET /ubs`, com busca), cadastrar (`POST /ubs`), editar (`PUT /ubs/:id`) e desativar/remover (`DELETE /ubs/:id`).
-- Tratamento de `409` (CNES duplicado).
-
-## [ ] Etapa 5e: Perfil do usuário (RF003)
-
-- Ver e editar os próprios dados (`GET /users/me` e `PUT /users/me`: nome, celular e data de nascimento).
-- Trocar a senha informando a senha atual, com a nova senha validada pelo RF001. **Dependência do backend:** a API ainda não tem uma rota de troca de senha autenticada.
-
 ## [ ] Etapa 5f: Cidadãos com doses atrasadas
 
 - Ao clicar no card "Doses atrasadas" do dashboard, abrir a lista de cidadãos com doses atrasadas. Cada cidadão leva à caderneta em `/confirmar-vacina?citizenId=`.
 - **Dependência do backend:** a API ainda não tem um endpoint que liste esses cidadãos.
+
+## [ ] Etapa final: Revisão de acessibilidade (WCAG 2.1 AA) e LGPD
+
+- Acessibilidade: contraste, navegação por teclado, foco visível, rótulos e erros associados aos campos, e leitores de tela nos modais e nas listas.
+- LGPD: revisar quais dados pessoais e de saúde cada perfil vê (princípio da necessidade), o mascaramento de CPF e as mensagens, para não expor dados de terceiros.

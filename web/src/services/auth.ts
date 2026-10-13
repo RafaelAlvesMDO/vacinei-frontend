@@ -9,11 +9,12 @@ import type {
   ApiErrorResponse,
   ParsedApiError,
   UserProfile,
-  RequestAccessResponse,
   ForgotPasswordResponse,
   ResetPasswordPayload,
   ResetPasswordResponse,
+  ValidationIssue,
 } from '../types/auth';
+import type { RegisterProfessionalPayload } from '../types/professional';
 
 /**
  * Autentica o usuário via POST /auth/login e persiste a sessão
@@ -44,21 +45,11 @@ export function signOut(): void {
 }
 
 /**
- * Solicita acesso ao administrador do sistema para criação de conta
+ * Cadastro público de profissional de saúde (POST /users). A conta nasce
+ * pendente de verificação pelo administrador (RS001)
  */
-export async function requestAccess(email: string): Promise<RequestAccessResponse> {
-  const fallback: RequestAccessResponse = { message: 'Sua solicitação foi enviada ao administrador.' };
-
-  try {
-    const response = await api.post<ApiMessageResponse>('/auth/request-access', { email: email.trim() });
-    return { message: response.data?.message || fallback.message };
-  } catch (error) {
-    // Rota provisória: ainda não existe no backend (será substituída pelo cadastro via POST /users)
-    if (isAxiosError(error) && (error.response?.status === 404 || !error.response)) {
-      return fallback;
-    }
-    throw error;
-  }
+export async function registerProfessional(payload: RegisterProfessionalPayload): Promise<void> {
+  await api.post('/users', payload);
 }
 
 /**
@@ -96,6 +87,19 @@ export async function resetPassword({
 }
 
 /**
+ * Campos aninhados do Zod viram caminhos com ponto (ex.: "professionalRegistry.uf")
+ */
+function collectFieldErrors(issue: ValidationIssue, path: string, fieldErrors: Record<string, string>): void {
+  const firstError = issue._errors?.[0];
+  if (firstError) fieldErrors[path] = firstError;
+
+  for (const [key, child] of Object.entries(issue)) {
+    if (key === '_errors' || !child || Array.isArray(child)) continue;
+    collectFieldErrors(child, `${path}.${key}`, fieldErrors);
+  }
+}
+
+/**
  * Normaliza erros do Axios no formato padrão da API ({ status, message, issues })
  */
 export function parseApiError(error: unknown, fallbackMessage: string): ParsedApiError {
@@ -116,8 +120,7 @@ export function parseApiError(error: unknown, fallbackMessage: string): ParsedAp
 
   if (data?.issues) {
     for (const [field, issue] of Object.entries(data.issues)) {
-      const firstError = issue?._errors?.[0];
-      if (firstError) fieldErrors[field] = firstError;
+      if (issue) collectFieldErrors(issue, field, fieldErrors);
     }
   }
 

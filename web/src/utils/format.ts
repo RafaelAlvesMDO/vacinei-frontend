@@ -45,3 +45,21 @@ export function formatCalendarDate(iso: string | null): string {
 export function formatNumber(value: number): string {
   return value.toLocaleString('pt-BR');
 }
+
+/**
+ * Remove tudo que não é dígito → "82999990002"
+ */
+export function onlyDigits(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+/**
+ * Máscara de celular durante a digitação: "82999990002" → "(82) 99999-0002"
+ */
+export function formatPhone(value: string): string {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}

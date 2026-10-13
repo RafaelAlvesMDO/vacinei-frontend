@@ -61,10 +61,6 @@ export interface ApiMessageResponse {
   message: string;
 }
 
-export interface RequestAccessResponse {
-  message: string;
-}
-
 export interface ForgotPasswordResponse {
   message: string;
 }
@@ -79,8 +75,13 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
-// Formato de erros de validação retornado pelo Zod (format())
-export type ValidationIssues = Record<string, { _errors?: string[] } | undefined>;
+// Formato de erros de validação retornado pelo Zod (format()); objetos aninhados repetem o formato
+export interface ValidationIssue {
+  _errors?: string[];
+  [field: string]: ValidationIssue | string[] | undefined;
+}
+
+export type ValidationIssues = Record<string, ValidationIssue | undefined>;
 
 export interface ApiErrorResponse {
   status: 'error';

@@ -11,12 +11,13 @@ import {
   AlertTriangle,
   Info,
   CheckCircle2,
-  Circle,
   RotateCw,
 } from 'lucide-react';
+import { FormField } from '../../components/ui/FormField';
 import { Modal } from '../../components/ui/Modal';
+import { PasswordChecklist } from '../../components/ui/PasswordChecklist';
 import { forgotPassword, resetPassword, parseApiError } from '../../services/auth';
-import { PASSWORD_MIN_LENGTH, PASSWORD_REQUIREMENTS, validatePassword } from '../../utils/password';
+import { PASSWORD_MIN_LENGTH, validatePassword } from '../../utils/password';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -56,44 +57,6 @@ const BANNER_ICONS: Record<Banner['type'], React.ElementType> = {
   error: AlertCircle,
   warning: AlertTriangle,
 };
-
-interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  icon: React.ElementType;
-  error?: string;
-  trailing?: React.ReactNode;
-}
-
-// Campo de formulário no padrão visual dos modais de autenticação
-const Field: React.FC<FieldProps> = ({ icon: Icon, error, trailing, ...inputProps }) => (
-  <div className="w-full">
-    <div
-      className={`relative flex items-center rounded-xl bg-white border transition-all ${
-        error
-          ? 'border-danger ring-2 ring-danger/15'
-          : 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
-      }`}
-    >
-      <input
-        {...inputProps}
-        aria-invalid={!!error}
-        className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50"
-      />
-      {/* Ação à direita (ex.: exibir senha) substitui o ícone decorativo */}
-      {trailing ?? (
-        <div className="pr-4 text-muted flex items-center pointer-events-none">
-          <Icon className="size-5" />
-        </div>
-      )}
-    </div>
-
-    {error && (
-      <p className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1 animate-in fade-in">
-        <AlertCircle className="size-3.5 shrink-0" />
-        <span>{error}</span>
-      </p>
-    )}
-  </div>
-);
 
 export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState<Step>('email');
@@ -360,7 +323,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
 
           {bannerElement}
 
-          <Field
+          <FormField
             id="forgot-password-email"
             icon={Mail}
             type="email"
@@ -401,7 +364,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
           {bannerElement}
 
           <div className="w-full space-y-4">
-            <Field
+            <FormField
               id="reset-password-code"
               icon={KeyRound}
               type="text"
@@ -418,7 +381,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
               error={fieldErrors.code}
             />
 
-            <Field
+            <FormField
               id="reset-password-new"
               icon={Lock}
               type={showPassword ? 'text' : 'password'}
@@ -434,25 +397,9 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
               trailing={passwordToggle}
             />
 
-            {/* Requisitos da senha (RF001) atualizados conforme a digitação */}
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 px-1" aria-label="Requisitos da senha">
-              {PASSWORD_REQUIREMENTS.map(({ label, test }) => {
-                const isMet = test(newPassword);
-                return (
-                  <li
-                    key={label}
-                    className={`flex items-center gap-1.5 text-xs transition-colors ${
-                      isMet ? 'text-success' : 'text-muted'
-                    }`}
-                  >
-                    {isMet ? <CheckCircle2 className="size-3.5 shrink-0" /> : <Circle className="size-3.5 shrink-0" />}
-                    <span>{label}</span>
-                  </li>
-                );
-              })}
-            </ul>
+            <PasswordChecklist password={newPassword} />
 
-            <Field
+            <FormField
               id="reset-password-confirm"
               icon={Lock}
               type={showPassword ? 'text' : 'password'}

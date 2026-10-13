@@ -9,7 +9,7 @@ import { PublicRoute } from './routes/PublicRoute';
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const ConfirmVaccination = lazy(() => import('./pages/records/ConfirmVaccination'));
-const UnderConstruction =lazy(() => import('./pages/UnderConstruction'));
+const Professionals = lazy(() => import('./pages/professionals/Professionals'));
 
 export function App() {
   return (
@@ -30,17 +30,9 @@ export function App() {
                   <Route path="/confirmar-vacina" element={<ConfirmVaccination />} />
                 </Route>
 
-                {/* Etapa 5: verificação de profissionais (RS001) */}
+                {/* Verificação de profissionais (RS001) */}
                 <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-                  <Route
-                    path="/profissionais"
-                    element={
-                      <UnderConstruction
-                        title="Profissionais"
-                        description="Verificação dos registros profissionais"
-                      />
-                    }
-                  />
+                  <Route path="/profissionais" element={<Professionals />} />
                 </Route>
               </Route>
             </Route>
