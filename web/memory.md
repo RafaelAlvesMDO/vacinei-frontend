@@ -94,6 +94,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Sucesso: tela "Cadastro enviado!" e, ao fechar, o login fica com o e-mail preenchido. `/auth/request-access` foi removido.
   - Reutilizáveis novos: `components/ui/FormField` (`FormField`, `FormSelect`) e `components/ui/PasswordChecklist`, também no `ForgotPasswordModal`.
   - Login: o cartão "Controle do SUS" virou "Administração" (o sistema não é integrado ao SUS).
+  - D14: o cadastro exige CPF (máscara `formatCpf`, validado por `isValidCpf` em `utils/cpf.ts`, enviado só com números) e data de nascimento (não futura). `409` de CPF marca o campo e mostra "Este CPF já está cadastrado". A busca de cidadãos aceita CPF com ou sem máscara: termos só com dígitos/pontuação são enviados só com números e exigem os 11 dígitos válidos.
   - D11 (o profissional também é cidadão): a busca mostra o badge "Profissional" (`role` no `CitizenSearchResult`). Na própria caderneta (`citizenId === user.id`), as ações de confirmar ficam ocultas (`canConfirm` no `VaccineCardItem`) e aparece o aviso RS006.
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
 - [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.

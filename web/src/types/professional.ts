@@ -15,6 +15,10 @@ export interface RegisterProfessionalPayload {
   password: string;
   // Só números: DDD + 9 dígitos
   phone: string;
+  // Só números (11 dígitos)
+  cpf: string;
+  // YYYY-MM-DD, não pode ser futura
+  birthDate: string;
   role: 'PROFISSIONAL_SAUDE';
   professionalRegistry: {
     category: ProfessionalCategory;

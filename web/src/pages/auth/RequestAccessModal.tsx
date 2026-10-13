@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import {
   AlertCircle,
   BadgeCheck,
+  CalendarDays,
   Eye,
   EyeOff,
   Hash,
+  IdCard,
   Loader2,
   Lock,
   Mail,
@@ -19,6 +21,7 @@ import { PasswordChecklist } from '../../components/ui/PasswordChecklist';
 import { parseApiError, registerProfessional } from '../../services/auth';
 import type { ProfessionalCategory } from '../../types/professional';
 import { BRAZILIAN_UFS, PROFESSIONAL_CATEGORIES } from '../../utils/councils';
+import { formatCpf, isValidCpf } from '../../utils/cpf';
 import { formatPhone, onlyDigits } from '../../utils/format';
 import { PASSWORD_MIN_LENGTH, validatePassword } from '../../utils/password';
 
@@ -33,6 +36,8 @@ type FieldName =
   | 'name'
   | 'email'
   | 'phone'
+  | 'cpf'
+  | 'birthDate'
   | 'category'
   | 'registryNumber'
   | 'uf'
@@ -44,6 +49,8 @@ interface FormValues {
   name: string;
   email: string;
   phone: string;
+  cpf: string;
+  birthDate: string;
   category: ProfessionalCategory | '';
   registryNumber: string;
   uf: string;
@@ -55,6 +62,8 @@ const INITIAL_VALUES: FormValues = {
   name: '',
   email: '',
   phone: '',
+  cpf: '',
+  birthDate: '',
   category: '',
   registryNumber: '',
   uf: '',
@@ -69,6 +78,8 @@ const REGISTRY_MAX_LENGTH = 20;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\d{2}9\d{8}$/;
 const REGISTRY_REGEX = /^[A-Z0-9]+$/;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const MIN_BIRTH_DATE = '1900-01-01';
 const GENERIC_ERROR = 'Não foi possível concluir o cadastro. Tente novamente mais tarde.';
 
 // Caminhos dos erros do Zod (400) → campos do formulário
@@ -76,6 +87,8 @@ const API_FIELD_MAP: Record<string, FieldName> = {
   name: 'name',
   email: 'email',
   phone: 'phone',
+  cpf: 'cpf',
+  birthDate: 'birthDate',
   password: 'password',
   'professionalRegistry.category': 'category',
   'professionalRegistry.registryNumber': 'registryNumber',
@@ -84,6 +97,20 @@ const API_FIELD_MAP: Record<string, FieldName> = {
 
 const CATEGORY_OPTIONS = PROFESSIONAL_CATEGORIES.map(({ value, label }) => ({ value, label }));
 const UF_OPTIONS = BRAZILIAN_UFS.map((uf) => ({ value: uf, label: uf }));
+
+// Data de hoje no fuso local em YYYY-MM-DD (limite do campo de nascimento)
+function getTodayIso(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+function isExistingDate(value: string): boolean {
+  if (!DATE_REGEX.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 
 function validateForm(values: FormValues): FieldErrors {
   const errors: FieldErrors = {};
@@ -106,6 +133,20 @@ function validateForm(values: FormValues): FieldErrors {
 
   if (!PHONE_REGEX.test(onlyDigits(values.phone))) {
     errors.phone = 'Informe o celular com DDD no formato (DD) 9XXXX-XXXX.';
+  }
+
+  if (!values.cpf) {
+    errors.cpf = 'Informe seu CPF.';
+  } else if (!isValidCpf(values.cpf)) {
+    errors.cpf = 'CPF inválido. Confira os números digitados.';
+  }
+
+  if (!values.birthDate) {
+    errors.birthDate = 'Informe sua data de nascimento.';
+  } else if (!isExistingDate(values.birthDate) || values.birthDate < MIN_BIRTH_DATE) {
+    errors.birthDate = 'Informe uma data de nascimento válida.';
+  } else if (values.birthDate > getTodayIso()) {
+    errors.birthDate = 'A data de nascimento não pode ser futura.';
   }
 
   if (!values.category) errors.category = 'Selecione sua categoria profissional.';
@@ -176,6 +217,8 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
         email: values.email.trim(),
         password: values.password,
         phone: onlyDigits(values.phone),
+        cpf: onlyDigits(values.cpf),
+        birthDate: values.birthDate,
         role: 'PROFISSIONAL_SAUDE',
         professionalRegistry: {
           category: values.category,
@@ -189,7 +232,14 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
 
       if (httpStatus === 409) {
         // A API informa se o conflito é o e-mail, o CPF ou o registro profissional
-        const conflict = message === GENERIC_ERROR ? 'E-mail ou registro profissional já cadastrado.' : message;
+        if (/cpf/i.test(message)) {
+          setFieldErrors({ cpf: 'Este CPF já está cadastrado.' });
+          setBannerError(
+            'Já existe uma conta com este CPF. Se ela é sua, entre com o e-mail cadastrado ou use “Esqueci minha senha”.'
+          );
+          return;
+        }
+        const conflict = message === GENERIC_ERROR ? 'E-mail, CPF ou registro profissional já cadastrado.' : message;
         setBannerError(`${conflict} Se você já tem conta, entre com seu e-mail ou use “Esqueci minha senha”.`);
       } else if (httpStatus === 400 && Object.keys(apiFieldErrors).length > 0) {
         const mapped: FieldErrors = {};
@@ -288,6 +338,37 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
                 placeholder="(82) 99999-9999"
                 disabled={isLoading}
                 error={fieldErrors.phone}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                id="register-cpf"
+                label="CPF"
+                icon={IdCard}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={values.cpf}
+                onChange={(e) => setField('cpf', formatCpf(e.target.value))}
+                placeholder="000.000.000-00"
+                disabled={isLoading}
+                error={fieldErrors.cpf}
+              />
+
+              <FormField
+                id="register-birth-date"
+                label="Data de nascimento"
+                icon={CalendarDays}
+                type="date"
+                autoComplete="bday"
+                min={MIN_BIRTH_DATE}
+                max={getTodayIso()}
+                value={values.birthDate}
+                onChange={(e) => setField('birthDate', e.target.value)}
+                disabled={isLoading}
+                error={fieldErrors.birthDate}
+                trailing={<span className="pr-2" />}
               />
             </div>
 
