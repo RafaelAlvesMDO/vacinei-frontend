@@ -1,5 +1,28 @@
 import type { ProfessionalVerificationStatus } from './auth';
 
+// Categorias aceitas pelo backend (D13); o conselho é derivado delas (D12)
+export type ProfessionalCategory =
+  | 'MEDICO'
+  | 'ENFERMEIRO'
+  | 'TECNICO_ENFERMAGEM'
+  | 'AUXILIAR_ENFERMAGEM'
+  | 'FARMACEUTICO';
+
+// Body do POST /users para o cadastro público de profissional (RF001)
+export interface RegisterProfessionalPayload {
+  name: string;
+  email: string;
+  password: string;
+  // Só números: DDD + 9 dígitos
+  phone: string;
+  role: 'PROFISSIONAL_SAUDE';
+  professionalRegistry: {
+    category: ProfessionalCategory;
+    registryNumber: string;
+    uf: string;
+  };
+}
+
 export interface ProfessionalRegistryInfo {
   council: string;
   registryNumber: string;
