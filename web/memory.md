@@ -22,6 +22,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 3 concluída: `AppLayout` reutilizável e dashboard por perfil (`recharts` instalado).
   - Etapa 4 concluída: confirmação de vacina (RF010) em `/confirmar-vacina`.
   - Etapa 5 concluída: administração de profissionais (RS001) em `/profissionais`.
+  - Etapa 6 concluída: cadastro de profissional (RF001) no "Criar conta" do login.
 - **Data da Última Atualização:** 2026-10-12
 
 ---
@@ -57,7 +58,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 - [x] **Diretrizes e Memória do Agente:** Criação de `agent.md` e `memory.md` estabelecendo padrões de código e arquitetura.
 - [x] **Configuração do Cliente HTTP & Serviço de Autenticação (`src/services/api.ts` e `src/services/auth.ts`):** Chamada POST pronta para `/sessions` (com suporte e fallback para `/auth/login`), tipagens em `src/types/auth.ts` e persistência de sessão.
 - [x] **Tela de Login/Autenticação (`src/pages/auth/Login.tsx`):** Componente visual responsivo baseado na referência de design, com validações de formulário, exibição dinâmica de erros, loading states e proteção RBAC contra acesso de cidadãos.
-- [x] **Modais de Autenticação Complementar (`src/pages/auth/RequestAccessModal.tsx`, `ForgotPasswordModal.tsx` e `src/components/ui/Modal.tsx`):** Fluxos fiéis ao design do "Criar conta" / "Solicitar Acesso", estado de confirmação "Solicitação Enviada" com ícone de envio e modal "Esqueci a Senha", integrados ao login e com métodos de API preparados em `src/services/auth.ts`.
+- [x] **Modais de Autenticação Complementar (`src/pages/auth/RequestAccessModal.tsx`, `ForgotPasswordModal.tsx` e `src/components/ui/Modal.tsx`):** "Criar conta" (hoje o cadastro de profissional, ver etapa 6) e "Esqueci a Senha", integrados ao login.
 - [x] **Recuperação de Senha Integrada ao Backend (`ForgotPasswordModal.tsx`):** Fluxo em etapas conectado a `POST /auth/forgot-password` e `POST /auth/reset-password` (código de 6 dígitos + nova senha), com reenvio de código (cooldown de 30s), erros de validação por campo (`issues` do Zod), tratamento de `429` (aguardar 15 min e solicitar novo código) e retorno ao login após sucesso. Helper `parseApiError` em `src/services/auth.ts` normaliza erros da API.
 - [x] **Regra de Senha RF001 (`src/utils/password.ts`):** `validatePassword()` e `PASSWORD_REQUIREMENTS` (mín. 8 caracteres, maiúscula, minúscula, número e símbolo) aplicados na redefinição de senha, com checklist visual. O login só exige a senha preenchida.
 - [x] **Base de Sessão (Contexto Global de Autenticação):**
@@ -86,6 +87,14 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Serviços `verifyProfessional` e `rejectProfessional(id, reason?)` em `services/professionals.ts`. `utils/councils.ts` tem `formatRegistry` ("COREN 654321/AL") e `getCouncilInfo` (conselho federal, só a página inicial oficial).
   - `VerifyProfessionalDialog` lembra de conferir o registro no site do conselho. `RejectProfessionalModal` tem motivo opcional (3 a 500 caracteres, `trim`). Para um verificado, a ação vira "Revogar" e exige marcar a ciência da perda de acesso.
   - `404`/`409` fecham o modal com um aviso warning ("lista desatualizada") e recarregam. O sucesso mostra um banner `success-soft` por 8 s e recarrega.
+- [x] **Cadastro de Profissional (etapa 6, RF001):** `RequestAccessModal` envia `POST /users` com `role: "PROFISSIONAL_SAUDE"` fixo e `professionalRegistry: { category, registryNumber, uf }`. O `council` não é enviado, porque o backend o deriva da categoria (D12). A tela mostra o conselho só como informação.
+  - Categorias (D13): `MEDICO` (CRM), `ENFERMEIRO`, `TECNICO_ENFERMAGEM`, `AUXILIAR_ENFERMAGEM` (COREN) e `FARMACEUTICO` (CRF), em `utils/councils.ts` (`PROFESSIONAL_CATEGORIES`, `BRAZILIAN_UFS`). O CRO foi removido.
+  - Celular com máscara (`formatPhone`/`onlyDigits` em `utils/format.ts`), enviado só com números. Nome com no mínimo duas palavras.
+  - `parseApiError` achata os erros aninhados do Zod em caminhos com ponto (`professionalRegistry.uf`). `409` mostra a mensagem da API.
+  - Sucesso: tela "Cadastro enviado!" e, ao fechar, o login fica com o e-mail preenchido. `/auth/request-access` foi removido.
+  - Reutilizáveis novos: `components/ui/FormField` (`FormField`, `FormSelect`) e `components/ui/PasswordChecklist`, também no `ForgotPasswordModal`.
+  - Login: o cartão "Controle do SUS" virou "Administração" (o sistema não é integrado ao SUS).
+  - D11 (o profissional também é cidadão): a busca mostra o badge "Profissional" (`role` no `CitizenSearchResult`). Na própria caderneta (`citizenId === user.id`), as ações de confirmar ficam ocultas (`canConfirm` no `VaccineCardItem`) e aparece o aviso RS006.
 - [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
 - [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.
 - [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
@@ -96,5 +105,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-1. **Etapa 6 (aguardando o orientador):** `RequestAccessModal` vira cadastro de profissional via `POST /users`, com as regras do RF001: nome com duas palavras, celular obrigatório e categoria profissional que define o conselho. Depende do campo `category` no backend.
-2. **Etapas 5b a 5f:** catálogo de vacinas, usuários e UBS (só ADMIN), perfil (RF003) e lista de cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
+Ordem definida: **5d (UBS) → 5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
+
+1. **Etapa 5d:** gestão de UBS (só ADMIN). A UBS é desativada via `PATCH /ubs/:id/status` e nunca excluída (D10).
+2. **Etapas 5b, 5e, 5c e 5f:** catálogo de vacinas, perfil (RF003), usuários e cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
