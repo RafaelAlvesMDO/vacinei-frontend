@@ -15,6 +15,10 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
   );
 }
 
+// Contêineres com foco preso, do mais antigo ao mais recente: só o do topo reage ao teclado
+// (ex.: aviso de inatividade aberto sobre um formulário)
+const trapStack: HTMLElement[] = [];
+
 interface FocusTrapOptions {
   // Fecha o contêiner com a tecla Esc
   onEscape?: () => void;
@@ -44,6 +48,7 @@ export function useFocusTrap<T extends HTMLElement>(
     if (!isActive || !container) return;
 
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    trapStack.push(container);
 
     // Respeita um autoFocus já aplicado dentro do contêiner
     if (!container.contains(document.activeElement)) {
@@ -52,6 +57,7 @@ export function useFocusTrap<T extends HTMLElement>(
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (trapStack[trapStack.length - 1] !== container) return;
       if (event.key === 'Escape' && onEscapeRef.current) {
         event.stopPropagation();
         onEscapeRef.current();
@@ -82,6 +88,7 @@ export function useFocusTrap<T extends HTMLElement>(
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      trapStack.splice(trapStack.lastIndexOf(container), 1);
       // O botão que abriu pode ter saído da tela (ex.: lista recarregada)
       if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };

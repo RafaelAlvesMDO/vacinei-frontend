@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Mail,
+  Clock,
   Lock,
   LogIn,
   ShieldCheck,
@@ -17,7 +18,10 @@ import { FormField } from '../../components/ui/FormField';
 import { PasswordToggle } from '../../components/ui/PasswordToggle';
 import { useAuth } from '../../hooks/useAuth';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { IDLE_TIMEOUT_MINUTES } from '../../hooks/useIdleTimeout';
 import { parseApiError } from '../../services/auth';
+import { clearLogoutReason, getLogoutReason } from '../../services/tokenStorage';
+import { formatIdleDuration } from '../../utils/idleTimeout';
 import { RequestAccessModal } from './RequestAccessModal';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 
@@ -49,6 +53,15 @@ export const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Sessão encerrada por inatividade (RNF11): o aviso aparece uma vez, até o próximo envio
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(() =>
+    getLogoutReason() === 'idle'
+      ? `Sua sessão foi encerrada após ${formatIdleDuration(IDLE_TIMEOUT_MINUTES)} sem uso. Entre novamente para continuar.`
+      : null
+  );
+  useEffect(() => {
+    clearLogoutReason();
+  }, []);
 
   // Validação básica de campos
   const validate = (): boolean => {
@@ -75,6 +88,7 @@ export const Login: React.FC = () => {
     e.preventDefault();
     setApiError(null);
     setSuccessMessage(null);
+    setNoticeMessage(null);
 
     if (!validate()) {
       return;
@@ -191,6 +205,17 @@ export const Login: React.FC = () => {
             >
               <AlertCircle className="size-5 shrink-0 mt-0.5" />
               <div className="leading-snug">{apiError}</div>
+            </div>
+          )}
+
+          {/* Aviso de sessão encerrada por inatividade */}
+          {noticeMessage && (
+            <div
+              role="status"
+              className="mb-6 p-4 rounded-xl border border-border bg-surface text-primary-dark text-sm flex items-start gap-3"
+            >
+              <Clock className="size-5 shrink-0 mt-0.5 text-primary" />
+              <div className="leading-snug">{noticeMessage}</div>
             </div>
           )}
 

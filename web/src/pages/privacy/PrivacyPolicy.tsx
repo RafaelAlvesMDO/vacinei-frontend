@@ -4,6 +4,8 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import logoVacinei from '../../assets/logo-vacinei.svg';
 import { useAuth } from '../../hooks/useAuth';
 import { usePageTitle } from '../../hooks/usePageTitle';
+import { IDLE_TIMEOUT_MINUTES } from '../../hooks/useIdleTimeout';
+import { formatIdleDuration } from '../../utils/idleTimeout';
 
 const LAST_UPDATE = '13 de outubro de 2026';
 
@@ -165,7 +167,10 @@ export const PrivacyPolicy: React.FC = () => {
                 tem conta.
               </li>
               <li>Uma conta desativada perde o acesso imediatamente, e a troca de senha encerra as outras sessões.</li>
-              <li>A sessão no gerenciador web é encerrada após 30 minutos sem uso, com aviso 1 minuto antes.</li>
+              <li>
+                A sessão no gerenciador web é encerrada após {formatIdleDuration(IDLE_TIMEOUT_MINUTES)} sem uso, com
+                um aviso antes, que permite continuar conectado.
+              </li>
               <li>Cada perfil acessa apenas as telas e os dados necessários à sua função.</li>
             </List>
           </Section>

@@ -1,17 +1,28 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useCallback, useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import { IdleWarningModal } from '../components/feedback/IdleWarningModal';
 import { Footer } from '../components/layout/Footer';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import { Spinner } from '../components/ui/Spinner';
 import { useAuth } from '../hooks/useAuth';
+import { useIdleTimeout } from '../hooks/useIdleTimeout';
+import { setLogoutReason } from '../services/tokenStorage';
 
 /**
- * Layout das rotas protegidas: sidebar fixa, barra superior, conteúdo da página e rodapé
+ * Layout das rotas protegidas: sidebar fixa, barra superior, conteúdo da página e rodapé.
+ * Também encerra a sessão por inatividade (RNF11)
  */
 export const AppLayout: React.FC = () => {
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // RNF11: sem uso pelo tempo configurado, a sessão é encerrada e o login explica o motivo
+  const handleIdleTimeout = useCallback(() => {
+    setLogoutReason('idle');
+    signOut();
+  }, [signOut]);
+  const { status: idleStatus, stayConnected } = useIdleTimeout({ enabled: user !== null, onTimeout: handleIdleTimeout });
 
   if (!user) return null;
 
@@ -43,6 +54,13 @@ export const AppLayout: React.FC = () => {
 
         <Footer />
       </div>
+
+      <IdleWarningModal
+        isOpen={idleStatus.phase === 'warning'}
+        remainingMs={idleStatus.remainingMs}
+        onStayConnected={stayConnected}
+        onSignOut={signOut}
+      />
     </div>
   );
 };

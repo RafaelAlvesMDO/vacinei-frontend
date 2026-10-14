@@ -70,3 +70,20 @@ export function clearSession(): void {
     sessionStorage.removeItem(key);
   }
 }
+
+// Motivo do último encerramento automático, exibido uma vez na tela de login
+const LOGOUT_REASON_KEY = '@vacinei:logoutReason';
+
+export type LogoutReason = 'idle';
+
+export function setLogoutReason(reason: LogoutReason): void {
+  sessionStorage.setItem(LOGOUT_REASON_KEY, reason);
+}
+
+export function getLogoutReason(): LogoutReason | null {
+  return sessionStorage.getItem(LOGOUT_REASON_KEY) === 'idle' ? 'idle' : null;
+}
+
+export function clearLogoutReason(): void {
+  sessionStorage.removeItem(LOGOUT_REASON_KEY);
+}
