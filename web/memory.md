@@ -27,6 +27,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 5b concluída: catálogo de vacinas em `/vacinas`.
   - Etapa 5c concluída: gestão de usuários em `/usuarios`.
   - Etapa 5e concluída: perfil do usuário (RF003) em `/perfil`.
+  - Etapa 5f concluída: busca ativa de doses atrasadas (RF009, D21) dentro de `/confirmar-vacina`.
 - **Data da Última Atualização:** 2026-10-13
 
 ---
@@ -132,12 +133,16 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - **Interceptor:** a opção `skipAuthRefresh` (augmentation do `AxiosRequestConfig`) desliga a renovação automática no `401`. A troca de senha a usa, porque o `401` pode ser a senha errada e porque a nova tentativa do interceptor reenviaria o `refreshToken` antigo, já revogado pela rotação. Com o token expirado (`401` com outra mensagem), o serviço chama `renewSession()` (exportada de `api.ts`) e reenvia com o refresh token novo.
   - Feedback (RNF03): `FeedbackBanner` de 8 s, spinner nos botões e erros por campo.
 
+- [x] **Busca ativa de doses atrasadas (etapa 5f, RF009, D21):** sem página própria (decisão do usuário: nada de `/busca-ativa` nem item na sidebar). Fica em `/confirmar-vacina` sem `citizenId`, abaixo do card de orientação: `pages/records/components/OverdueCard.tsx`.
+  - `getOverdue({ limit, search }, signal)` em `services/dashboard.ts` (`GET /dashboard/overdue`, `limit=100`, o máximo). Tipos `OverdueList`/`OverduePerson`/`OverdueVaccine` em `types/dashboard.ts`.
+  - Totais (pessoas e doses), filtro por nome no servidor (debounce de 400 ms, mín. 2 caracteres, `AbortController`), ordem da API (mais atrasados primeiro). Item: nome, CPF mascarado, badge "Atrasado há X dias" e vacinas atrasadas (vacina · dose, "prevista para"). O item inteiro é um link para `?citizenId=`; a página rola ao topo quando o `citizenId` muda.
+  - Sem badge "Profissional": o `/overdue` não retorna `role` (o backend não foi alterado).
+  - Dashboard: `StatCard` ganhou `to`/`linkLabel` (vira `Link`, exceto no erro). "Doses atrasadas" leva o profissional a `/confirmar-vacina`; o ADMIN não tem link (D21). `RecentDosesCard`: o nome do cidadão abre a caderneta (RF009 nota 4).
+
 ---
 
 ## 4. Próximos Passos Imediatos
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-Ordem definida: **5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
-
-1. **Etapa 5f:** cidadãos com doses atrasadas. Depende de rota nova no backend.
+1. **Etapa final:** revisão de acessibilidade (WCAG 2.1 AA) e LGPD.

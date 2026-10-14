@@ -4,7 +4,7 @@ Roteiro das etapas do front-end web (`web/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente
 
-Ordem das próximas etapas: 5f (atrasados) → revisão final.
+Próxima etapa: revisão final (acessibilidade e LGPD).
 
 ---
 
@@ -103,10 +103,16 @@ Ordem das próximas etapas: 5f (atrasados) → revisão final.
 - Listar usuários com `GET /users` (todas as páginas, com `limit=100`). A busca por nome ou e-mail e os filtros de perfil e status rodam no cliente, porque a API não filtra por `isActive`.
 - Ativar/desativar contas com `PUT /users/:id` e `{ isActive }`, com confirmação. O `DELETE /users/:id` não é usado: usuários não são excluídos, porque os registros de vacinação apontam para eles.
 
-## [ ] Etapa 5f: Cidadãos com doses atrasadas
+## [x] Etapa 5f: Busca ativa de doses atrasadas (RF009)
 
-- Ao clicar no card "Doses atrasadas" do dashboard, abrir a lista de cidadãos com doses atrasadas. Cada cidadão leva à caderneta em `/confirmar-vacina?citizenId=`.
-- **Dependência do backend:** a API ainda não tem um endpoint que liste esses cidadãos.
+> Concluída em 13/10/2026. Usa o `GET /dashboard/overdue` (D21). Não há página própria: a busca ativa fica na tela Confirmar vacina.
+
+- Em `/confirmar-vacina`, sem cidadão selecionado, o card "Busca ativa — doses atrasadas" (`pages/records/components/OverdueCard.tsx`) mostra abaixo da busca os totais (pessoas e doses atrasadas) e a lista com `limit=100`, das pessoas mais atrasadas para as menos. Cada item tem nome, CPF mascarado, o maior atraso em dias e as vacinas atrasadas (vacina, dose e data prevista). Clicar abre a caderneta (`?citizenId=`), e a página volta ao topo.
+- O filtro por nome usa o `search` da API (debounce de 400 ms, mínimo de 2 caracteres, ignora acentos). Com filtro, os totais passam a ser os do resultado filtrado. Se houver mais de 100 pessoas, aparece "Mostrando 100 de N".
+- Sem o badge "Profissional", porque o `/overdue` não retorna `role`. O badge continua na busca de cidadãos.
+- Estados: carregando, erro com "Tentar novamente", vazio ("Nenhuma dose atrasada no momento") e filtro sem resultado. Durante um novo filtro, a lista anterior continua na tela, esmaecida, com "Atualizando..." (RNF03). O `403` sincroniza o perfil.
+- Dashboard: para o profissional, o card "Doses atrasadas" é um link para `/confirmar-vacina` ("Ver busca ativa"). Para o ADMIN, o card continua só informativo (LGPD, D21). O `StatCard` ganhou as props `to` e `linkLabel`.
+- Doses recentes (RF009 nota 4): o nome do cidadão é um link para a caderneta.
 
 ## [ ] Etapa final: Revisão de acessibilidade (WCAG 2.1 AA) e LGPD
 
