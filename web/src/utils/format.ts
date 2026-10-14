@@ -83,3 +83,10 @@ export function formatCep(value: string): string {
   if (digits.length <= 5) return digits;
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 }
+
+/**
+ * Minúsculas e sem acentos, para buscas no cliente: "pajucara" encontra "Pajuçara"
+ */
+export function normalizeSearch(value: string): string {
+  return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+}

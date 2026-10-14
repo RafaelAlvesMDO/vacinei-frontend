@@ -10,11 +10,11 @@ import { useAsync } from '../../hooks/useAsync';
 import { useDebounce } from '../../hooks/useDebounce';
 import { listAllUbs } from '../../services/ubs';
 import type { Ubs } from '../../types/ubs';
-import { formatPhone } from '../../utils/format';
+import { formatPhone, normalizeSearch } from '../../utils/format';
 import { OpeningHoursLines } from './components/OpeningHoursLines';
 import { UbsFormModal } from './components/UbsFormModal';
 import { UbsStatusDialog } from './components/UbsStatusDialog';
-import { formatUbsAddress, normalizeSearch } from './utils';
+import { formatUbsAddress } from './utils';
 
 const FEEDBACK_DURATION_MS = 8000;
 const SEARCH_MAX_LENGTH = 100;
