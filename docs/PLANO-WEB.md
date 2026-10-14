@@ -4,7 +4,7 @@ Roteiro das etapas do front-end web (`web/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente
 
-Ordem das próximas etapas: 5e (perfil) → 5f (atrasados) → revisão final.
+Ordem das próximas etapas: 5f (atrasados) → revisão final.
 
 ---
 
@@ -90,7 +90,9 @@ Ordem das próximas etapas: 5e (perfil) → 5f (atrasados) → revisão final.
 - Sem exclusão: o `DELETE /vaccines/:id` não é usado. A vacina é desativada ou reativada com `PUT { isActive }`.
 - **Limitação da API:** o `PUT` não aceita doses, então o esquema só é definido no cadastro e aparece para leitura na edição. O `dosesCount` é calculado a partir das doses e não é editado.
 
-## [ ] Etapa 5e: Perfil do usuário (RF003)
+## [x] Etapa 5e: Perfil do usuário (RF003)
+
+> Concluída em 13/10/2026. Os dados vêm do `GET /users/me`, que traz categoria, conselho, número e UF do registro (o `GET /auth/me` só tem `isVerified` e `status`).
 
 - Rota `/perfil` para `PROFISSIONAL_SAUDE` e `ADMIN`, aberta pelo menu do ícone de perfil na barra superior ("Meu perfil" e "Sair").
 - Ver os próprios dados. Só o nome é editável, pelo `PATCH /auth/me` (`{ name }`, mesma regra do cadastro). O `PUT /users/me` foi removido (D20). E-mail e celular exigem verificação de identidade e ficam bloqueados por enquanto; CPF, data de nascimento, perfil e registro profissional não são editáveis (D19).

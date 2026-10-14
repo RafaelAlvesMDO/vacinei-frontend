@@ -26,6 +26,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 5d concluída: gestão de UBS (RF008 nota 8) em `/ubs`.
   - Etapa 5b concluída: catálogo de vacinas em `/vacinas`.
   - Etapa 5c concluída: gestão de usuários em `/usuarios`.
+  - Etapa 5e concluída: perfil do usuário (RF003) em `/perfil`.
 - **Data da Última Atualização:** 2026-10-13
 
 ---
@@ -124,12 +125,19 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - `UserStatusDialog` usa `PUT /users/:id { isActive }` e avisa que o usuário perde o acesso imediatamente (o backend revoga as sessões ao desativar). Sem exclusão: o `DELETE /users/:id` não é usado, porque os registros de vacinação apontam para o usuário. O próprio admin aparece com o badge "Você" e sem a ação de desativar.
   - Erros: `400`, `403` e `409` com mensagem no diálogo; `404` fecha com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizado agora".
 
+- [x] **Perfil do Usuário (`/perfil`, etapa 5e, RF003):** `pages/profile/Profile.tsx` (PROFISSIONAL_SAUDE e ADMIN, sem link na sidebar). O ícone de perfil da `Topbar` abre um menu com "Meu perfil" e "Sair" (fecha com Esc ou clique fora).
+  - Dados via `getOwnUser` (`GET /users/me`, `services/users.ts`), que traz o registro profissional completo. O `GET /auth/me` só tem `isVerified`/`status`.
+  - `PersonalDataCard`: só o nome é editável (`updateOwnName`, `PATCH /auth/me`, D19). A regra do nome do RF001 foi extraída para `utils/name.ts` (`validateFullName`, `normalizeName`, `NAME_MAX_LENGTH`), também usada no cadastro. E-mail, celular, CPF completo (titular), nascimento e perfil são só leitura; e-mail e celular têm o aviso de verificação de identidade. Profissionais veem categoria, conselho, registro/UF e o badge de verificação. Após salvar, `refreshProfile()` atualiza o nome da barra superior.
+  - `ChangePasswordCard`: senha atual, nova senha com `PasswordChecklist` e confirmação (`changePassword`, `PATCH /auth/me/password`), enviando o `refreshToken` da sessão atual. `401` marca a senha atual; `400` marca a nova senha (igual à atual ou fora da regra). No sucesso, limpa os campos e avisa que as outras sessões foram encerradas.
+  - **Interceptor:** a opção `skipAuthRefresh` (augmentation do `AxiosRequestConfig`) desliga a renovação automática no `401`. A troca de senha a usa, porque o `401` pode ser a senha errada e porque a nova tentativa do interceptor reenviaria o `refreshToken` antigo, já revogado pela rotação. Com o token expirado (`401` com outra mensagem), o serviço chama `renewSession()` (exportada de `api.ts`) e reenvia com o refresh token novo.
+  - Feedback (RNF03): `FeedbackBanner` de 8 s, spinner nos botões e erros por campo.
+
 ---
 
 ## 4. Próximos Passos Imediatos
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-Ordem definida: **5e (perfil) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
+Ordem definida: **5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
 
-1. **Etapas 5e e 5f:** perfil (RF003) e cidadãos com doses atrasadas. As duas dependem de rotas novas no backend.
+1. **Etapa 5f:** cidadãos com doses atrasadas. Depende de rota nova no backend.
