@@ -4,7 +4,7 @@ Roteiro das etapas do front-end web (`web/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente
 
-Ordem das próximas etapas: 5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão final.
+Ordem das próximas etapas: 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão final.
 
 ---
 
@@ -82,11 +82,13 @@ Ordem das próximas etapas: 5b (vacinas) → 5e (perfil) → 5c (usuários) → 
 - Campos do cadastro (RF008): nome, CEP, logradouro, número (ou `s/n`), bairro, cidade, UF, latitude, longitude e horário de funcionamento; telefone e CNES são opcionais.
 - Tratamento de `409` (CNES duplicado).
 
-## [ ] Etapa 5b: Catálogo de vacinas (só ADMIN)
+## [x] Etapa 5b: Catálogo de vacinas (só ADMIN)
 
-- Rota restrita a `ADMIN`, com link na sidebar.
-- Listar as vacinas (`GET /vaccines`, com busca, filtro por público-alvo e opção de ver as inativas), cadastrar (`POST /vaccines`, com as doses) e editar (`PUT /vaccines/:id`).
-- Tratamento de `409` (nome duplicado).
+- Rota `/vacinas` restrita a `ADMIN`, com link "Vacinas" na sidebar.
+- Listar as vacinas (`GET /vaccines` com `isActive=true` e `isActive=false`, juntas no cliente), com busca por nome ou doença, filtro por status e por público-alvo, e esquema de doses expansível. Cadastrar (`POST /vaccines`, com as doses) e editar (`PUT /vaccines/:id`).
+- Tratamento de `400` por campo (inclusive `doses.N.campo`), `404` (lista desatualizada) e `409` (nome duplicado).
+- Sem exclusão: o `DELETE /vaccines/:id` não é usado. A vacina é desativada ou reativada com `PUT { isActive }`.
+- **Limitação da API:** o `PUT` não aceita doses, então o esquema só é definido no cadastro e aparece para leitura na edição. O `dosesCount` é calculado a partir das doses e não é editado.
 
 ## [ ] Etapa 5e: Perfil do usuário (RF003)
 

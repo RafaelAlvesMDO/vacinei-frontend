@@ -24,6 +24,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 5 concluída: administração de profissionais (RS001) em `/profissionais`.
   - Etapa 6 concluída: cadastro de profissional (RF001) no "Criar conta" do login.
   - Etapa 5d concluída: gestão de UBS (RF008 nota 8) em `/ubs`.
+  - Etapa 5b concluída: catálogo de vacinas em `/vacinas`.
 - **Data da Última Atualização:** 2026-10-13
 
 ---
@@ -107,8 +108,13 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Na exibição (lista e prévia), cada faixa fica em uma linha (`OpeningHoursLines`, que quebra o texto em " · "). Os horários usam `components/ui/TimeInput`: um campo de texto com máscara 24h (`formatTime` em `utils/format.ts`, "0700" → "07:00", `inputMode="numeric"`, até 5 caracteres) no lugar do `input type="time"`, que mostrava AM/PM conforme o navegador (os selects de hora e minutos também foram descartados). Horário fora de 00:00 a 23:59 mostra "Horário inválido. Use o formato 24h, ex.: 17:00".
   - `UbsStatusDialog` (`PATCH /ubs/:id/status`), com o aviso de que o histórico é mantido (D10). `404` → aviso de lista desatualizada; `409` → campo CNES.
   - `components/feedback/FeedbackBanner` (aviso de 8 s, RNF03) extraído e reutilizado em Profissionais. A UBS alterada ganha o badge "Atualizada agora".
-- [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
-- [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
+- [x] **Catálogo de Vacinas (`/vacinas`, etapa 5b):** `pages/vaccines/VaccineList.tsx` (só ADMIN, link "Vacinas" na sidebar), no padrão da tela de UBS.
+  - `listAllVaccines` (`services/vaccines.ts`) busca `isActive=true` e `isActive=false` em paralelo, porque a API filtra só um status por vez. Busca por nome ou doença (sem acentos, `normalizeSearch`, movido para `utils/format.ts`), status na URL (`?status=inativas|todas`, padrão Ativas) e público-alvo na URL (`?publico=CRIANCA...`). Os contadores de status respeitam o público.
+  - Cada vacina mostra nome, doença, público, quantidade de doses e status. O botão de doses expande o `DoseSchedule` (nome, idade recomendada e intervalo desde a anterior). Formatação em `pages/vaccines/utils.ts`: `formatRecommendedAge` (0 → "Ao nascer", 15 → "1 ano e 3 meses") e `formatInterval`.
+  - `VaccineFormModal`: nome, doença, público-alvo (obrigatório na tela, já que a API usaria CRIANCA como padrão) e descrição. No cadastro, editor de doses (`doseNumber` sequencial, primeira dose sem intervalo, nomes únicos e `dosesCount` = número de doses). **O `PUT /vaccines/:id` não aceita doses**: na edição, o esquema aparece só para leitura e o `dosesCount` não é enviado. O `PUT` leva só o que mudou, e a descrição apagada vai como `""`.
+  - Sem exclusão (princípio da D10): o `DELETE` não é usado. `VaccineStatusDialog` desativa ou reativa com `PUT { isActive }`, avisando que a vacina sai da confirmação de dose e que os registros continuam nas cadernetas. A caderneta (`GET /citizens/:id/vaccination-records`) não filtra vacinas inativas.
+  - `ConfirmDoseModal`: se a vacina do botão da caderneta estiver inativa (fora do `GET /vaccines`), mostra o aviso e bloqueia o envio. A API também responderia `404`.
+  - Erros: `400` por campo (inclusive `doses.N.doseName`), `409` no nome e `404` com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizada agora", e a vacina cadastrada já aparece com o esquema expandido.
 
 ---
 
@@ -116,6 +122,6 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-Ordem definida: **5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
+Ordem definida: **5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
 
-1. **Etapas 5b, 5e, 5c e 5f:** catálogo de vacinas, perfil (RF003), usuários e cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
+1. **Etapas 5e, 5c e 5f:** perfil (RF003), usuários e cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
