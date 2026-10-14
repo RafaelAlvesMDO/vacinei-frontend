@@ -10,6 +10,9 @@ const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const ConfirmVaccination = lazy(() => import('./pages/records/ConfirmVaccination'));
 const Professionals = lazy(() => import('./pages/professionals/Professionals'));
+const UbsList = lazy(() => import('./pages/ubs/UbsList'));
+const VaccineList = lazy(() => import('./pages/vaccines/VaccineList'));
+const UserList = lazy(() => import('./pages/users/UserList'));
 
 export function App() {
   return (
@@ -33,6 +36,21 @@ export function App() {
                 {/* Verificação de profissionais (RS001) */}
                 <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                   <Route path="/profissionais" element={<Professionals />} />
+                </Route>
+
+                {/* Gestão de UBS (RF008 nota 8) */}
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                  <Route path="/ubs" element={<UbsList />} />
+                </Route>
+
+                {/* Catálogo de vacinas */}
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                  <Route path="/vacinas" element={<VaccineList />} />
+                </Route>
+
+                {/* Gestão de usuários */}
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                  <Route path="/usuarios" element={<UserList />} />
                 </Route>
               </Route>
             </Route>

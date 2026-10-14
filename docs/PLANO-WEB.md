@@ -4,7 +4,7 @@ Roteiro das etapas do front-end web (`web/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente
 
-Ordem das próximas etapas: 5d (UBS) → 5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão final.
+Ordem das próximas etapas: 5e (perfil) → 5f (atrasados) → revisão final.
 
 ---
 
@@ -74,27 +74,31 @@ Ordem das próximas etapas: 5d (UBS) → 5b (vacinas) → 5e (perfil) → 5c (us
 - Categorias (D13): Médico(a) → CRM; Enfermeiro(a), Técnico(a) de Enfermagem e Auxiliar de Enfermagem → COREN; Farmacêutico(a) → CRF.
 - Componentes reutilizáveis: `components/ui/FormField` (`FormField` e `FormSelect`) e `components/ui/PasswordChecklist`, também usados no `ForgotPasswordModal`.
 
-## [ ] Etapa 5d: Gestão de UBS (só ADMIN)
+## [x] Etapa 5d: Gestão de UBS (só ADMIN)
+
+> Concluída em 13/10/2026. Tela `pages/ubs/UbsList.tsx` em `/ubs`, no `AppLayout`, só para ADMIN, com o link "UBS" na sidebar. A lista vem inteira de `GET /ubs?includeInactive=true`. A busca por nome ou bairro (ignora acentos) e o filtro Ativas/Inativas/Todas (na URL: `?status=inativas|todas`, com contadores) rodam no cliente. Cada linha mostra o nome, o endereço resumido, o bairro, o horário, o telefone e o badge Ativa/Inativa. O `UbsFormModal` cadastra e edita (no `PUT`, envia só os campos alterados) com os campos do RF008: nome, CNES opcional (7 dígitos), CEP com máscara, logradouro, número (normaliza "S/N" para `s/n`), bairro, cidade, UF, horário, telefone opcional e latitude/longitude. Cidade e UF entraram porque o `POST /ubs` os exige, e o padrão é Maceió/AL. O telefone aceita fixo (10 dígitos) ou celular (11 dígitos), com a máscara adaptando ao tamanho, e é salvo formatado, como no seed. Com o CEP completo, o ViaCEP (`services/viaCep.ts`, `fetch` sem o token da API) preenche logradouro, bairro, cidade e UF, que continuam editáveis. Se o ViaCEP falhar, o preenchimento é manual. As coordenadas aceitam vírgula decimal e, coladas juntas na latitude ("-9.6658, -35.7353"), são separadas. Uma dica explica como obtê-las no OpenStreetMap e tem um link para conferir o ponto. O `UbsStatusDialog` confirma a desativação ("A UBS deixará de aparecer no aplicativo, mas o histórico de vacinações registradas nela será mantido.") e a reativação. O `400` aparece em cada campo, o `409` marca o CNES e o `404` fecha o modal com o aviso de lista desatualizada. Depois de cada ação, um aviso fica 8 s na tela, a UBS ganha o badge "Atualizada agora" e a lista é recarregada (RNF03). O aviso foi extraído para `components/feedback/FeedbackBanner`, que agora também é usado em Profissionais. Ajustes de 13/10: as coordenadas usam vírgula decimal nos exemplos, e o horário de funcionamento passou a ser montado em faixas (dias + abertura/fechamento). O texto salvo é sempre gerado no padrão "Seg a Sex: 07:00 às 17:00 · Sáb: 07:00 às 14:00", e horários antigos fora do padrão (como os do seed) aparecem como referência para serem redefinidos.
 
 - Listar (`GET /ubs`, com busca e `includeInactive=true` para ver as desativadas), cadastrar (`POST /ubs`), editar (`PUT /ubs/:id`) e desativar/reativar (`PATCH /ubs/:id/status`). A UBS nunca é excluída (D10).
 - Campos do cadastro (RF008): nome, CEP, logradouro, número (ou `s/n`), bairro, cidade, UF, latitude, longitude e horário de funcionamento; telefone e CNES são opcionais.
 - Tratamento de `409` (CNES duplicado).
 
-## [ ] Etapa 5b: Catálogo de vacinas (só ADMIN)
+## [x] Etapa 5b: Catálogo de vacinas (só ADMIN)
 
-- Rota restrita a `ADMIN`, com link na sidebar.
-- Listar as vacinas (`GET /vaccines`, com busca, filtro por público-alvo e opção de ver as inativas), cadastrar (`POST /vaccines`, com as doses) e editar (`PUT /vaccines/:id`).
-- Tratamento de `409` (nome duplicado).
+- Rota `/vacinas` restrita a `ADMIN`, com link "Vacinas" na sidebar.
+- Listar as vacinas (`GET /vaccines` com `isActive=true` e `isActive=false`, juntas no cliente), com busca por nome ou doença, filtro por status e por público-alvo, e esquema de doses expansível. Cadastrar (`POST /vaccines`, com as doses) e editar (`PUT /vaccines/:id`).
+- Tratamento de `400` por campo (inclusive `doses.N.campo`), `404` (lista desatualizada) e `409` (nome duplicado).
+- Sem exclusão: o `DELETE /vaccines/:id` não é usado. A vacina é desativada ou reativada com `PUT { isActive }`.
+- **Limitação da API:** o `PUT` não aceita doses, então o esquema só é definido no cadastro e aparece para leitura na edição. O `dosesCount` é calculado a partir das doses e não é editado.
 
 ## [ ] Etapa 5e: Perfil do usuário (RF003)
 
 - Ver e editar os próprios dados (`GET /users/me` e `PUT /users/me`: nome, celular e data de nascimento), com as mesmas regras de nome e celular do cadastro.
 - Trocar a senha informando a senha atual, com a nova senha validada pelo RF001. **Dependência do backend:** a API ainda não tem uma rota de troca de senha autenticada.
 
-## [ ] Etapa 5c: Gestão de usuários (só ADMIN)
+## [x] Etapa 5c: Gestão de usuários (só ADMIN)
 
-- Listar usuários com `GET /users` (filtro por perfil, busca e paginação).
-- Ativar/desativar contas: `PUT /users/:id` com `{ isActive }` e `DELETE /users/:id` (exclusão lógica), com confirmação.
+- Listar usuários com `GET /users` (todas as páginas, com `limit=100`). A busca por nome ou e-mail e os filtros de perfil e status rodam no cliente, porque a API não filtra por `isActive`.
+- Ativar/desativar contas com `PUT /users/:id` e `{ isActive }`, com confirmação. O `DELETE /users/:id` não é usado: usuários não são excluídos, porque os registros de vacinação apontam para eles.
 
 ## [ ] Etapa 5f: Cidadãos com doses atrasadas
 

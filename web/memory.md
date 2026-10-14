@@ -23,7 +23,10 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 4 concluída: confirmação de vacina (RF010) em `/confirmar-vacina`.
   - Etapa 5 concluída: administração de profissionais (RS001) em `/profissionais`.
   - Etapa 6 concluída: cadastro de profissional (RF001) no "Criar conta" do login.
-- **Data da Última Atualização:** 2026-10-12
+  - Etapa 5d concluída: gestão de UBS (RF008 nota 8) em `/ubs`.
+  - Etapa 5b concluída: catálogo de vacinas em `/vacinas`.
+  - Etapa 5c concluída: gestão de usuários em `/usuarios`.
+- **Data da Última Atualização:** 2026-10-13
 
 ---
 
@@ -96,9 +99,30 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Login: o cartão "Controle do SUS" virou "Administração" (o sistema não é integrado ao SUS).
   - D14: o cadastro exige CPF (máscara `formatCpf`, validado por `isValidCpf` em `utils/cpf.ts`, enviado só com números) e data de nascimento (não futura). `409` de CPF marca o campo e mostra "Este CPF já está cadastrado". A busca de cidadãos aceita CPF com ou sem máscara: termos só com dígitos/pontuação são enviados só com números e exigem os 11 dígitos válidos.
   - D11 (o profissional também é cidadão): a busca mostra o badge "Profissional" (`role` no `CitizenSearchResult`). Na própria caderneta (`citizenId === user.id`), as ações de confirmar ficam ocultas (`canConfirm` no `VaccineCardItem`) e aparece o aviso RS006.
-- [ ] **Módulo de Vacinas (`/vaccines`):** Listagem com busca e filtros por público-alvo, detalhes da vacina e suas doses.
-- [ ] **Módulo de Unidades Básicas de Saúde (`/ubs`):** Listagem das 36 UBSs de Maceió/AL cadastradas no backend, busca por nome/bairro e visualização de dados de contato/coordenadas.
-- [ ] **Registro e Confirmação de Doses (`/records`):** Interface para profissionais de saúde confirmarem a aplicação presencial de doses (RS006/RF010).
+- [x] **Gestão de UBS (`/ubs`, etapa 5d, RF008 nota 8):** `pages/ubs/UbsList.tsx` (só ADMIN, link "UBS" na sidebar).
+  - Lista completa via `GET /ubs?includeInactive=true` (`services/ubs.ts`: `listAllUbs`, `createUbs`, `updateUbs`, `setUbsStatus`). Busca por nome/bairro (sem acentos, `pages/ubs/utils.ts`) e filtro `?status=inativas|todas` no cliente, com contadores. Padrão: Ativas.
+  - `UbsFormModal`: cadastro e edição (o `PUT` leva só o que mudou). Inclui cidade e UF (exigidos pela API, padrão Maceió/AL) e CNES opcional (7 dígitos). O CNES não pode ser apagado na edição, porque vazio não é enviado. Telefone apagado vai como `""`.
+  - ViaCEP em `services/viaCep.ts` (`fetch` próprio, sem o Bearer token, timeout de 8 s, `null` em falha) preenche logradouro, bairro, cidade e UF. O CEP já salvo não é consultado ao abrir a edição.
+  - `formatPhone` (`utils/format.ts`) adapta a máscara: `(DD) XXXX-XXXX` com 10 dígitos e `(DD) XXXXX-XXXX` com 11. O telefone da UBS é salvo formatado (como no seed). O cadastro de profissional continua exigindo celular. `formatCep` foi adicionado.
+  - Coordenadas no padrão brasileiro (placeholders e valores exibidos com vírgula: "-9,6658"). Vírgula ou ponto são aceitos, o par colado na latitude é separado e o link do OpenStreetMap abre o ponto informado.
+  - Horário de funcionamento em faixas estruturadas (`pages/ubs/openingHours.ts` + `OpeningHoursField`): dias (Seg a Dom), abertura e fechamento (fechamento depois da abertura), mínimo de uma faixa e nenhum dia em duas faixas. O texto salvo é sempre gerado, no formato "Seg a Sex: 07:00 às 17:00 · Sáb: 07:00 às 14:00": 3 ou mais dias consecutivos viram intervalo, os demais são separados por vírgula e as faixas por " · ". Na edição, `parseOpeningHours` só aceita o texto se ele for idêntico ao que seria gerado. Senão, o texto antigo aparece como referência e os horários são aproveitados, com os dias em branco. Todas as 36 UBS do seed estão nesse formato antigo ("07:00 às 17:00", sem dias).
+  - Na exibição (lista e prévia), cada faixa fica em uma linha (`OpeningHoursLines`, que quebra o texto em " · "). Os horários usam `components/ui/TimeInput`: um campo de texto com máscara 24h (`formatTime` em `utils/format.ts`, "0700" → "07:00", `inputMode="numeric"`, até 5 caracteres) no lugar do `input type="time"`, que mostrava AM/PM conforme o navegador (os selects de hora e minutos também foram descartados). Horário fora de 00:00 a 23:59 mostra "Horário inválido. Use o formato 24h, ex.: 17:00".
+  - `UbsStatusDialog` (`PATCH /ubs/:id/status`), com o aviso de que o histórico é mantido (D10). `404` → aviso de lista desatualizada; `409` → campo CNES.
+  - `components/feedback/FeedbackBanner` (aviso de 8 s, RNF03) extraído e reutilizado em Profissionais. A UBS alterada ganha o badge "Atualizada agora".
+- [x] **Catálogo de Vacinas (`/vacinas`, etapa 5b):** `pages/vaccines/VaccineList.tsx` (só ADMIN, link "Vacinas" na sidebar), no padrão da tela de UBS.
+  - `listAllVaccines` (`services/vaccines.ts`) busca `isActive=true` e `isActive=false` em paralelo, porque a API filtra só um status por vez. Busca por nome ou doença (sem acentos, `normalizeSearch`, movido para `utils/format.ts`), status na URL (`?status=inativas|todas`, padrão Ativas) e público-alvo na URL (`?publico=CRIANCA...`). Os contadores de status respeitam o público.
+  - Cada vacina mostra nome, doença, público, quantidade de doses e status. O botão de doses expande o `DoseSchedule` (nome, idade recomendada e intervalo desde a anterior). Formatação em `pages/vaccines/utils.ts`: `formatRecommendedAge` (0 → "Ao nascer", 15 → "1 ano e 3 meses") e `formatInterval`.
+  - `VaccineFormModal`: nome, doença, público-alvo (obrigatório na tela, já que a API usaria CRIANCA como padrão) e descrição. No cadastro, editor de doses (`doseNumber` sequencial, primeira dose sem intervalo, nomes únicos e `dosesCount` = número de doses). **O `PUT /vaccines/:id` não aceita doses**: na edição, o esquema aparece só para leitura e o `dosesCount` não é enviado. O `PUT` leva só o que mudou, e a descrição apagada vai como `""`.
+  - Sem exclusão (princípio da D10): o `DELETE` não é usado. `VaccineStatusDialog` desativa ou reativa com `PUT { isActive }`, avisando que a vacina sai da confirmação de dose e que os registros continuam nas cadernetas. A caderneta (`GET /citizens/:id/vaccination-records`) não filtra vacinas inativas.
+  - `ConfirmDoseModal`: se a vacina do botão da caderneta estiver inativa (fora do `GET /vaccines`), mostra o aviso e bloqueia o envio. A API também responderia `404`.
+  - Erros: `400` por campo (inclusive `doses.N.doseName`), `409` no nome e `404` com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizada agora", e a vacina cadastrada já aparece com o esquema expandido.
+
+- [x] **Gestão de Usuários (`/usuarios`, etapa 5c):** `pages/users/UserList.tsx` (só ADMIN, link "Usuários" na sidebar), no padrão das telas de UBS e vacinas.
+  - `listAllUsers` (`services/users.ts`) busca todas as páginas do `GET /users` (`limit=100`, a primeira e depois as demais em paralelo). A API não filtra por `isActive`, então a busca por nome ou e-mail (sem acentos), o status (`?status=inativos|todos`, padrão Ativos) e o perfil (`?perfil=CIDADAO|PROFISSIONAL_SAUDE|ADMIN`) rodam no cliente. Os contadores de status respeitam o perfil.
+  - Cada usuário mostra nome, e-mail, badge de perfil, CPF mascarado (como vem da API), data de cadastro e status. LGPD: só dados cadastrais, nada da caderneta.
+  - Profissionais: categoria, registro (`formatRegistry`), badge de verificação e o link "Ver em Profissionais" (`/profissionais?status=...`). O `professionalRegistry` do `GET /users` não traz `verificationStatus`: `getVerificationStatus` (`pages/users/utils.ts`) o deriva de `isVerified` e `rejectedAt`.
+  - `UserStatusDialog` usa `PUT /users/:id { isActive }` e avisa que o usuário perde o acesso imediatamente (o backend revoga as sessões ao desativar). Sem exclusão: o `DELETE /users/:id` não é usado, porque os registros de vacinação apontam para o usuário. O próprio admin aparece com o badge "Você" e sem a ação de desativar.
+  - Erros: `400`, `403` e `409` com mensagem no diálogo; `404` fecha com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizado agora".
 
 ---
 
@@ -106,7 +130,6 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-Ordem definida: **5d (UBS) → 5b (vacinas) → 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
+Ordem definida: **5e (perfil) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
 
-1. **Etapa 5d:** gestão de UBS (só ADMIN). A UBS é desativada via `PATCH /ubs/:id/status` e nunca excluída (D10).
-2. **Etapas 5b, 5e, 5c e 5f:** catálogo de vacinas, perfil (RF003), usuários e cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
+1. **Etapas 5e e 5f:** perfil (RF003) e cidadãos com doses atrasadas. As duas dependem de rotas novas no backend.

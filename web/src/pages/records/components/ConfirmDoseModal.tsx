@@ -10,6 +10,8 @@ import { formatCalendarDate, formatDate } from '../../../utils/format';
 
 const LOT_MAX_LENGTH = 20;
 const LOT_PATTERN = /^[A-Z0-9]+$/;
+const INACTIVE_VACCINE_MESSAGE =
+  'Esta vacina foi desativada no catálogo e não aceita novas confirmações. Os registros já existentes continuam na caderneta.';
 
 const SELECT_CLASSES =
   'w-full h-12 rounded-xl border bg-white px-4 text-sm text-primary-dark focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer';
@@ -106,6 +108,8 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedVaccine = vaccines.find((vaccine) => vaccine.id === vaccineId) ?? null;
+  // Vacina desativada: some do catálogo, mas os registros continuam na caderneta
+  const isVaccineInactive = !!vaccineId && !!catalog.data && !selectedVaccine;
   const doses = selectedVaccine?.doses ?? [];
   const doseId = chosenDoseId ?? (vaccineId ? suggestDoseId(vaccineId) : '');
   const suggestedDoseId = vaccineId ? suggestDoseId(vaccineId) : '';
@@ -127,6 +131,10 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
 
     const lotValidation = validateLot(lot);
     setLotError(lotValidation);
+    if (isVaccineInactive) {
+      setSubmitError(INACTIVE_VACCINE_MESSAGE);
+      return;
+    }
     if (!vaccineId || !doseId) {
       setSubmitError('Selecione a vacina e a dose aplicada.');
       return;
@@ -180,7 +188,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
         </label>
         <select
           id={`${fieldId}-vaccine`}
-          value={vaccineId}
+          value={selectedVaccine ? vaccineId : ''}
           disabled={isSubmitting}
           onChange={(event) => {
             setVaccineId(event.target.value);
@@ -270,6 +278,15 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
 
     return (
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        {isVaccineInactive && (
+          <p
+            role="alert"
+            className="flex items-start gap-2 rounded-xl border border-warning/25 bg-warning-soft p-3 text-sm text-warning"
+          >
+            <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+            {INACTIVE_VACCINE_MESSAGE}
+          </p>
+        )}
         {pendingRecord ? renderPendingRecord(pendingRecord) : renderSelection()}
 
         <div className="flex flex-col gap-1.5">

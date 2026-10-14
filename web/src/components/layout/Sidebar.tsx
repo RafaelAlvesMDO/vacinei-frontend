@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, LogOut, Syringe, UserCheck, X } from 'lucide-react';
+import { Building2, LayoutDashboard, LogOut, Syringe, UserCheck, Users, X } from 'lucide-react';
 import logoVacinei from '../../assets/logo-vacinei.svg';
 import type { UserRole } from '../../types/auth';
 
@@ -15,6 +15,9 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['PROFISSIONAL_SAUDE', 'ADMIN'] },
   { to: '/confirmar-vacina', label: 'Confirmar vacina', icon: Syringe, roles: ['PROFISSIONAL_SAUDE'] },
   { to: '/profissionais', label: 'Profissionais', icon: UserCheck, roles: ['ADMIN'] },
+  { to: '/ubs', label: 'UBS', icon: Building2, roles: ['ADMIN'] },
+  { to: '/vacinas', label: 'Vacinas', icon: Syringe, roles: ['ADMIN'] },
+  { to: '/usuarios', label: 'Usuários', icon: Users, roles: ['ADMIN'] },
 ];
 
 interface SidebarProps {
