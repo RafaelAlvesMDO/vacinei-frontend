@@ -120,7 +120,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Erros: `400` por campo (inclusive `doses.N.doseName`), `409` no nome e `404` com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizada agora", e a vacina cadastrada já aparece com o esquema expandido.
 
 - [x] **Gestão de Usuários (`/usuarios`, etapa 5c):** `pages/users/UserList.tsx` (só ADMIN, link "Usuários" na sidebar), no padrão das telas de UBS e vacinas.
-  - `listAllUsers` (`services/users.ts`) busca todas as páginas do `GET /users` (`limit=100`, a primeira e depois as demais em paralelo). A API não filtra por `isActive`, então a busca por nome ou e-mail (sem acentos), o status (`?status=inativos|todos`, padrão Ativos) e o perfil (`?perfil=CIDADAO|PROFISSIONAL_SAUDE|ADMIN`) rodam no cliente. Os contadores de status respeitam o perfil.
+  - `listUsers` (`services/users.ts`) busca uma página do `GET /users` (10 por página, D22). Busca (nome, e-mail ou CPF), status (`?status=inativos|todos`, padrão Ativos, enviado como `isActive`) e perfil (`?perfil=...`) vão para a API. Os contadores vêm de `counts` (respeitam perfil e busca).
   - Cada usuário mostra nome, e-mail, badge de perfil, CPF mascarado (como vem da API), data de cadastro e status. LGPD: só dados cadastrais, nada da caderneta.
   - Profissionais: categoria, registro (`formatRegistry`), badge de verificação e o link "Ver em Profissionais" (`/profissionais?status=...`). O `professionalRegistry` do `GET /users` não traz `verificationStatus`: `getVerificationStatus` (`pages/users/utils.ts`) o deriva de `isVerified` e `rejectedAt`.
   - `UserStatusDialog` usa `PUT /users/:id { isActive }` e avisa que o usuário perde o acesso imediatamente (o backend revoga as sessões ao desativar). Sem exclusão: o `DELETE /users/:id` não é usado, porque os registros de vacinação apontam para o usuário. O próprio admin aparece com o badge "Você" e sem a ação de desativar.
@@ -138,6 +138,12 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Totais (pessoas e doses), filtro por nome no servidor (debounce de 400 ms, mín. 2 caracteres, `AbortController`), ordem da API (mais atrasados primeiro). Item: nome, CPF mascarado, badge "Atrasado há X dias" e vacinas atrasadas (vacina · dose, "prevista para"). O item inteiro é um link para `?citizenId=`; a página rola ao topo quando o `citizenId` muda.
   - Sem badge "Profissional": o `/overdue` não retorna `role` (o backend não foi alterado).
   - Dashboard: `StatCard` ganhou `to`/`linkLabel` (vira `Link`, exceto no erro). "Doses atrasadas" leva o profissional a `/confirmar-vacina`; o ADMIN não tem link (D21). `RecentDosesCard`: o nome do cidadão abre a caderneta (RF009 nota 4).
+
+- [x] **Paginação no servidor (D22):** `GET /users`, `GET /professionals` e `GET /dashboard/overdue` respondem `{ items, total, page, limit, totalPages }` (tipo `PaginatedList` em `types/pagination.ts`); users e professionals trazem `counts`. O `/professionals` usa `?status=PENDENTE|VERIFICADO|RECUSADO` (o `verified` saiu).
+  - `components/ui/Pagination` (anterior/próxima, "Página X de Y", total, `nav` com `aria-label`, página anunciada por `aria-live`).
+  - `hooks/useUrlPagination.ts`: `usePageParam` (`?pagina=`, cria histórico), `useClampPage` (página além da última volta para a última), `useFilterParams` (troca filtros e volta à página 1) e `useSearchParamInput` (`?busca=`, debounce de 400 ms, `minLength`).
+  - Usuários: 10 por página. Profissionais: 20 por página, busca por nome nova e contadores nas abas. Busca ativa (`OverdueCard`): 10 por página, busca e página na URL de `/confirmar-vacina`. `PendingProfessionalsCard`: só `PENDENTE`, 5 itens e o total na descrição.
+  - UBS e Vacinas continuam carregando tudo (catálogos pequenos).
 
 ---
 
