@@ -92,8 +92,9 @@ Ordem das próximas etapas: 5e (perfil) → 5f (atrasados) → revisão final.
 
 ## [ ] Etapa 5e: Perfil do usuário (RF003)
 
-- Ver e editar os próprios dados (`GET /users/me` e `PUT /users/me`: nome, celular e data de nascimento), com as mesmas regras de nome e celular do cadastro.
-- Trocar a senha informando a senha atual, com a nova senha validada pelo RF001. **Dependência do backend:** a API ainda não tem uma rota de troca de senha autenticada.
+- Rota `/perfil` para `PROFISSIONAL_SAUDE` e `ADMIN`, aberta pelo menu do ícone de perfil na barra superior ("Meu perfil" e "Sair").
+- Ver os próprios dados. Só o nome é editável, pelo `PATCH /auth/me` (`{ name }`, mesma regra do cadastro). O `PUT /users/me` foi removido (D20). E-mail e celular exigem verificação de identidade e ficam bloqueados por enquanto; CPF, data de nascimento, perfil e registro profissional não são editáveis (D19).
+- Trocar a senha pelo `PATCH /auth/me/password` (`{ currentPassword, newPassword, refreshToken }`), com a nova senha validada pelo RF001. O `refreshToken` da sessão atual a mantém conectada; as demais sessões são encerradas.
 
 ## [x] Etapa 5c: Gestão de usuários (só ADMIN)
 
