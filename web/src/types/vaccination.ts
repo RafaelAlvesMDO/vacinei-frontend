@@ -33,6 +33,27 @@ export interface Vaccine {
   doses: Dose[];
 }
 
+// POST /vaccines: dose enviada no cadastro (doseNumber é único dentro da vacina)
+export interface DosePayload {
+  doseNumber: number;
+  doseName: string;
+  recommendedAgeMonths?: number | null;
+  intervalDaysFromPrevious?: number | null;
+  description?: string | null;
+}
+
+// POST /vaccines. O PUT aceita os mesmos campos, opcionais e sem `doses`, mais o `isActive`
+export interface VaccinePayload {
+  name: string;
+  description?: string;
+  targetAudience: TargetAudience;
+  targetDisease: string;
+  dosesCount: number;
+  doses?: DosePayload[];
+}
+
+export type VaccineUpdatePayload = Partial<Omit<VaccinePayload, 'doses'>> & { isActive?: boolean };
+
 export interface CardRecord {
   id: string;
   status: RecordStatus;

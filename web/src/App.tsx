@@ -11,6 +11,7 @@ const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const ConfirmVaccination = lazy(() => import('./pages/records/ConfirmVaccination'));
 const Professionals = lazy(() => import('./pages/professionals/Professionals'));
 const UbsList = lazy(() => import('./pages/ubs/UbsList'));
+const VaccineList = lazy(() => import('./pages/vaccines/VaccineList'));
 
 export function App() {
   return (
@@ -39,6 +40,11 @@ export function App() {
                 {/* Gestão de UBS (RF008 nota 8) */}
                 <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                   <Route path="/ubs" element={<UbsList />} />
+                </Route>
+
+                {/* Catálogo de vacinas */}
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                  <Route path="/vacinas" element={<VaccineList />} />
                 </Route>
               </Route>
             </Route>

@@ -16,6 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/confirmar-vacina', label: 'Confirmar vacina', icon: Syringe, roles: ['PROFISSIONAL_SAUDE'] },
   { to: '/profissionais', label: 'Profissionais', icon: UserCheck, roles: ['ADMIN'] },
   { to: '/ubs', label: 'UBS', icon: Building2, roles: ['ADMIN'] },
+  { to: '/vacinas', label: 'Vacinas', icon: Syringe, roles: ['ADMIN'] },
 ];
 
 interface SidebarProps {
