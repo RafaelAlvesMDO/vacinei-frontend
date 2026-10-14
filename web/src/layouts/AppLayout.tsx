@@ -25,7 +25,7 @@ export const AppLayout: React.FC = () => {
       />
 
       <div className="lg:pl-64 flex min-h-screen flex-col">
-        <Topbar user={user} onOpenMenu={() => setIsMenuOpen(true)} />
+        <Topbar user={user} onOpenMenu={() => setIsMenuOpen(true)} onSignOut={signOut} />
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <Suspense fallback={<Spinner />}>

@@ -1,8 +1,10 @@
 import { isAxiosError } from 'axios';
-import { api } from './api';
-import { clearSession, saveSession } from './tokenStorage';
+import { api, renewSession } from './api';
+import { clearSession, getRefreshToken, saveSession } from './tokenStorage';
 import type {
+  ChangePasswordPayload,
   LoginCredentials,
+  UpdatedOwnProfile,
   AuthResponse,
   ApiSuccessResponse,
   ApiMessageResponse,
@@ -35,6 +37,47 @@ export async function authenticate({ email, password, rememberMe = false }: Logi
 export async function getProfile(): Promise<UserProfile> {
   const response = await api.get<ApiSuccessResponse<UserProfile>>('/auth/me');
   return response.data.data;
+}
+
+/**
+ * Altera o nome do próprio usuário (PATCH /auth/me). É o único campo editável no perfil (D19)
+ */
+export async function updateOwnName(name: string): Promise<UpdatedOwnProfile> {
+  const response = await api.patch<ApiSuccessResponse<UpdatedOwnProfile>>('/auth/me', { name });
+  return response.data.data;
+}
+
+// Mensagem do 401 de senha atual errada, que não deve disparar a renovação da sessão
+const WRONG_CURRENT_PASSWORD_MESSAGE = 'Senha atual incorreta.';
+
+// O refreshToken é lido a cada envio: depois de uma renovação, o anterior já foi revogado pela rotação
+function sendPasswordChange({ currentPassword, newPassword }: ChangePasswordPayload) {
+  return api.patch<ApiMessageResponse>(
+    '/auth/me/password',
+    { currentPassword, newPassword, refreshToken: getRefreshToken() ?? undefined },
+    { skipAuthRefresh: true }
+  );
+}
+
+/**
+ * Troca a senha (PATCH /auth/me/password) mantendo a sessão atual: a API revoga as demais.
+ * Com o access token expirado, renova a sessão e reenvia com o refresh token novo
+ */
+export async function changePassword(payload: ChangePasswordPayload): Promise<string> {
+  try {
+    const response = await sendPasswordChange(payload);
+    return response.data?.message || 'Senha alterada com sucesso.';
+  } catch (error) {
+    const isExpiredToken =
+      isAxiosError<ApiErrorResponse>(error) &&
+      error.response?.status === 401 &&
+      error.response.data?.message !== WRONG_CURRENT_PASSWORD_MESSAGE;
+    if (!isExpiredToken) throw error;
+
+    await renewSession();
+    const response = await sendPasswordChange(payload);
+    return response.data?.message || 'Senha alterada com sucesso.';
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { api } from './api';
 import type { ApiSuccessResponse } from '../types/auth';
-import type { ManagedUser, UpdatedUser, UserListPage } from '../types/user';
+import type { ManagedUser, OwnUser, UpdatedUser, UserListPage } from '../types/user';
 
 // Máximo aceito pela API por página
 const PAGE_LIMIT = 100;
@@ -21,6 +21,14 @@ export async function listAllUsers(): Promise<ManagedUser[]> {
   const remainingPages = Array.from({ length: Math.max(first.totalPages - 1, 0) }, (_, index) => index + 2);
   const rest = await Promise.all(remainingPages.map(fetchUsersPage));
   return [first, ...rest].flatMap((page) => page.users);
+}
+
+/**
+ * Dados do próprio usuário (GET /users/me). Diferente do GET /auth/me, traz categoria, conselho, número e UF do registro
+ */
+export async function getOwnUser(): Promise<OwnUser> {
+  const response = await api.get<ApiSuccessResponse<OwnUser>>('/users/me');
+  return response.data.data;
 }
 
 /**

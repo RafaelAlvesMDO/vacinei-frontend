@@ -32,6 +32,20 @@ export interface UserListPage {
   users: ManagedUser[];
 }
 
+// Dados do próprio usuário (GET /users/me): CPF completo, por ser o titular, e registro profissional completo
+export interface OwnUser {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string | null;
+  phone: string | null;
+  birthDate: string | null;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  professionalRegistry: UserProfessionalRegistry | null;
+}
+
 // Resposta do PUT /users/:id
 export interface UpdatedUser {
   id: string;
