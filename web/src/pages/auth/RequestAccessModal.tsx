@@ -432,8 +432,23 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
             />
           </div>
 
+          {/* Transparência no momento da coleta (LGPD). Nova aba, para não perder o formulário */}
+          <p className="mt-6 text-xs leading-relaxed text-muted">
+            Seus dados (inclusive CPF e registro profissional) são usados para identificar você e verificar seu registro.
+            Saiba mais na{' '}
+            <a
+              href="/privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded font-semibold text-primary hover:text-primary-dark hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Política de privacidade<span className="sr-only"> (abre em nova aba)</span>
+            </a>
+            .
+          </p>
+
           {/* Botões de Ação */}
-          <div className="flex flex-col-reverse sm:flex-row items-stretch gap-3 mt-8 w-full">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch gap-3 mt-6 w-full">
             <button
               type="button"
               onClick={handleClose}

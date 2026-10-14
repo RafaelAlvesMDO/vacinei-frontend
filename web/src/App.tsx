@@ -14,6 +14,7 @@ const UbsList = lazy(() => import('./pages/ubs/UbsList'));
 const VaccineList = lazy(() => import('./pages/vaccines/VaccineList'));
 const UserList = lazy(() => import('./pages/users/UserList'));
 const Profile = lazy(() => import('./pages/profile/Profile'));
+const PrivacyPolicy = lazy(() => import('./pages/privacy/PrivacyPolicy'));
 
 export function App() {
   return (
@@ -21,6 +22,9 @@ export function App() {
       <AuthProvider>
         <Suspense fallback={<Spinner fullScreen />}>
           <Routes>
+            {/* Política de privacidade (LGPD): pública, com ou sem sessão */}
+            <Route path="/privacidade" element={<PrivacyPolicy />} />
+
             <Route element={<PublicRoute />}>
               <Route path="/login" element={<Login />} />
             </Route>

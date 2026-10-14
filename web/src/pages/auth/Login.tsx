@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Mail,
   Lock,
@@ -307,6 +308,16 @@ export const Login: React.FC = () => {
               <strong className="text-primary-dark">Vacinei!?</strong>.
             </p>
           </div>
+
+          <footer className="mt-8 text-center text-xs text-muted">
+            <p>© 2026 Vacinei!? — Centro Universitário CESMAC</p>
+            <Link
+              to="/privacidade"
+              className="mt-1 inline-block rounded font-semibold text-primary hover:text-primary-dark hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Política de privacidade
+            </Link>
+          </footer>
         </div>
       </div>
 
