@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Building2, LayoutDashboard, LogOut, Syringe, UserCheck, Users, X } from 'lucide-react';
 import logoVacinei from '../../assets/logo-vacinei.svg';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { UserRole } from '../../types/auth';
 
 interface NavItem {
@@ -29,6 +31,13 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ role, isOpen, onClose, onSignOut }) => {
   const items = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  const asideRef = useRef<HTMLElement>(null);
+  // No desktop (lg) o menu fica sempre visível; abaixo disso, vira uma gaveta
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const isDrawerOpen = isOpen && !isDesktop;
+
+  // Gaveta aberta: foco preso, Esc fecha e o foco volta ao botão "Abrir menu"
+  useFocusTrap(asideRef, isDrawerOpen, { onEscape: onClose });
 
   return (
     <>
@@ -42,6 +51,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ role, isOpen, onClose, onSignO
       />
 
       <aside
+        ref={asideRef}
+        id="app-sidebar"
+        aria-label="Menu lateral"
+        // Gaveta fechada (fora da tela) não pode receber foco pelo Tab
+        inert={!isDesktop && !isOpen}
+        {...(isDrawerOpen ? { role: 'dialog', 'aria-modal': true } : {})}
         className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-border flex flex-col transition-transform lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}

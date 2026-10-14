@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import {
   Mail,
-  Eye,
-  EyeOff,
+  Lock,
   LogIn,
   ShieldCheck,
   Syringe,
@@ -13,7 +12,10 @@ import {
 } from 'lucide-react';
 import logoVacinei from '../../assets/logo-vacinei.svg';
 import { CitizenAccessError } from '../../contexts/auth-context';
+import { FormField } from '../../components/ui/FormField';
+import { PasswordToggle } from '../../components/ui/PasswordToggle';
 import { useAuth } from '../../hooks/useAuth';
+import { usePageTitle } from '../../hooks/usePageTitle';
 import { parseApiError } from '../../services/auth';
 import { RequestAccessModal } from './RequestAccessModal';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
@@ -23,8 +25,16 @@ interface FormErrors {
   password?: string;
 }
 
+const LOGIN_ERROR_FALLBACKS: Record<number, string> = {
+  0: 'Ocorreu um erro ao realizar login. Tente novamente.',
+  401: 'Credenciais inválidas.',
+  403: 'Esta conta está desativada. Procure a administração do Vacinei!? para reativá-la.',
+  429: 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.',
+};
+
 export const Login: React.FC = () => {
   const { signIn } = useAuth();
+  usePageTitle('Entrar');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -83,9 +93,10 @@ export const Login: React.FC = () => {
       if (err instanceof CitizenAccessError) {
         setApiError(err.message);
       } else {
-        // A API devolve mensagens próprias para 401 (credenciais) e 403 (conta desativada)
-        const { message } = parseApiError(err, 'Ocorreu um erro ao realizar login. Tente novamente.');
-        setApiError(message);
+        // 401 é genérico (e-mail inexistente ou senha errada) e o 403 de conta desativada só vem
+        // com a senha correta (D17). Vale a mensagem da API; os textos abaixo são a reserva
+        const { status, message } = parseApiError(err, '');
+        setApiError(message || LOGIN_ERROR_FALLBACKS[status ?? 0] || LOGIN_ERROR_FALLBACKS[0]);
       }
       setIsLoading(false);
     }
@@ -195,96 +206,44 @@ export const Login: React.FC = () => {
 
           {/* Formulário */}
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
-            {/* Campo E-mail */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-semibold text-primary-dark mb-2"
-              >
-                E-mail
-              </label>
-              <div
-                className={`relative flex items-center rounded-xl bg-white border transition-all ${
-                  errors.email
-                    ? 'border-danger ring-2 ring-danger/15'
-                    : 'border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
-                }`}
-              >
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
-                  }}
-                  placeholder="seu.email@saude.gov.br"
-                  autoComplete="email"
-                  disabled={isLoading}
-                  className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50"
-                />
-                <div className="pr-4 text-muted flex items-center pointer-events-none">
-                  <Mail className="size-5" />
-                </div>
-              </div>
-              {errors.email && (
-                <p className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1">
-                  <AlertCircle className="size-3.5" />
-                  {errors.email}
-                </p>
-              )}
-            </div>
+            <FormField
+              id="email"
+              type="email"
+              label="E-mail"
+              icon={Mail}
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+              }}
+              placeholder="seu.email@saude.gov.br"
+              autoComplete="email"
+              disabled={isLoading}
+              error={errors.email}
+            />
 
-            {/* Campo Senha */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-semibold text-primary-dark mb-2"
-              >
-                Senha
-              </label>
-              <div
-                className={`relative flex items-center rounded-xl bg-white border transition-all ${
-                  errors.password
-                    ? 'border-danger ring-2 ring-danger/15'
-                    : 'border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
-                }`}
-              >
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
-                  }}
-                  placeholder="Sua senha de acesso"
-                  autoComplete="current-password"
+            <FormField
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              label="Senha"
+              icon={Lock}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+              }}
+              placeholder="Sua senha de acesso"
+              autoComplete="current-password"
+              disabled={isLoading}
+              error={errors.password}
+              trailing={
+                <PasswordToggle
+                  isVisible={showPassword}
+                  onToggle={() => setShowPassword((prev) => !prev)}
                   disabled={isLoading}
-                  className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                  disabled={isLoading}
-                  title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-                  className="pr-4 text-muted hover:text-primary-dark transition-colors focus:outline-none cursor-pointer"
-                >
-                  {showPassword ? (
-                    <EyeOff className="size-5" />
-                  ) : (
-                    <Eye className="size-5" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1">
-                  <AlertCircle className="size-3.5" />
-                  {errors.password}
-                </p>
-              )}
-            </div>
+              }
+            />
 
             {/* Opções: Lembrar de mim & Esqueci minha senha */}
             <div className="flex items-center justify-between text-sm">
@@ -302,7 +261,7 @@ export const Login: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsForgotPasswordOpen(true)}
-                className="text-primary hover:text-primary-dark font-semibold transition-colors cursor-pointer"
+                className="rounded text-primary hover:text-primary-dark font-semibold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 Esqueci minha senha
               </button>
@@ -334,7 +293,7 @@ export const Login: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsRequestAccessOpen(true)}
-              className="text-primary hover:text-primary-dark font-semibold transition-colors cursor-pointer"
+              className="rounded text-primary hover:text-primary-dark font-semibold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               Criar conta
             </button>

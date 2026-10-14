@@ -4,8 +4,6 @@ import {
   ShieldQuestion,
   KeyRound,
   Lock,
-  Eye,
-  EyeOff,
   Loader2,
   AlertCircle,
   AlertTriangle,
@@ -16,6 +14,7 @@ import {
 import { FormField } from '../../components/ui/FormField';
 import { Modal } from '../../components/ui/Modal';
 import { PasswordChecklist } from '../../components/ui/PasswordChecklist';
+import { PasswordToggle } from '../../components/ui/PasswordToggle';
 import { forgotPassword, resetPassword, parseApiError } from '../../services/auth';
 import { PASSWORD_MIN_LENGTH, validatePassword } from '../../utils/password';
 
@@ -268,16 +267,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
   );
 
   const passwordToggle = (
-    <button
-      type="button"
-      onClick={() => setShowPassword((prev) => !prev)}
-      tabIndex={-1}
-      disabled={isBusy}
-      title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-      className="pr-4 text-muted hover:text-primary-dark transition-colors focus:outline-none cursor-pointer"
-    >
-      {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-    </button>
+    <PasswordToggle isVisible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} disabled={isBusy} />
   );
 
   const actionButtons = (submitLabel: string, loadingLabel: string) => (
@@ -356,7 +346,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
             type="button"
             onClick={handleChangeEmail}
             disabled={isBusy}
-            className="text-xs text-primary hover:text-primary-dark font-semibold mb-5 cursor-pointer disabled:opacity-50"
+            className="rounded text-xs text-primary hover:text-primary-dark font-semibold mb-5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50"
           >
             Trocar e-mail
           </button>
@@ -420,7 +410,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ isOpen
             type="button"
             onClick={handleResendCode}
             disabled={resendCooldown > 0 || isBusy}
-            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-dark transition-colors cursor-pointer disabled:text-muted/60 disabled:cursor-not-allowed"
+            className="mt-4 inline-flex items-center gap-1.5 rounded text-xs font-semibold text-primary hover:text-primary-dark transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:text-muted disabled:cursor-not-allowed"
           >
             {isResending ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCw className="size-3.5" />}
             <span>

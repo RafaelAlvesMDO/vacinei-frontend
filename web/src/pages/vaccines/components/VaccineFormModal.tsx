@@ -388,7 +388,7 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
       </ol>
 
       {fieldErrors.doses && (
-        <p className="text-xs text-danger font-medium flex items-center gap-1">
+        <p role="alert" className="text-xs text-danger font-medium flex items-center gap-1">
           <AlertCircle className="size-3.5 shrink-0" />
           {fieldErrors.doses}
         </p>
@@ -485,6 +485,7 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
             {descriptionError ? (
               <p
                 id={`${fieldId}-description-error`}
+                role="alert"
                 className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1"
               >
                 <AlertCircle className="size-3.5 shrink-0" />

@@ -25,8 +25,6 @@ export const MonthlyChart: React.FC<MonthlyChartProps> = ({ data, isLoading, err
     [data]
   );
 
-  const summary = chartData.map((item) => `${item.label}: ${item.total}`).join(', ');
-
   return (
     <Card title="Registros por mês" description="Doses registradas nos últimos 12 meses">
       {isLoading ? (
@@ -36,46 +34,66 @@ export const MonthlyChart: React.FC<MonthlyChartProps> = ({ data, isLoading, err
       ) : chartData.length === 0 ? (
         <CardEmpty message="Ainda não há registros de vacinação nos últimos 12 meses." />
       ) : (
-        <div className="h-64 -ml-3" role="img" aria-label={`Gráfico de registros por mês. ${summary}`}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke={CHART_COLORS.grid} strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: CHART_COLORS.axis, fontSize: 12 }}
-                tickLine={false}
-                axisLine={{ stroke: CHART_COLORS.grid }}
-                interval="preserveStartEnd"
-                minTickGap={8}
-              />
-              <YAxis
-                allowDecimals={false}
-                tick={{ fill: CHART_COLORS.axis, fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-                width={44}
-                tickFormatter={(value: number) => formatNumber(value)}
-              />
-              <Tooltip
-                cursor={{ stroke: CHART_COLORS.grid }}
-                contentStyle={{ borderRadius: 12, borderColor: CHART_COLORS.grid, fontSize: 13 }}
-                labelFormatter={(_, payload) => {
-                  const month = payload?.[0]?.payload?.month;
-                  return typeof month === 'string' ? formatMonthLong(month) : '';
-                }}
-                formatter={(value) => [formatNumber(Number(value)), 'Registros']}
-              />
-              <Line
-                type="monotone"
-                dataKey="total"
-                stroke={CHART_COLORS.line}
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: CHART_COLORS.line, strokeWidth: 0 }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <>
+          {/* Alternativa em texto para leitores de tela (WCAG 1.1.1); o gráfico em si fica oculto para eles */}
+          <table className="sr-only">
+            <caption>Doses registradas por mês nos últimos 12 meses</caption>
+            <thead>
+              <tr>
+                <th scope="col">Mês</th>
+                <th scope="col">Registros</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((item) => (
+                <tr key={item.month}>
+                  <th scope="row">{formatMonthLong(item.month)}</th>
+                  <td>{formatNumber(item.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="h-64 -ml-3" aria-hidden="true">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+                <CartesianGrid stroke={CHART_COLORS.grid} strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: CHART_COLORS.axis, fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={{ stroke: CHART_COLORS.grid }}
+                  interval="preserveStartEnd"
+                  minTickGap={8}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fill: CHART_COLORS.axis, fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={44}
+                  tickFormatter={(value: number) => formatNumber(value)}
+                />
+                <Tooltip
+                  cursor={{ stroke: CHART_COLORS.grid }}
+                  contentStyle={{ borderRadius: 12, borderColor: CHART_COLORS.grid, fontSize: 13 }}
+                  labelFormatter={(_, payload) => {
+                    const month = payload?.[0]?.payload?.month;
+                    return typeof month === 'string' ? formatMonthLong(month) : '';
+                  }}
+                  formatter={(value) => [formatNumber(Number(value)), 'Registros']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke={CHART_COLORS.line}
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: CHART_COLORS.line, strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </>
       )}
     </Card>
   );

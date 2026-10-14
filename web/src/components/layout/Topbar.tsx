@@ -18,17 +18,38 @@ export const Topbar: React.FC<TopbarProps> = ({ user, onOpenMenu, onSignOut }) =
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Fecha o menu ao clicar fora ou com Esc (devolvendo o foco ao botão)
+  // Padrão de menu da WAI-ARIA: abre com o foco no primeiro item, setas/Home/End navegam,
+  // Esc e Tab fecham o menu
   useEffect(() => {
     if (!isProfileMenuOpen) return;
+
+    const getItems = () =>
+      Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    getItems()[0]?.focus();
 
     const handlePointerDown = (event: MouseEvent) => {
       if (!menuRef.current?.contains(event.target as Node)) setIsProfileMenuOpen(false);
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setIsProfileMenuOpen(false);
-      buttonRef.current?.focus();
+      // Os itens somem ao fechar, então o foco volta ao botão para não se perder
+      if (event.key === 'Escape' || event.key === 'Tab') {
+        event.preventDefault();
+        setIsProfileMenuOpen(false);
+        buttonRef.current?.focus();
+        return;
+      }
+
+      const items = getItems();
+      const current = items.indexOf(document.activeElement as HTMLElement);
+      const nextIndex: Record<string, number> = {
+        ArrowDown: (current + 1) % items.length,
+        ArrowUp: (current - 1 + items.length) % items.length,
+        Home: 0,
+        End: items.length - 1,
+      };
+      if (!(event.key in nextIndex) || items.length === 0) return;
+      event.preventDefault();
+      items[nextIndex[event.key]].focus();
     };
 
     document.addEventListener('mousedown', handlePointerDown);
@@ -47,6 +68,7 @@ export const Topbar: React.FC<TopbarProps> = ({ user, onOpenMenu, onSignOut }) =
             type="button"
             onClick={onOpenMenu}
             aria-label="Abrir menu"
+            aria-controls="app-sidebar"
             className="rounded-lg p-2 text-primary-dark hover:bg-surface lg:hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             <Menu className="size-5" />

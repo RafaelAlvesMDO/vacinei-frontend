@@ -17,6 +17,13 @@ interface FieldShellProps {
   children: React.ReactNode;
 }
 
+// Liga o campo à mensagem de erro (ou, sem erro, à dica) para o leitor de tela
+function describedBy(id: string | undefined, error: string | undefined, hint: React.ReactNode): string | undefined {
+  if (!id) return undefined;
+  if (error) return `${id}-error`;
+  return hint ? `${id}-hint` : undefined;
+}
+
 // Rótulo, caixa do campo, dica e mensagem de erro no padrão visual dos modais de autenticação
 const FieldShell: React.FC<FieldShellProps> = ({ id, label, error, hint, children }) => (
   <div className="w-full">
@@ -28,11 +35,17 @@ const FieldShell: React.FC<FieldShellProps> = ({ id, label, error, hint, childre
 
     <div className={`${BOX_CLASSES} ${error ? BOX_STATE_CLASSES.error : BOX_STATE_CLASSES.default}`}>{children}</div>
 
-    {hint && !error && <div className="mt-1.5 text-xs text-muted">{hint}</div>}
+    {hint && !error && (
+      <div id={id ? `${id}-hint` : undefined} className="mt-1.5 text-xs text-muted">
+        {hint}
+      </div>
+    )}
 
     {error && (
+      // role="alert": o erro é anunciado pelo leitor de tela assim que aparece
       <p
         id={id ? `${id}-error` : undefined}
+        role="alert"
         className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1 animate-in fade-in"
       >
         <AlertCircle className="size-3.5 shrink-0" />
@@ -56,7 +69,7 @@ export const FormField: React.FC<FormFieldProps> = ({ icon: Icon, label, error, 
     <input
       {...inputProps}
       aria-invalid={!!error}
-      aria-describedby={error && inputProps.id ? `${inputProps.id}-error` : undefined}
+      aria-describedby={describedBy(inputProps.id, error, hint)}
       className={CONTROL_CLASSES}
     />
     {trailing ?? (
@@ -80,7 +93,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({ label, error, hint, plac
     <select
       {...selectProps}
       aria-invalid={!!error}
-      aria-describedby={error && selectProps.id ? `${selectProps.id}-error` : undefined}
+      aria-describedby={describedBy(selectProps.id, error, hint)}
       className={`${CONTROL_CLASSES} appearance-none cursor-pointer pr-10 ${selectProps.value ? '' : 'text-muted'}`}
     >
       <option value="" disabled>

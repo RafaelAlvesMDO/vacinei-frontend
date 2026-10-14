@@ -3,8 +3,6 @@ import {
   AlertCircle,
   BadgeCheck,
   CalendarDays,
-  Eye,
-  EyeOff,
   Hash,
   IdCard,
   Loader2,
@@ -18,6 +16,7 @@ import {
 import { FormField, FormSelect } from '../../components/ui/FormField';
 import { Modal } from '../../components/ui/Modal';
 import { PasswordChecklist } from '../../components/ui/PasswordChecklist';
+import { PasswordToggle } from '../../components/ui/PasswordToggle';
 import { parseApiError, registerProfessional } from '../../services/auth';
 import type { ProfessionalCategory } from '../../types/professional';
 import { BRAZILIAN_UFS, PROFESSIONAL_CATEGORIES } from '../../utils/councils';
@@ -254,16 +253,7 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
   };
 
   const passwordToggle = (
-    <button
-      type="button"
-      onClick={() => setShowPassword((prev) => !prev)}
-      tabIndex={-1}
-      disabled={isLoading}
-      title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-      className="pr-4 text-muted hover:text-primary-dark transition-colors focus:outline-none cursor-pointer"
-    >
-      {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-    </button>
+    <PasswordToggle isVisible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} disabled={isLoading} />
   );
 
   return (

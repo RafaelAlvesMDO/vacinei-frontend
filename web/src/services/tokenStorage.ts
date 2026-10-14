@@ -6,6 +6,15 @@ const USER_KEY = '@vacinei:user';
 
 const KEYS = [TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY];
 
+// LGPD (minimização): o navegador guarda só o necessário para a interface. CPF, celular e data de
+// nascimento ficam fora do storage; a tela de perfil os busca na API (GET /users/me)
+type StoredUser = Pick<User, 'id' | 'name' | 'email' | 'role' | 'professionalRegistry'>;
+
+function serializeUser({ id, name, email, role, professionalRegistry }: User): string {
+  const storedUser: StoredUser = { id, name, email, role, professionalRegistry };
+  return JSON.stringify(storedUser);
+}
+
 // "Lembrar de mim" persiste no localStorage; caso contrário, a sessão dura até fechar a aba
 function getActiveStorage(): Storage | null {
   if (localStorage.getItem(REFRESH_TOKEN_KEY)) return localStorage;
@@ -25,7 +34,7 @@ export function getStoredUser(): User | null {
   const userJson = getActiveStorage()?.getItem(USER_KEY);
   if (!userJson) return null;
   try {
-    return JSON.parse(userJson) as User;
+    return { ...(JSON.parse(userJson) as StoredUser), cpf: null };
   } catch {
     return null;
   }
@@ -39,7 +48,7 @@ export function saveSession(token: string, refreshToken: string, user: User, rem
   const storage = rememberMe ? localStorage : sessionStorage;
   storage.setItem(TOKEN_KEY, token);
   storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  storage.setItem(USER_KEY, JSON.stringify(user));
+  storage.setItem(USER_KEY, serializeUser(user));
 }
 
 /**
@@ -52,7 +61,7 @@ export function updateTokens(token: string, refreshToken: string): void {
 }
 
 export function updateStoredUser(user: User): void {
-  getActiveStorage()?.setItem(USER_KEY, JSON.stringify(user));
+  getActiveStorage()?.setItem(USER_KEY, serializeUser(user));
 }
 
 export function clearSession(): void {

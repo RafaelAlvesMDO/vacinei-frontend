@@ -87,7 +87,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
               )}
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
+            <div role="group" aria-label={`Dias da faixa ${index + 1}`} className="flex flex-wrap gap-1.5">
               {WEEKDAYS.map((label, day) => {
                 const isSelected = slot.days.includes(day);
                 const isUsedElsewhere = !isSelected && usedDays.has(day);
@@ -98,9 +98,13 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
                     aria-pressed={isSelected}
                     aria-label={isUsedElsewhere ? `${DAY_NAMES[day]} (já está em outra faixa)` : DAY_NAMES[day]}
                     title={isUsedElsewhere ? 'Já está em outra faixa' : undefined}
-                    onClick={() => toggleDay(slot, day)}
-                    disabled={disabled || isUsedElsewhere}
-                    className={`h-9 min-w-12 rounded-full border px-3 text-sm font-semibold transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-40 ${
+                    // aria-disabled (e não disabled) mantém o dia no Tab, para o leitor de tela explicar o bloqueio
+                    aria-disabled={isUsedElsewhere || undefined}
+                    onClick={() => {
+                      if (!isUsedElsewhere) toggleDay(slot, day);
+                    }}
+                    disabled={disabled}
+                    className={`h-9 min-w-12 rounded-full border px-3 text-sm font-semibold transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${
                       isSelected
                         ? 'border-primary bg-primary text-white'
                         : 'border-border bg-white text-primary-dark hover:bg-surface'
@@ -137,7 +141,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
             </div>
 
             {slotError && (
-              <p id={errorId} className="flex items-center gap-1 text-xs font-medium text-danger">
+              <p id={errorId} role="alert" className="flex items-center gap-1 text-xs font-medium text-danger">
                 <AlertCircle className="size-3.5 shrink-0" />
                 {slotError}
               </p>
@@ -166,7 +170,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
       </div>
 
       {error && (
-        <p className="flex items-center gap-1 text-xs font-medium text-danger">
+        <p role="alert" className="flex items-center gap-1 text-xs font-medium text-danger">
           <AlertCircle className="size-3.5 shrink-0" />
           {error}
         </p>
