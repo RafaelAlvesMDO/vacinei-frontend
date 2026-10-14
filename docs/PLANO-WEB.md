@@ -4,7 +4,7 @@ Roteiro das etapas do front-end web (`web/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente
 
-Próxima etapa: revisão final (acessibilidade e LGPD).
+Todas as etapas do roteiro estão concluídas.
 
 ---
 
@@ -114,7 +114,15 @@ Próxima etapa: revisão final (acessibilidade e LGPD).
 - Dashboard: para o profissional, o card "Doses atrasadas" é um link para `/confirmar-vacina` ("Ver busca ativa"). Para o ADMIN, o card continua só informativo (LGPD, D21). O `StatCard` ganhou as props `to` e `linkLabel`.
 - Doses recentes (RF009 nota 4): o nome do cidadão é um link para a caderneta.
 
-## [ ] Etapa final: Revisão de acessibilidade (WCAG 2.1 AA) e LGPD
+## [x] Etapa final: Revisão de acessibilidade (WCAG 2.1 AA, RNF04) e LGPD (RNF10, RNF11)
 
-- Acessibilidade: contraste, navegação por teclado, foco visível, rótulos e erros associados aos campos, e leitores de tela nos modais e nas listas.
-- LGPD: revisar quais dados pessoais e de saúde cada perfil vê (princípio da necessidade), o mascaramento de CPF e as mensagens, para não expor dados de terceiros.
+> Concluída em 14/10/2026, em todas as telas (login, cadastro, recuperação de senha, dashboard, confirmar vacina, busca ativa, profissionais, UBS, vacinas, usuários e meu perfil).
+
+- **Contraste:** `primary` `#077A66`, `accent` `#047A80` e `warning` `#8F5B12` (antes 4,37, 3,15 e 3,36:1 nos piores pares) e o token `input` (`#7F948D`, 3,22:1) no contorno dos campos. Placeholders em `muted` e contadores sem `opacity`. A tabela de pares está no `DESIGN.md`.
+- **Foco e teclado:** `hooks/useFocusTrap` no `Modal` (todos os diálogos) e na gaveta da sidebar: foco inicial no primeiro campo, Tab preso, Esc fecha e o foco volta a quem abriu. Só o diálogo do topo reage ao teclado. A sidebar fechada no celular fica `inert`. O menu do perfil tem setas, Home/End, Esc e Tab. Foco visível padrão (`:focus-visible`) e link "Pular para o conteúdo". Os dias da UBS formam um grupo rotulado, e o dia já usado em outra faixa continua no Tab (`aria-disabled`). A paginação já era navegável.
+- **Rótulos e anúncios:** `PasswordToggle` (no Tab, com `aria-label` e `aria-pressed`) nas 4 telas com senha. Os erros de campo têm `role="alert"` e a dica fica ligada por `aria-describedby`. O login passou a usar o `FormField`. A busca de cidadãos anuncia a quantidade de resultados. O título da aba muda por página (`usePageTitle`).
+- **Gráfico mensal:** tabela `sr-only` (mês por extenso e total) e gráfico com `aria-hidden`.
+- **Login (D17):** mostra a mensagem da API no `401` e no `403`, com textos de reserva por status (inclusive `429`).
+- **LGPD:** página pública `/privacidade` (dados, finalidades, quem acessa, segurança, retenção e direitos), com link no rodapé do login e do painel e aviso no cadastro. O storage do navegador guarda o usuário sem CPF, celular e nascimento.
+- **RNF11:** `hooks/useIdleTimeout` encerra a sessão após `VITE_IDLE_TIMEOUT_MINUTES` (padrão 30) sem uso, com aviso 1 minuto antes ("Continuar conectado" / "Sair agora"). A contagem segue o relógio e é compartilhada entre as abas. O login explica o encerramento.
+- **Pendência no backend:** não existe `POST /auth/logout`. Ao sair (ou por inatividade), o refresh token só é apagado do navegador e continua válido no servidor até expirar.

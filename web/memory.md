@@ -28,7 +28,8 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 5c concluída: gestão de usuários em `/usuarios`.
   - Etapa 5e concluída: perfil do usuário (RF003) em `/perfil`.
   - Etapa 5f concluída: busca ativa de doses atrasadas (RF009, D21) dentro de `/confirmar-vacina`.
-- **Data da Última Atualização:** 2026-10-13
+  - Etapa final concluída: acessibilidade (WCAG 2.1 AA), LGPD (`/privacidade`) e encerramento por inatividade (RNF11). Todas as etapas do `docs/PLANO-WEB.md` estão concluídas.
+- **Data da Última Atualização:** 2026-10-14
 
 ---
 
@@ -52,7 +53,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 5. **Identidade Visual (`docs/DESIGN.md`):**
    - O web segue a identidade do app mobile: nome **Vacinei!?**, primária `#087F6B`, fonte Inter (Google Fonts no `index.html`).
-   - Tokens no `tailwind.config.js`: `primary`, `primary-dark`, `accent`, `surface`, `background`, `muted`, `border`, `danger`/`danger-soft`, `warning`/`warning-soft`, `success`/`success-soft`. Novas telas devem usar os tokens, e não as cores padrão do Tailwind (`sky`, `slate` etc.).
+   - Tokens no `tailwind.config.js`: `primary`, `primary-dark`, `accent`, `surface`, `background`, `muted`, `border`, `input`, `danger`/`danger-soft`, `warning`/`warning-soft`, `success`/`success-soft`. Os valores passam no contraste AA (tabela no `DESIGN.md`): campos de formulário usam `border-input`, e não `border-border`. Novas telas devem usar os tokens, e não as cores padrão do Tailwind (`sky`, `slate` etc.).
    - Logos: `src/assets/logo-vacinei.svg` (login/sidebar) e `src/assets/icone-vacinei.svg` (favicon).
 
 ---
@@ -147,8 +148,22 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 ---
 
+- [x] **Etapa final: acessibilidade (WCAG 2.1 AA, RNF04) e LGPD (RNF10, RNF11):** detalhes em `docs/PLANO-WEB.md`.
+  - Contraste: `primary` `#077A66`, `accent` `#047A80`, `warning` `#8F5B12` e o token novo `input` `#7F948D` (contorno de campos). Placeholders em `muted`, sem `opacity` em texto.
+  - `hooks/useFocusTrap(ref, ativo, { onEscape, getInitialFocus })`: usado pelo `Modal` (todos os diálogos) e pela gaveta da sidebar (que fica `inert` quando fechada no celular, via `hooks/useMediaQuery`). Há uma pilha de traps: só o do topo trata o teclado. O `Modal` ganhou `role` (`alertdialog`) e `dismissible`, e o título usa `useId`.
+  - Novos componentes: `components/ui/PasswordToggle` e `components/feedback/IdleWarningModal`. O `FormField` anuncia o erro (`role="alert"`) e liga a dica por `aria-describedby`. `usePageTitle` (chamado pelo `PageHeader`) define o título da aba. O `AppLayout` tem o skip link para `#conteudo`.
+  - Novas telas devem usar o `Modal` e o `FormField` (que já trazem foco e anúncios) e o `PageHeader` (título da aba).
+  - `MonthlyChart`: tabela `sr-only`, gráfico `aria-hidden` e `accessibilityLayer={false}`.
+  - `/privacidade` (`pages/privacy/PrivacyPolicy.tsx`): rota pública fora do `PublicRoute`, acessível com ou sem sessão. Links no rodapé do login e no `Footer`; no cadastro, abre em nova aba.
+  - `tokenStorage` grava só `id`, `name`, `email`, `role` e `professionalRegistry` do usuário (o `cpf` volta como `null`).
+  - RNF11: `hooks/useIdleTimeout` + `utils/idleTimeout.ts` (funções puras). Configuração em `VITE_IDLE_TIMEOUT_MINUTES` (padrão 30, aceita decimais, tipada em `src/vite-env.d.ts`). O aviso aparece 1 minuto antes (metade do tempo quando ele é de até 2 min). A última atividade fica em `localStorage` (`@vacinei:lastActivity`), compartilhada entre as abas. Durante o aviso, a atividade não reinicia a contagem. O motivo `idle` vai para o `sessionStorage` e o login mostra o aviso uma vez. A lógica foi testada com relógio simulado (12 cenários).
+  - Pendência no backend: falta `POST /auth/logout` para revogar o refresh token ao sair.
+
+---
+
 ## 4. Próximos Passos Imediatos
 
-O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
+O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`). Todas as etapas foram concluídas.
 
-1. **Etapa final:** revisão de acessibilidade (WCAG 2.1 AA) e LGPD.
+1. Validar manualmente com teclado e leitor de tela (NVDA) antes da Pré-Banca.
+2. Backend: criar `POST /auth/logout` (revogar o refresh token) e usá-lo no `signOut`.
