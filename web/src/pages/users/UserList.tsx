@@ -1,18 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronDown, ExternalLink, Loader2, Power, PowerOff, Search, Users } from 'lucide-react';
 import { FeedbackBanner, type Feedback } from '../../components/feedback/FeedbackBanner';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../components/ui/CardState';
+import { Pagination } from '../../components/ui/Pagination';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
-import { useDebounce } from '../../hooks/useDebounce';
-import { listAllUsers } from '../../services/users';
+import { useClampPage, useFilterParams, usePageParam, useSearchParamInput } from '../../hooks/useUrlPagination';
+import { listUsers } from '../../services/users';
 import type { ManagedUser, UpdatedUser } from '../../types/user';
 import { formatRegistry } from '../../utils/councils';
-import { formatDate, normalizeSearch } from '../../utils/format';
+import { formatDate, formatNumber } from '../../utils/format';
 import { UserStatusDialog } from './components/UserStatusDialog';
 import {
   ROLE_BADGE_VARIANTS,
@@ -26,20 +27,22 @@ import {
 
 const FEEDBACK_DURATION_MS = 8000;
 const SEARCH_MAX_LENGTH = 100;
+const PAGE_SIZE = 10;
 
 type StatusFilter = 'ativos' | 'inativos' | 'todos';
 
 interface FilterOption {
   value: StatusFilter;
   label: string;
-  matches: (user: ManagedUser) => boolean;
+  // Filtro `isActive` da API; omitido em Todos
+  isActive?: boolean;
   emptyMessage: string;
 }
 
 const FILTERS: FilterOption[] = [
-  { value: 'ativos', label: 'Ativos', matches: (user) => user.isActive, emptyMessage: 'Nenhum usuário ativo' },
-  { value: 'inativos', label: 'Inativos', matches: (user) => !user.isActive, emptyMessage: 'Nenhum usuário desativado' },
-  { value: 'todos', label: 'Todos', matches: () => true, emptyMessage: 'Nenhum usuário cadastrado' },
+  { value: 'ativos', label: 'Ativos', isActive: true, emptyMessage: 'Nenhum usuário ativo' },
+  { value: 'inativos', label: 'Inativos', isActive: false, emptyMessage: 'Nenhum usuário desativado' },
+  { value: 'todos', label: 'Todos', emptyMessage: 'Nenhum usuário cadastrado' },
 ];
 
 const GRID_COLUMNS =
@@ -49,16 +52,20 @@ const GRID_COLUMNS =
 // Usuários não são excluídos, só desativados, porque os registros de vacinação apontam para eles
 export const UserList: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { searchParams, setFilters } = useFilterParams();
   const filter = FILTERS.find((option) => option.value === searchParams.get('status')) ?? FILTERS[0];
   const roleParam = searchParams.get('perfil');
   const role = isUserRole(roleParam) ? roleParam : null;
+  const { input: searchInput, setInput: setSearchInput, search, isTyping } = useSearchParamInput();
+  const { page, setPage } = usePageParam();
 
-  // A base é pequena: a lista completa vem de uma vez e a busca e os filtros rodam no cliente
-  const userList = useAsync(listAllUsers, 'Não foi possível carregar os usuários.');
-
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(normalizeSearch(search), 250);
+  // Busca, filtros e paginação rodam na API (D22): só a página atual é baixada
+  const fetchUsers = useCallback(
+    () => listUsers({ page, limit: PAGE_SIZE, role: role ?? undefined, isActive: filter.isActive, search }),
+    [page, role, filter.isActive, search]
+  );
+  const userList = useAsync(fetchUsers, 'Não foi possível carregar os usuários.');
+  useClampPage(page, userList.data?.totalPages, userList.isLoading, setPage);
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -72,35 +79,12 @@ export const UserList: React.FC = () => {
     return () => window.clearTimeout(timeout);
   }, [feedback]);
 
-  // Os contadores de status respeitam o filtro de perfil
-  const roleUsers = useMemo(
-    () => (userList.data ?? []).filter((user) => !role || user.role === role),
-    [userList.data, role]
-  );
-
-  const counts = useMemo(() => {
-    const active = roleUsers.filter((user) => user.isActive).length;
-    return { ativos: active, inativos: roleUsers.length - active, todos: roleUsers.length };
-  }, [roleUsers]);
-
-  const visibleUsers = useMemo(
-    () =>
-      roleUsers.filter(
-        (user) =>
-          filter.matches(user) &&
-          (!debouncedSearch ||
-            normalizeSearch(user.name).includes(debouncedSearch) ||
-            normalizeSearch(user.email).includes(debouncedSearch))
-      ),
-    [roleUsers, filter, debouncedSearch]
-  );
-
-  const updateParams = (status: StatusFilter, perfil: string | null) => {
-    const next: Record<string, string> = {};
-    if (status !== 'ativos') next.status = status;
-    if (perfil) next.perfil = perfil;
-    setSearchParams(next, { replace: true });
-  };
+  // Contadores da API: respeitam o perfil e a busca, mas não o status
+  const apiCounts = userList.data?.counts;
+  const counts: Record<StatusFilter, number> | null = apiCounts
+    ? { ativos: apiCounts.active, inativos: apiCounts.inactive, todos: apiCounts.active + apiCounts.inactive }
+    : null;
+  const users = userList.data?.items ?? [];
 
   const closeDialog = useCallback(() => setSelectedUser(null), []);
 
@@ -190,15 +174,13 @@ export const UserList: React.FC = () => {
       return <CardError message={userList.error?.message ?? ''} onRetry={userList.reload} />;
     }
 
-    if (visibleUsers.length === 0) {
+    if (users.length === 0) {
       const roleLabel = role ? ` com o perfil ${getRoleLabel(role)}` : '';
       return (
         <CardEmpty
           icon={Users}
           message={
-            debouncedSearch
-              ? `Nenhum usuário encontrado para “${search.trim()}”${roleLabel}.`
-              : `${filter.emptyMessage}${roleLabel}.`
+            search ? `Nenhum usuário encontrado para “${search}”${roleLabel}.` : `${filter.emptyMessage}${roleLabel}.`
           }
         />
       );
@@ -217,7 +199,7 @@ export const UserList: React.FC = () => {
           <span className="text-right">Ações</span>
         </div>
         <ul className="divide-y divide-border">
-          {visibleUsers.map((user) => (
+          {users.map((user) => (
             <li
               key={user.id}
               className={`px-5 py-4 sm:px-6 transition-colors ${user.id === highlightedId ? 'bg-success-soft/60' : ''}`}
@@ -251,6 +233,15 @@ export const UserList: React.FC = () => {
             </li>
           ))}
         </ul>
+        <Pagination
+          page={page}
+          totalPages={userList.data.totalPages}
+          total={userList.data.total}
+          onPageChange={setPage}
+          itemLabel={{ singular: 'usuário', plural: 'usuários' }}
+          ariaLabel="Paginação dos usuários"
+          className="border-t border-border px-5 pt-4 sm:px-6"
+        />
       </div>
     );
   };
@@ -263,16 +254,16 @@ export const UserList: React.FC = () => {
         actions={
           <div className="relative">
             <label htmlFor="user-search" className="sr-only">
-              Buscar usuário por nome ou e-mail
+              Buscar usuário por nome, e-mail ou CPF
             </label>
             <input
               id="user-search"
               type="search"
               autoComplete="off"
               maxLength={SEARCH_MAX_LENGTH}
-              placeholder="Buscar por nome ou e-mail"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por nome, e-mail ou CPF"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
               className="w-full h-12 rounded-xl border border-border bg-white pl-4 pr-11 text-sm text-primary-dark placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
             <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
@@ -293,10 +284,12 @@ export const UserList: React.FC = () => {
       <Card
         title="Usuários cadastrados"
         description={
-          userList.data ? `${visibleUsers.length} ${visibleUsers.length === 1 ? 'usuário' : 'usuários'}` : undefined
+          userList.data
+            ? `${formatNumber(userList.data.total)} ${userList.data.total === 1 ? 'usuário' : 'usuários'}`
+            : undefined
         }
         action={
-          userList.isLoading && userList.data ? (
+          (userList.isLoading || isTyping) && userList.data ? (
             <span role="status" className="flex items-center gap-1.5 text-xs text-muted">
               <Loader2 className="size-4 animate-spin text-primary" />
               Atualizando...
@@ -313,7 +306,7 @@ export const UserList: React.FC = () => {
                   key={option.value}
                   type="button"
                   aria-pressed={isActive}
-                  onClick={() => updateParams(option.value, role)}
+                  onClick={() => setFilters({ status: option.value === 'ativos' ? null : option.value })}
                   className={`h-9 rounded-full border px-4 text-sm font-semibold transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 ${
                     isActive
                       ? 'border-primary bg-primary text-white'
@@ -321,7 +314,9 @@ export const UserList: React.FC = () => {
                   }`}
                 >
                   {option.label}
-                  {userList.data && <span className="ml-1.5 font-normal opacity-80">({counts[option.value]})</span>}
+                  {counts && (
+                    <span className="ml-1.5 font-normal opacity-80">({formatNumber(counts[option.value])})</span>
+                  )}
                 </button>
               );
             })}
@@ -333,7 +328,7 @@ export const UserList: React.FC = () => {
             <select
               id="user-role"
               value={role ?? ''}
-              onChange={(event) => updateParams(filter.value, event.target.value || null)}
+              onChange={(event) => setFilters({ perfil: event.target.value || null })}
               className="w-full h-9 appearance-none rounded-full border border-border bg-white pl-4 pr-9 text-sm font-semibold text-primary-dark cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             >
               <option value="">Todos os perfis</option>

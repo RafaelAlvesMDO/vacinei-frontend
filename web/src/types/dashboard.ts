@@ -1,3 +1,5 @@
+import type { PaginatedList, PaginationParams } from './pagination';
+
 // GET /dashboard/summary
 export interface DashboardSummary {
   totalCadernetas: number;
@@ -43,14 +45,12 @@ export interface OverduePerson {
   overdueVaccines: OverdueVaccine[];
 }
 
-// Os totais consideram todos os resultados do filtro, não só os `items` retornados
-export interface OverdueList {
+// Paginado (D22). Os totais consideram todos os resultados do filtro, não só a página (`totalPessoas` = `total`)
+export interface OverdueList extends PaginatedList<OverduePerson> {
   totalPessoas: number;
   totalDosesAtrasadas: number;
-  items: OverduePerson[];
 }
 
-export interface OverdueParams {
-  limit?: number;
+export interface OverdueParams extends PaginationParams {
   search?: string;
 }

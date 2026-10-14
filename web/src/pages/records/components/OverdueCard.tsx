@@ -5,20 +5,21 @@ import { AlertTriangle, ChevronRight, Loader2, Search, UserRound } from 'lucide-
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../../components/ui/CardState';
+import { Pagination } from '../../../components/ui/Pagination';
 import { useAuth } from '../../../hooks/useAuth';
-import { useDebounce } from '../../../hooks/useDebounce';
+import { useClampPage, usePageParam, useSearchParamInput } from '../../../hooks/useUrlPagination';
 import { parseApiError } from '../../../services/auth';
 import { getOverdue } from '../../../services/dashboard';
 import type { OverdueList } from '../../../types/dashboard';
 import { formatCalendarDate, formatNumber } from '../../../utils/format';
 
-// Máximo aceito pelo /dashboard/overdue
-const OVERDUE_LIMIT = 100;
+const PAGE_SIZE = 10;
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_LENGTH = 100;
 
 interface FetchState {
   term: string;
+  page: number;
   attempt: number;
   data: OverdueList | null;
   error: string | null;
@@ -32,32 +33,33 @@ function formatDays(days: number): string {
 // Só para o profissional verificado: são dados de saúde identificados (LGPD)
 export const OverdueCard: React.FC = () => {
   const { refreshProfile } = useAuth();
-  const [query, setQuery] = useState('');
+  // Busca (nome, com 1 caractere a lista continua completa) e página ficam na URL; filtro e paginação na API (D22)
+  const { input: query, setInput: setQuery, search: searchTerm, isTyping } = useSearchParamInput({
+    minLength: MIN_SEARCH_LENGTH,
+  });
+  const { page, setPage } = usePageParam();
   const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<FetchState>({ term: '', attempt: -1, data: null, error: null });
-
-  const trimmedQuery = query.trim();
-  // Com 1 caractere, a lista continua completa
-  const searchTerm = trimmedQuery.length >= MIN_SEARCH_LENGTH ? trimmedQuery : '';
-  const debouncedTerm = useDebounce(searchTerm, 400);
+  const [state, setState] = useState<FetchState>({ term: '', page: 0, attempt: -1, data: null, error: null });
 
   useEffect(() => {
     const controller = new AbortController();
 
-    getOverdue({ limit: OVERDUE_LIMIT, search: debouncedTerm }, controller.signal)
-      .then((data) => setState({ term: debouncedTerm, attempt, data, error: null }))
+    getOverdue({ page, limit: PAGE_SIZE, search: searchTerm }, controller.signal)
+      .then((data) => setState({ term: searchTerm, page, attempt, data, error: null }))
       .catch((error: unknown) => {
         if (isCancel(error)) return;
         const parsed = parseApiError(error, 'Não foi possível carregar as pessoas com doses atrasadas.');
         // 403: a verificação do profissional mudou desde o login
         if (parsed.status === 403) refreshProfile().catch(() => undefined);
-        setState({ term: debouncedTerm, attempt, data: null, error: parsed.message });
+        setState({ term: searchTerm, page, attempt, data: null, error: parsed.message });
       });
 
     return () => controller.abort();
-  }, [debouncedTerm, attempt, refreshProfile]);
+  }, [searchTerm, page, attempt, refreshProfile]);
 
-  const isLoading = state.term !== searchTerm || state.attempt !== attempt;
+  const isFetching = state.term !== searchTerm || state.page !== page || state.attempt !== attempt;
+  const isLoading = isFetching || isTyping;
+  useClampPage(page, state.data?.totalPages, isFetching, setPage);
   const reload = () => setAttempt((value) => value + 1);
   const { data } = state;
 
@@ -126,12 +128,15 @@ export const OverdueCard: React.FC = () => {
             </li>
           ))}
         </ul>
-        {data.totalPessoas > data.items.length && (
-          <p className="mt-4 text-center text-xs text-muted">
-            Mostrando {formatNumber(data.items.length)} de {formatNumber(data.totalPessoas)} pessoas. Filtre pelo nome
-            para encontrar as demais.
-          </p>
-        )}
+        <Pagination
+          page={page}
+          totalPages={data.totalPages}
+          total={data.total}
+          onPageChange={setPage}
+          itemLabel={{ singular: 'pessoa', plural: 'pessoas' }}
+          ariaLabel="Paginação das pessoas com doses atrasadas"
+          className="mt-5 border-t border-border pt-4"
+        />
       </>
     );
   };
@@ -182,7 +187,7 @@ export const OverdueCard: React.FC = () => {
         />
         <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
       </div>
-      {trimmedQuery.length === 1 && (
+      {query.trim().length === 1 && (
         <p className="-mt-3 mb-4 text-xs text-muted">Digite ao menos 2 caracteres para filtrar.</p>
       )}
 

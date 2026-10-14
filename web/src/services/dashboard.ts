@@ -39,7 +39,7 @@ export async function getRecentDoses(limit = 10): Promise<RecentDose[]> {
  */
 export async function getOverdue(params: OverdueParams = {}, signal?: AbortSignal): Promise<OverdueList> {
   const response = await api.get<ApiSuccessResponse<OverdueList>>('/dashboard/overdue', {
-    params: { limit: params.limit, search: params.search || undefined },
+    params: { page: params.page, limit: params.limit, search: params.search || undefined },
     signal,
   });
   return response.data.data;
