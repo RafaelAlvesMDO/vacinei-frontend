@@ -172,8 +172,8 @@ export const Login: React.FC = () => {
       </div>
 
       {/* PAINEL DIREITO: Formulário de autenticação */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 lg:px-16">
-        <div className="w-full max-w-[420px]">
+      <div className="flex-1 min-w-0 flex flex-col justify-center items-center px-4 min-[400px]:px-6 py-12 lg:px-16">
+        <div className="w-full min-w-0 max-w-[420px]">
           {/* Marca */}
           <div className="flex items-center gap-3 mb-8">
             <img
@@ -272,7 +272,7 @@ export const Login: React.FC = () => {
             />
 
             {/* Opções: Lembrar de mim & Esqueci minha senha */}
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm">
               <label className="flex items-center gap-2 cursor-pointer select-none text-muted hover:text-primary-dark">
                 <input
                   type="checkbox"

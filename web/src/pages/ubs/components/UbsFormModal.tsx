@@ -414,9 +414,9 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
           </p>
         )}
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>Identificação</legend>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_10rem]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
             <FormField
               id="ubs-name"
               label="Nome"
@@ -444,7 +444,7 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
           </div>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>Endereço</legend>
           <FormField
             id="ubs-zip-code"
@@ -466,7 +466,7 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
               ) : undefined
             }
           />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_8rem]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
             <FormField
               id="ubs-address"
               label="Logradouro"
@@ -502,7 +502,7 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
             placeholder="Ex.: Jacintinho"
             error={fieldErrors.neighborhood}
           />
-          <div className="grid grid-cols-[1fr_7rem] gap-4">
+          <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-[minmax(0,1fr)_7rem]">
             <FormField
               id="ubs-city"
               label="Cidade"
@@ -525,7 +525,7 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
           </div>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>Atendimento</legend>
           <OpeningHoursField
             slots={values.openingHours}
@@ -551,9 +551,9 @@ export const UbsFormModal: React.FC<UbsFormModalProps> = ({ ubs, onClose, onSucc
           </div>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>Localização</legend>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2">
             <FormField
               id="ubs-latitude"
               label="Latitude"

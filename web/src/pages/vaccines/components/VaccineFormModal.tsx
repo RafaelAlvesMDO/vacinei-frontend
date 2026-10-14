@@ -423,7 +423,7 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
           </p>
         )}
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>Identificação</legend>
           <FormField
             id={`${fieldId}-name`}
@@ -499,7 +499,7 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
           </div>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>
             Esquema de doses{vaccine ? ` (${vaccine.doses.length})` : ''}
           </legend>

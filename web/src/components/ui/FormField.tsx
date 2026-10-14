@@ -6,8 +6,9 @@ const BOX_STATE_CLASSES = {
   error: 'border-danger ring-2 ring-danger/15',
   default: 'border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20',
 };
+// min-w-0: sem ele, o input (item flex) não encolhe abaixo da largura intrínseca (~20 caracteres)
 const CONTROL_CLASSES =
-  'w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50';
+  'w-full min-w-0 py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50';
 
 interface FieldShellProps {
   id?: string;
@@ -26,9 +27,9 @@ function describedBy(id: string | undefined, error: string | undefined, hint: Re
 
 // Rótulo, caixa do campo, dica e mensagem de erro no padrão visual dos modais de autenticação
 const FieldShell: React.FC<FieldShellProps> = ({ id, label, error, hint, children }) => (
-  <div className="w-full">
+  <div className="w-full min-w-0">
     {label && (
-      <label htmlFor={id} className="block text-sm font-semibold text-primary-dark mb-1.5">
+      <label htmlFor={id} className="block text-sm font-semibold text-primary-dark mb-1.5 break-words">
         {label}
       </label>
     )}
@@ -46,10 +47,10 @@ const FieldShell: React.FC<FieldShellProps> = ({ id, label, error, hint, childre
       <p
         id={id ? `${id}-error` : undefined}
         role="alert"
-        className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1 animate-in fade-in"
+        className="mt-1.5 text-xs text-danger font-medium flex items-start gap-1 animate-in fade-in"
       >
-        <AlertCircle className="size-3.5 shrink-0" />
-        <span>{error}</span>
+        <AlertCircle className="size-3.5 shrink-0 mt-px" />
+        <span className="min-w-0 break-words">{error}</span>
       </p>
     )}
   </div>

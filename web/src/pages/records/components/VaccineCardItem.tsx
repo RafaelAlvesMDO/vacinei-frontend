@@ -45,7 +45,7 @@ export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold text-primary-dark">{vaccine.name}</h3>
+            <h3 className="min-w-0 text-base font-semibold text-primary-dark break-words">{vaccine.name}</h3>
             <Badge variant={config.variant} className="gap-1">
               <StatusIcon className="size-3.5" />
               {config.label}
@@ -57,7 +57,7 @@ export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted mt-0.5">{vaccine.targetDisease}</p>
+          <p className="text-sm text-muted mt-0.5 break-words">{vaccine.targetDisease}</p>
 
           <div className="mt-3 flex items-center gap-3">
             <div
@@ -103,8 +103,9 @@ export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({
       {records.length > 0 && (
         <ul className="mt-4 flex flex-col gap-2 border-t border-border/70 pt-3">
           {records.map((record) => (
-            <li key={record.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
-              <span className="text-primary-dark">
+            // Em telas estreitas, o badge e o botão quebram para a linha de baixo
+            <li key={record.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-sm">
+              <span className="min-w-0 text-primary-dark break-words">
                 <span className="font-medium">{record.dose.doseName}</span>
                 <span className="text-muted">
                   {' · '}
@@ -115,7 +116,7 @@ export const VaccineCardItem: React.FC<VaccineCardItemProps> = ({
               {record.status === 'CONFIRMADO' ? (
                 <Badge variant="accent">Confirmado</Badge>
               ) : (
-                <span className="flex items-center gap-2">
+                <span className="flex min-w-0 flex-wrap items-center gap-2">
                   <Badge variant="warning">Aguardando confirmação</Badge>
                   {canConfirm && (
                     <button

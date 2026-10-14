@@ -69,7 +69,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
             key={slot.id}
             role="group"
             aria-label={`Faixa de horário ${index + 1}`}
-            className={`flex flex-col gap-3 rounded-xl border p-4 ${slotError ? 'border-danger/40' : 'border-border'}`}
+            className={`flex min-w-0 flex-col gap-3 rounded-xl border p-3 min-[400px]:p-4 ${slotError ? 'border-danger/40' : 'border-border'}`}
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">Faixa {index + 1}</span>
@@ -116,7 +116,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
               })}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
               <TimeInput
                 id={`${slot.id}-opens`}
                 label="Abre às"
@@ -141,7 +141,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
             </div>
 
             {slotError && (
-              <p id={errorId} role="alert" className="flex items-center gap-1 text-xs font-medium text-danger">
+              <p id={errorId} role="alert" className="flex items-start gap-1 text-xs font-medium text-danger break-words">
                 <AlertCircle className="size-3.5 shrink-0" />
                 {slotError}
               </p>
@@ -170,7 +170,7 @@ export const OpeningHoursField: React.FC<OpeningHoursFieldProps> = ({
       </div>
 
       {error && (
-        <p role="alert" className="flex items-center gap-1 text-xs font-medium text-danger">
+        <p role="alert" className="flex items-start gap-1 text-xs font-medium text-danger break-words">
           <AlertCircle className="size-3.5 shrink-0" />
           {error}
         </p>

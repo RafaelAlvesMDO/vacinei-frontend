@@ -33,18 +33,22 @@ export const StatCard: React.FC<StatCardProps> = ({
   // O erro tem o botão "Tentar novamente", que não pode ficar dentro de um link
   const isLink = Boolean(to) && !error;
 
-  const containerClasses = `rounded-2xl border shadow-sm p-4 sm:p-5 flex flex-col gap-3 min-h-36 ${
+  const containerClasses = `min-w-0 rounded-2xl border shadow-sm p-4 sm:p-5 flex flex-col gap-3 min-h-36 ${
     isDanger ? 'bg-danger-soft border-danger/25' : 'bg-white border-border'
   }`;
 
   const content = (
     <>
-      <header className="flex items-start justify-between gap-3">
-        <h2 className={`text-sm font-semibold leading-snug ${isDanger ? 'text-danger' : 'text-primary-dark'}`}>
+      {/* Em telas estreitas o ícone fica acima do título (flex-col-reverse), para o título usar toda a largura */}
+      <header className="flex flex-col-reverse items-start gap-2 sm:flex-row sm:justify-between sm:gap-3">
+        <h2
+          className={`min-w-0 text-sm font-semibold leading-snug break-words ${isDanger ? 'text-danger' : 'text-primary-dark'}`}
+        >
           {title}
         </h2>
         <span
-          className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
+          aria-hidden="true"
+          className={`flex size-9 shrink-0 items-center justify-center rounded-full sm:size-10 ${
             isDanger ? 'bg-white text-danger' : 'bg-surface text-primary'
           }`}
         >
@@ -57,17 +61,19 @@ export const StatCard: React.FC<StatCardProps> = ({
       ) : error ? (
         <CardError compact message={error} onRetry={onRetry} />
       ) : (
-        <div>
-          <p className={`text-2xl sm:text-3xl font-bold tracking-tight ${isDanger ? 'text-danger' : 'text-primary-dark'}`}>
+        <div className="min-w-0">
+          <p
+            className={`text-2xl sm:text-3xl font-bold tracking-tight break-words ${isDanger ? 'text-danger' : 'text-primary-dark'}`}
+          >
             {value ?? '—'}
           </p>
-          {description && <p className="text-xs text-muted mt-1">{description}</p>}
+          {description && <p className="text-xs text-muted mt-1 break-words">{description}</p>}
         </div>
       )}
 
       {isLink && (
         <span
-          className={`mt-auto inline-flex items-center gap-1 text-xs font-semibold group-hover:underline ${
+          className={`mt-auto inline-flex flex-wrap items-center gap-1 text-xs font-semibold group-hover:underline ${
             isDanger ? 'text-danger' : 'text-primary'
           }`}
         >

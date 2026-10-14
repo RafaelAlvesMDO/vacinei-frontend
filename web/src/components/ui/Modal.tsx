@@ -61,13 +61,13 @@ export const Modal: React.FC<ModalProps> = ({
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
-        className={`relative w-full ${maxWidth} max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-3xl p-7 sm:p-9 shadow-xl flex flex-col transition-all animate-in zoom-in-95 duration-200 focus:outline-none`}
+        className={`relative w-full min-w-0 ${maxWidth} max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-3xl p-5 min-[400px]:p-7 sm:p-9 shadow-xl flex flex-col transition-all animate-in zoom-in-95 duration-200 focus:outline-none`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho do Modal */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-start justify-between gap-3 mb-6">
           {title ? (
-            <h2 id={titleId} className="text-2xl font-bold text-primary-dark tracking-tight">
+            <h2 id={titleId} className="min-w-0 text-xl min-[400px]:text-2xl font-bold text-primary-dark tracking-tight break-words">
               {title}
             </h2>
           ) : (
@@ -79,7 +79,7 @@ export const Modal: React.FC<ModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Fechar"
-              className="text-muted hover:text-primary-dark hover:bg-surface p-1.5 rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="shrink-0 text-muted hover:text-primary-dark hover:bg-surface p-1.5 rounded-full transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <X className="size-5" />
             </button>
@@ -87,7 +87,9 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Conteúdo do Modal */}
-        <div ref={contentRef}>{children}</div>
+        <div ref={contentRef} className="min-w-0">
+          {children}
+        </div>
       </div>
     </div>
   );

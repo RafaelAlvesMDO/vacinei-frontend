@@ -18,17 +18,17 @@ export const DoseSchedule: React.FC<DoseScheduleProps> = ({ doses, id }) => {
   }
 
   return (
-    <div id={id} className="overflow-hidden rounded-xl border border-border bg-white">
+    <div id={id} className="overflow-x-auto rounded-xl border border-border bg-white">
       <table className="w-full text-left text-sm">
         <thead className="bg-surface text-xs font-semibold uppercase tracking-wide text-muted">
           <tr>
-            <th scope="col" className="px-4 py-2.5">
+            <th scope="col" className="px-3 py-2.5 sm:px-4">
               Dose
             </th>
-            <th scope="col" className="px-4 py-2.5">
+            <th scope="col" className="px-3 py-2.5 sm:px-4">
               Idade recomendada
             </th>
-            <th scope="col" className="px-4 py-2.5">
+            <th scope="col" className="px-3 py-2.5 sm:px-4">
               <span className="hidden sm:inline">Intervalo desde a anterior</span>
               <span className="sm:hidden">Intervalo</span>
             </th>
@@ -37,12 +37,12 @@ export const DoseSchedule: React.FC<DoseScheduleProps> = ({ doses, id }) => {
         <tbody className="divide-y divide-border">
           {doses.map((dose) => (
             <tr key={dose.id}>
-              <td className="px-4 py-2.5 align-top">
+              <td className="px-3 py-2.5 sm:px-4 align-top">
                 <p className="font-semibold text-primary-dark">{dose.doseName}</p>
                 {dose.description && <p className="text-xs text-muted">{dose.description}</p>}
               </td>
-              <td className="px-4 py-2.5 align-top text-primary-dark">{formatRecommendedAge(dose.recommendedAgeMonths)}</td>
-              <td className="px-4 py-2.5 align-top text-primary-dark">
+              <td className="px-3 py-2.5 sm:px-4 align-top text-primary-dark">{formatRecommendedAge(dose.recommendedAgeMonths)}</td>
+              <td className="px-3 py-2.5 sm:px-4 align-top text-primary-dark">
                 {formatInterval(dose.intervalDaysFromPrevious)}
               </td>
             </tr>

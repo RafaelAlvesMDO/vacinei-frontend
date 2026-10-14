@@ -375,7 +375,7 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
               }
             />
 
-            <div className="grid grid-cols-[1fr_7rem] gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-[minmax(0,1fr)_7rem]">
               <FormField
                 id="register-registry"
                 label="Número do registro"

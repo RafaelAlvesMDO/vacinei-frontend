@@ -56,9 +56,10 @@ export const MonthlyChart: React.FC<MonthlyChartProps> = ({ data, isLoading, err
               </tbody>
             </table>
           </div>
-          <div className="h-64 -ml-3" aria-hidden="true">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+          {/* min-w-0 + minWidth={0}: o gráfico acompanha a largura do card e nunca passa dela */}
+          <div className="h-64 min-w-0 -ml-3" aria-hidden="true">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
                 <CartesianGrid stroke={CHART_COLORS.grid} strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="label"

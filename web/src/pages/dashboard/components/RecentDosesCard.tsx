@@ -37,9 +37,10 @@ export const RecentDosesCard: React.FC = () => {
       ) : !data || data.length === 0 ? (
         <CardEmpty icon={Syringe} message="Nenhuma dose registrada recentemente." />
       ) : (
-        <ul className="divide-y divide-border -my-1">
+        // Container query: com o card estreito (celular ou meia tela), badge e data vão para a linha de baixo
+        <ul className="@container divide-y divide-border -my-1">
           {data.map((dose) => (
-            <li key={dose.id} className="py-3 flex items-start justify-between gap-3">
+            <li key={dose.id} className="py-3 flex flex-col gap-1.5 @sm:flex-row @sm:items-start @sm:justify-between @sm:gap-3">
               <div className="min-w-0">
                 {/* RF009 nota 4: o nome abre a caderneta do cidadão */}
                 <Link
@@ -49,11 +50,11 @@ export const RecentDosesCard: React.FC = () => {
                 >
                   {dose.citizen.name}
                 </Link>
-                <p className="text-sm text-muted">
+                <p className="text-sm text-muted break-words">
                   {dose.vaccine.name} · {dose.dose.doseName}
                 </p>
               </div>
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 @sm:shrink-0 @sm:flex-col @sm:items-end @sm:gap-1.5">
                 <StatusBadge status={dose.status} />
                 <time dateTime={dose.applicationDate} className="text-xs text-muted">
                   {formatDate(dose.applicationDate)}

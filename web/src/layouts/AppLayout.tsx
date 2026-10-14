@@ -43,10 +43,11 @@ export const AppLayout: React.FC = () => {
         onSignOut={signOut}
       />
 
-      <div className="lg:pl-64 flex min-h-screen flex-col">
+      {/* min-w-0: nenhum conteúdo alarga a coluna além da tela (WCAG 1.4.10, a partir de 320px) */}
+      <div className="lg:pl-64 flex min-h-screen min-w-0 flex-col">
         <Topbar user={user} onOpenMenu={() => setIsMenuOpen(true)} onSignOut={signOut} />
 
-        <main id="conteudo" tabIndex={-1} className="flex-1 px-4 py-6 sm:px-6 lg:px-8 focus:outline-none">
+        <main id="conteudo" tabIndex={-1} className="flex-1 min-w-0 px-4 py-6 sm:px-6 lg:px-8 focus:outline-none">
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>

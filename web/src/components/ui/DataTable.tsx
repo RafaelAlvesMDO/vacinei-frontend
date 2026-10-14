@@ -50,7 +50,7 @@ interface DataTableRowProps {
 
 export const DataTableRow: React.FC<DataTableRowProps> = ({ children, highlighted = false, details }) => (
   <li className={`px-5 py-4 sm:px-6 transition-colors ${highlighted ? 'bg-success-soft/60' : ''}`}>
-    <div className="grid gap-2 xl:grid-cols-(--data-table-columns) xl:items-center xl:gap-4 [&>*]:min-w-0">
+    <div className="grid grid-cols-1 gap-2 xl:grid-cols-(--data-table-columns) xl:items-center xl:gap-4 [&>*]:min-w-0">
       {children}
     </div>
     {details}
