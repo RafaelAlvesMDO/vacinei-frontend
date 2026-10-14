@@ -35,24 +35,27 @@ export const MonthlyChart: React.FC<MonthlyChartProps> = ({ data, isLoading, err
         <CardEmpty message="Ainda não há registros de vacinação nos últimos 12 meses." />
       ) : (
         <>
-          {/* Alternativa em texto para leitores de tela (WCAG 1.1.1); o gráfico em si fica oculto para eles */}
-          <table className="sr-only">
-            <caption>Doses registradas por mês nos últimos 12 meses</caption>
-            <thead>
-              <tr>
-                <th scope="col">Mês</th>
-                <th scope="col">Registros</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chartData.map((item) => (
-                <tr key={item.month}>
-                  <th scope="row">{formatMonthLong(item.month)}</th>
-                  <td>{formatNumber(item.total)}</td>
+          {/* Alternativa em texto para leitores de tela (WCAG 1.1.1); o gráfico em si fica oculto para eles.
+              O sr-only fica no wrapper: aplicado na <table>, o overflow não recorta o <caption>, que vazava sobre o card. */}
+          <div className="sr-only">
+            <table>
+              <caption>Doses registradas por mês nos últimos 12 meses</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Mês</th>
+                  <th scope="col">Registros</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {chartData.map((item) => (
+                  <tr key={item.month}>
+                    <th scope="row">{formatMonthLong(item.month)}</th>
+                    <td>{formatNumber(item.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div className="h-64 -ml-3" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
