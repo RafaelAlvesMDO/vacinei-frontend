@@ -8,23 +8,25 @@ export default {
     extend: {
       // Identidade visual do Vacinei!? (ver docs/DESIGN.md)
       colors: {
-        primary: '#087F6B',
+        primary: '#077A66',
         'primary-dark': '#103B34',
-        accent: '#03A1A9',
+        accent: '#047A80',
         surface: '#E8F4F0',
         background: '#F6F8F7',
         muted: '#5F6F6B',
         border: '#CFE0DA',
+        // Contorno de campos de formulário (contraste mínimo de 3:1, WCAG 1.4.11)
+        input: '#7F948D',
         danger: {
           DEFAULT: '#B42318',
           soft: '#FEF3F2',
         },
         warning: {
-          DEFAULT: '#B7791F',
+          DEFAULT: '#8F5B12',
           soft: '#FDF5E6',
         },
         success: {
-          DEFAULT: '#087F6B',
+          DEFAULT: '#077A66',
           soft: '#E8F4F0',
         },
       },

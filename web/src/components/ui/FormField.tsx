@@ -4,10 +4,10 @@ import { AlertCircle, ChevronDown } from 'lucide-react';
 const BOX_CLASSES = 'relative flex items-center rounded-xl bg-white border transition-all';
 const BOX_STATE_CLASSES = {
   error: 'border-danger ring-2 ring-danger/15',
-  default: 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20',
+  default: 'border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20',
 };
 const CONTROL_CLASSES =
-  'w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50';
+  'w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50';
 
 interface FieldShellProps {
   id?: string;
@@ -81,7 +81,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({ label, error, hint, plac
       {...selectProps}
       aria-invalid={!!error}
       aria-describedby={error && selectProps.id ? `${selectProps.id}-error` : undefined}
-      className={`${CONTROL_CLASSES} appearance-none cursor-pointer pr-10 ${selectProps.value ? '' : 'text-muted/70'}`}
+      className={`${CONTROL_CLASSES} appearance-none cursor-pointer pr-10 ${selectProps.value ? '' : 'text-muted'}`}
     >
       <option value="" disabled>
         {placeholder}

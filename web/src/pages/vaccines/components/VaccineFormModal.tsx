@@ -476,10 +476,10 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
               placeholder="Ex.: Previne as formas graves de tuberculose."
               aria-invalid={!!descriptionError}
               aria-describedby={descriptionError ? `${fieldId}-description-error` : undefined}
-              className={`w-full resize-y rounded-xl border bg-white px-4 py-3 text-base text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50 ${
+              className={`w-full resize-y rounded-xl border bg-white px-4 py-3 text-base text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50 ${
                 descriptionError
                   ? 'border-danger ring-2 ring-danger/15'
-                  : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
+                  : 'border-input focus:border-primary focus:ring-2 focus:ring-primary/20'
               }`}
             />
             {descriptionError ? (

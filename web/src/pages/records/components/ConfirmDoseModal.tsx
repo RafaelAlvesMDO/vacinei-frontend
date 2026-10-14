@@ -195,7 +195,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
             setChosenDoseId(null);
             setSubmitError(null);
           }}
-          className={`${SELECT_CLASSES} border-border`}
+          className={`${SELECT_CLASSES} border-input`}
         >
           <option value="" disabled>
             Selecione a vacina
@@ -233,7 +233,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
             setChosenDoseId(event.target.value);
             setSubmitError(null);
           }}
-          className={`${SELECT_CLASSES} border-border`}
+          className={`${SELECT_CLASSES} border-input`}
         >
           <option value="" disabled>
             {selectedVaccine ? 'Selecione a dose' : 'Escolha a vacina primeiro'}
@@ -309,7 +309,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
             aria-invalid={lotError ? true : undefined}
             aria-describedby={`${fieldId}-lot-hint`}
             className={`w-full h-12 rounded-xl border bg-white px-4 text-sm uppercase tracking-wide text-primary-dark placeholder:normal-case placeholder:tracking-normal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 ${
-              lotError ? 'border-danger focus:border-danger' : 'border-border focus:border-primary'
+              lotError ? 'border-danger focus:border-danger' : 'border-input focus:border-primary'
             }`}
           />
           <p id={`${fieldId}-lot-hint`} className={`text-xs ${lotError ? 'text-danger' : 'text-muted'}`}>

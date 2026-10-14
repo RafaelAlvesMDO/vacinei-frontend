@@ -207,7 +207,7 @@ export const Login: React.FC = () => {
                 className={`relative flex items-center rounded-xl bg-white border transition-all ${
                   errors.email
                     ? 'border-danger ring-2 ring-danger/15'
-                    : 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
+                    : 'border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
                 }`}
               >
                 <input
@@ -221,7 +221,7 @@ export const Login: React.FC = () => {
                   placeholder="seu.email@saude.gov.br"
                   autoComplete="email"
                   disabled={isLoading}
-                  className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50"
+                  className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50"
                 />
                 <div className="pr-4 text-muted flex items-center pointer-events-none">
                   <Mail className="size-5" />
@@ -247,7 +247,7 @@ export const Login: React.FC = () => {
                 className={`relative flex items-center rounded-xl bg-white border transition-all ${
                   errors.password
                     ? 'border-danger ring-2 ring-danger/15'
-                    : 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
+                    : 'border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
                 }`}
               >
                 <input
@@ -261,7 +261,7 @@ export const Login: React.FC = () => {
                   placeholder="Sua senha de acesso"
                   autoComplete="current-password"
                   disabled={isLoading}
-                  className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50"
+                  className="w-full py-3.5 pl-4 pr-2 text-base bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50"
                 />
                 <button
                   type="button"
@@ -294,7 +294,7 @@ export const Login: React.FC = () => {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   disabled={isLoading}
-                  className="size-4 rounded border-border accent-primary focus:ring-2 focus:ring-primary/30"
+                  className="size-4 rounded border-input accent-primary focus:ring-2 focus:ring-primary/30"
                 />
                 <span>Lembrar de mim</span>
               </label>

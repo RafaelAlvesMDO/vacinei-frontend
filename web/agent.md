@@ -60,7 +60,7 @@ src/
   - Usar tipagem explícita com `interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement>`.
   - Variantes de estilo controladas por classes condicionais limpas.
 - **Design System com Tailwind CSS:**
-  - **Identidade Visual:** Seguir `docs/DESIGN.md` e usar apenas os tokens do `tailwind.config.js` (`primary`, `primary-dark`, `accent`, `surface`, `background`, `muted`, `border`, `danger`, `warning`, `success`), nunca as cores padrão do Tailwind (`sky`, `slate` etc.).
+  - **Identidade Visual:** Seguir `docs/DESIGN.md` e usar apenas os tokens do `tailwind.config.js` (`primary`, `primary-dark`, `accent`, `surface`, `background`, `muted`, `border`, `input`, `danger`, `warning`, `success`), nunca as cores padrão do Tailwind (`sky`, `slate` etc.).
   - **Superfície e Contraste:** Fundo da página `bg-background`, cards e inputs em branco (`bg-white`) com `border-border` e sombras sutis (`shadow-sm`).
   - **Tipografia & Legibilidade:** Fonte Inter; títulos em `text-primary-dark` com `font-bold`/`font-semibold`, texto de apoio em `text-muted`.
   - **Acessibilidade & Estados:** Foco visível (`focus:ring-2 focus:ring-primary/30`), estados desabilitados (`disabled:opacity-50`) e feedback tátil em botões.

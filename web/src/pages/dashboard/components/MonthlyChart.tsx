@@ -7,7 +7,7 @@ import { formatMonthLabel, formatMonthLong, formatNumber } from '../../../utils/
 
 // Espelha os tokens do tailwind.config.js (o recharts recebe as cores por propriedade)
 const CHART_COLORS = {
-  line: '#087F6B',
+  line: '#077A66',
   grid: '#CFE0DA',
   axis: '#5F6F6B',
 };

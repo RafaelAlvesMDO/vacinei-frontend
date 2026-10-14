@@ -313,7 +313,7 @@ export const VaccineList: React.FC = () => {
                 placeholder="Buscar por nome ou doença"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="w-full h-12 rounded-xl border border-border bg-white pl-4 pr-11 text-sm text-primary-dark placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+                className="w-full h-12 rounded-xl border border-input bg-white pl-4 pr-11 text-sm text-primary-dark placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
               <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
             </div>
@@ -372,7 +372,7 @@ export const VaccineList: React.FC = () => {
                   }`}
                 >
                   {option.label}
-                  {vaccineList.data && <span className="ml-1.5 font-normal opacity-80">({counts[option.value]})</span>}
+                  {vaccineList.data && <span className="ml-1.5 font-normal">({counts[option.value]})</span>}
                 </button>
               );
             })}
@@ -385,7 +385,7 @@ export const VaccineList: React.FC = () => {
               id="vaccine-audience"
               value={audience ?? ''}
               onChange={(event) => updateParams(filter.value, event.target.value || null)}
-              className="w-full h-9 appearance-none rounded-full border border-border bg-white pl-4 pr-9 text-sm font-semibold text-primary-dark cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+              className="w-full h-9 appearance-none rounded-full border border-input bg-white pl-4 pr-9 text-sm font-semibold text-primary-dark cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             >
               <option value="">Todos os públicos</option>
               {TARGET_AUDIENCE_OPTIONS.map((option) => (

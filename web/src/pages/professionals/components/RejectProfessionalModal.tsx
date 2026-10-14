@@ -120,7 +120,7 @@ export const RejectProfessionalModal: React.FC<RejectProfessionalModalProps> = (
             aria-invalid={reasonError ? true : undefined}
             aria-describedby={`${fieldId}-reason-hint`}
             className={`w-full resize-y rounded-xl border bg-white px-4 py-3 text-sm text-primary-dark placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 ${
-              reasonError ? 'border-danger focus:border-danger' : 'border-border focus:border-primary'
+              reasonError ? 'border-danger focus:border-danger' : 'border-input focus:border-primary'
             }`}
           />
           <p id={`${fieldId}-reason-hint`} className={`text-xs ${reasonError ? 'text-danger' : 'text-muted'}`}>
