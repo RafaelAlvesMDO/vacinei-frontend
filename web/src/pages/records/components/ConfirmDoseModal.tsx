@@ -14,7 +14,7 @@ const INACTIVE_VACCINE_MESSAGE =
   'Esta vacina foi desativada no catálogo e não aceita novas confirmações. Os registros já existentes continuam na caderneta.';
 
 const SELECT_CLASSES =
-  'w-full h-12 rounded-xl border bg-white px-4 text-sm text-primary-dark focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer';
+  'w-full min-w-0 h-12 rounded-xl border bg-white px-4 text-sm text-primary-dark focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 disabled:opacity-50 cursor-pointer';
 
 export interface PendingRecord {
   vaccineId: string;
@@ -162,14 +162,14 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
   // Registro do cidadão: vacina e dose fixas, sem depender do catálogo
   const renderPendingRecord = ({ vaccineName, record }: PendingRecord) => (
     <div className="flex flex-col gap-3 rounded-xl border border-warning/25 bg-warning-soft p-4 text-sm">
-      <dl className="grid gap-3 sm:grid-cols-2">
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <dt className="text-xs text-muted">Vacina</dt>
-          <dd className="font-semibold text-primary-dark">{vaccineName}</dd>
+          <dd className="font-semibold text-primary-dark break-words">{vaccineName}</dd>
         </div>
         <div>
           <dt className="text-xs text-muted">Dose</dt>
-          <dd className="font-semibold text-primary-dark">{record.dose.doseName}</dd>
+          <dd className="font-semibold text-primary-dark break-words">{record.dose.doseName}</dd>
         </div>
       </dl>
       <p className="text-xs text-warning">
@@ -195,7 +195,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
             setChosenDoseId(null);
             setSubmitError(null);
           }}
-          className={`${SELECT_CLASSES} border-border`}
+          className={`${SELECT_CLASSES} border-input`}
         >
           <option value="" disabled>
             Selecione a vacina
@@ -233,7 +233,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
             setChosenDoseId(event.target.value);
             setSubmitError(null);
           }}
-          className={`${SELECT_CLASSES} border-border`}
+          className={`${SELECT_CLASSES} border-input`}
         >
           <option value="" disabled>
             {selectedVaccine ? 'Selecione a dose' : 'Escolha a vacina primeiro'}
@@ -309,7 +309,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
             aria-invalid={lotError ? true : undefined}
             aria-describedby={`${fieldId}-lot-hint`}
             className={`w-full h-12 rounded-xl border bg-white px-4 text-sm uppercase tracking-wide text-primary-dark placeholder:normal-case placeholder:tracking-normal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 ${
-              lotError ? 'border-danger focus:border-danger' : 'border-border focus:border-primary'
+              lotError ? 'border-danger focus:border-danger' : 'border-input focus:border-primary'
             }`}
           />
           <p id={`${fieldId}-lot-hint`} className={`text-xs ${lotError ? 'text-danger' : 'text-muted'}`}>
@@ -317,7 +317,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
           </p>
         </div>
 
-        <dl className="grid gap-3 rounded-xl bg-surface p-4 text-sm sm:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-3 rounded-xl bg-surface p-4 text-sm sm:grid-cols-2">
           <div className="flex items-start gap-2">
             <CalendarDays className="size-4 shrink-0 mt-0.5 text-primary" />
             <div>
@@ -335,7 +335,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
         </dl>
 
         {submitError && (
-          <p role="alert" className="flex items-start gap-2 rounded-xl border border-danger/20 bg-danger-soft p-3 text-sm text-danger">
+          <p role="alert" className="flex items-start gap-2 rounded-xl border border-danger/20 bg-danger-soft p-3 text-sm text-danger break-words">
             <AlertCircle className="size-4 shrink-0 mt-0.5" />
             {submitError}
           </p>
@@ -367,7 +367,7 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
     <Modal isOpen onClose={isSubmitting ? () => undefined : onClose} title="Confirmar dose" maxWidth="max-w-[560px]">
       <p className="-mt-3 mb-5 flex items-center gap-2 text-sm text-muted">
         <UserRound className="size-4 shrink-0 text-primary" />
-        <span className="truncate">
+        <span className="min-w-0 truncate">
           Cidadão: <span className="font-semibold text-primary-dark">{citizen.name}</span>
         </span>
       </p>

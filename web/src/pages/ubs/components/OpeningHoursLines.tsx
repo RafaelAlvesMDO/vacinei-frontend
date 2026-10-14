@@ -14,7 +14,7 @@ export const OpeningHoursLines: React.FC<OpeningHoursLinesProps> = ({ text, clas
   return (
     <span className={`flex flex-col ${className}`}>
       {lines.map((line) => (
-        <span key={line} className="whitespace-nowrap">
+        <span key={line} className="break-words min-[400px]:whitespace-nowrap">
           {line}
         </span>
       ))}

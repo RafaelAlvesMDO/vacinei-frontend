@@ -91,8 +91,9 @@ export const Dashboard: React.FC = () => {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="flex flex-col gap-6">
+      {/* grid-cols-1 (minmax(0, 1fr)): sem ele, a coluna implícita cresce com o gráfico e vaza da tela */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-6">
           <MonthlyChart
             data={monthly.data}
             isLoading={monthly.isLoading}

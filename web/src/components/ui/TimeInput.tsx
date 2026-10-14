@@ -33,7 +33,7 @@ export const TimeInput: React.FC<TimeInputProps> = ({
       className={`relative flex items-center rounded-xl bg-white border transition-all ${
         invalid
           ? 'border-danger ring-2 ring-danger/15'
-          : 'border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
+          : 'border-input focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
       }`}
     >
       <input
@@ -48,7 +48,7 @@ export const TimeInput: React.FC<TimeInputProps> = ({
         disabled={disabled}
         aria-invalid={invalid}
         aria-describedby={describedBy}
-        className="w-full py-3.5 pl-4 pr-2 text-base tabular-nums bg-transparent border-0 text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50"
+        className="w-full min-w-0 py-3.5 pl-4 pr-2 text-base tabular-nums bg-transparent border-0 text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50"
       />
       <Clock aria-hidden="true" className="mr-4 size-5 shrink-0 text-muted pointer-events-none" />
     </div>

@@ -3,8 +3,6 @@ import {
   AlertCircle,
   BadgeCheck,
   CalendarDays,
-  Eye,
-  EyeOff,
   Hash,
   IdCard,
   Loader2,
@@ -18,6 +16,7 @@ import {
 import { FormField, FormSelect } from '../../components/ui/FormField';
 import { Modal } from '../../components/ui/Modal';
 import { PasswordChecklist } from '../../components/ui/PasswordChecklist';
+import { PasswordToggle } from '../../components/ui/PasswordToggle';
 import { parseApiError, registerProfessional } from '../../services/auth';
 import type { ProfessionalCategory } from '../../types/professional';
 import { BRAZILIAN_UFS, PROFESSIONAL_CATEGORIES } from '../../utils/councils';
@@ -254,16 +253,7 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
   };
 
   const passwordToggle = (
-    <button
-      type="button"
-      onClick={() => setShowPassword((prev) => !prev)}
-      tabIndex={-1}
-      disabled={isLoading}
-      title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-      className="pr-4 text-muted hover:text-primary-dark transition-colors focus:outline-none cursor-pointer"
-    >
-      {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-    </button>
+    <PasswordToggle isVisible={showPassword} onToggle={() => setShowPassword((prev) => !prev)} disabled={isLoading} />
   );
 
   return (
@@ -385,7 +375,7 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
               }
             />
 
-            <div className="grid grid-cols-[1fr_7rem] gap-4">
+            <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-[minmax(0,1fr)_7rem]">
               <FormField
                 id="register-registry"
                 label="Número do registro"
@@ -442,8 +432,23 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
             />
           </div>
 
+          {/* Transparência no momento da coleta (LGPD). Nova aba, para não perder o formulário */}
+          <p className="mt-6 text-xs leading-relaxed text-muted">
+            Seus dados (inclusive CPF e registro profissional) são usados para identificar você e verificar seu registro.
+            Saiba mais na{' '}
+            <a
+              href="/privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded font-semibold text-primary hover:text-primary-dark hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              Política de privacidade<span className="sr-only"> (abre em nova aba)</span>
+            </a>
+            .
+          </p>
+
           {/* Botões de Ação */}
-          <div className="flex flex-col-reverse sm:flex-row items-stretch gap-3 mt-8 w-full">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch gap-3 mt-6 w-full">
             <button
               type="button"
               onClick={handleClose}

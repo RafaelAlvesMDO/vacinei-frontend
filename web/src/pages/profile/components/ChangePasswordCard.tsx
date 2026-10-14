@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { AlertCircle, Eye, EyeOff, KeyRound, Loader2, Lock } from 'lucide-react';
+import { AlertCircle, KeyRound, Loader2, Lock } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { FormField } from '../../../components/ui/FormField';
 import { PasswordChecklist } from '../../../components/ui/PasswordChecklist';
+import { PasswordToggle } from '../../../components/ui/PasswordToggle';
 import { changePassword, parseApiError } from '../../../services/auth';
 import { validatePassword } from '../../../utils/password';
 
@@ -84,16 +85,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ onPasswo
   };
 
   const passwordToggle = (
-    <button
-      type="button"
-      onClick={() => setShowPasswords((prev) => !prev)}
-      tabIndex={-1}
-      disabled={isSaving}
-      title={showPasswords ? 'Ocultar senhas' : 'Exibir senhas'}
-      className="pr-4 text-muted hover:text-primary-dark transition-colors focus:outline-none cursor-pointer"
-    >
-      {showPasswords ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-    </button>
+    <PasswordToggle isVisible={showPasswords} onToggle={() => setShowPasswords((prev) => !prev)} disabled={isSaving} noun="senhas" />
   );
   const inputType = showPasswords ? 'text' : 'password';
 

@@ -388,7 +388,7 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
       </ol>
 
       {fieldErrors.doses && (
-        <p className="text-xs text-danger font-medium flex items-center gap-1">
+        <p role="alert" className="text-xs text-danger font-medium flex items-center gap-1">
           <AlertCircle className="size-3.5 shrink-0" />
           {fieldErrors.doses}
         </p>
@@ -423,7 +423,7 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
           </p>
         )}
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>Identificação</legend>
           <FormField
             id={`${fieldId}-name`}
@@ -476,15 +476,16 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
               placeholder="Ex.: Previne as formas graves de tuberculose."
               aria-invalid={!!descriptionError}
               aria-describedby={descriptionError ? `${fieldId}-description-error` : undefined}
-              className={`w-full resize-y rounded-xl border bg-white px-4 py-3 text-base text-primary-dark placeholder:text-muted/70 focus:outline-none disabled:opacity-50 ${
+              className={`w-full resize-y rounded-xl border bg-white px-4 py-3 text-base text-primary-dark placeholder:text-muted focus:outline-none disabled:opacity-50 ${
                 descriptionError
                   ? 'border-danger ring-2 ring-danger/15'
-                  : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
+                  : 'border-input focus:border-primary focus:ring-2 focus:ring-primary/20'
               }`}
             />
             {descriptionError ? (
               <p
                 id={`${fieldId}-description-error`}
+                role="alert"
                 className="mt-1.5 text-xs text-danger font-medium flex items-center gap-1"
               >
                 <AlertCircle className="size-3.5 shrink-0" />
@@ -498,7 +499,7 @@ export const VaccineFormModal: React.FC<VaccineFormModalProps> = ({ vaccine, onC
           </div>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-4" disabled={isSubmitting}>
+        <fieldset className="flex min-w-0 flex-col gap-4" disabled={isSubmitting}>
           <legend className={`${sectionTitleClasses} mb-3`}>
             Esquema de doses{vaccine ? ` (${vaccine.doses.length})` : ''}
           </legend>

@@ -49,9 +49,14 @@ export const Pagination: React.FC<Props> = ({
           className={BUTTON_CLASS}
         >
           <ChevronLeft className="size-4" aria-hidden="true" />
-          Anterior
+          {/* Abaixo de 400px só a seta aparece (o nome vem do aria-label), para os três itens caberem */}
+          <span className="hidden min-[400px]:inline">Anterior</span>
         </button>
-        <p className="text-sm font-medium text-primary-dark tabular-nums" aria-live="polite" aria-atomic="true">
+        <p
+          className="min-w-0 text-center text-sm font-medium text-primary-dark tabular-nums"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           Página {formatNumber(current)} de {formatNumber(lastPage)}
         </p>
         <button
@@ -61,7 +66,7 @@ export const Pagination: React.FC<Props> = ({
           aria-label="Próxima página"
           className={BUTTON_CLASS}
         >
-          Próxima
+          <span className="hidden min-[400px]:inline">Próxima</span>
           <ChevronRight className="size-4" aria-hidden="true" />
         </button>
       </div>

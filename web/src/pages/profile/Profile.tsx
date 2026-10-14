@@ -47,7 +47,7 @@ export const Profile: React.FC = () => {
 
       {feedback && <FeedbackBanner feedback={feedback} onClose={() => setFeedback(null)} />}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[3fr_2fr] xl:items-start">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:items-start">
         {ownUser.data ? (
           // A chave reinicia o formulário com o nome salvo após a recarga
           <PersonalDataCard key={ownUser.data.name} user={ownUser.data} onNameSaved={handleNameSaved} />

@@ -5,6 +5,13 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { Badge, type BadgeVariant } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../components/ui/CardState';
+import {
+  DataTable,
+  DataTableActions,
+  DataTableRow,
+  TOGGLE_ACTION_CLASS,
+  type DataTableColumn,
+} from '../../components/ui/DataTable';
 import { Pagination } from '../../components/ui/Pagination';
 import { useAsync } from '../../hooks/useAsync';
 import { useClampPage, useFilterParams, usePageParam, useSearchParamInput } from '../../hooks/useUrlPagination';
@@ -45,6 +52,14 @@ const STATUS_BADGES: Record<ProfessionalVerificationStatus, { label: string; var
   VERIFICADO: { label: 'Verificado', variant: 'success' },
   RECUSADO: { label: 'Recusado', variant: 'danger' },
 };
+
+const COLUMNS: DataTableColumn[] = [
+  { header: 'Profissional', width: 'minmax(0,2fr)' },
+  { header: 'Registro', width: 'minmax(0,1fr)' },
+  { header: 'Status', width: '6.5rem' },
+  { header: 'Cadastro', width: '6.5rem' },
+  { header: 'Ações', width: '15rem', align: 'right' },
+];
 
 type ModalState = { type: 'verify' | 'reject'; professional: Professional } | null;
 
@@ -109,12 +124,12 @@ export const Professionals: React.FC = () => {
   };
 
   const renderActions = (professional: Professional) => (
-    <div className="flex flex-wrap gap-2 md:justify-end">
+    <DataTableActions>
       {professional.verificationStatus !== 'VERIFICADO' && (
         <button
           type="button"
           onClick={() => setModal({ type: 'verify', professional })}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30`}
         >
           <ShieldCheck className="size-4" />
           Verificar
@@ -124,13 +139,13 @@ export const Professionals: React.FC = () => {
         <button
           type="button"
           onClick={() => setModal({ type: 'reject', professional })}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30"
+          className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30`}
         >
           <UserX className="size-4" />
           {professional.verificationStatus === 'VERIFICADO' ? 'Revogar' : 'Recusar'}
         </button>
       )}
-    </div>
+    </DataTableActions>
   );
 
   const renderList = () => {
@@ -157,55 +172,47 @@ export const Professionals: React.FC = () => {
     }
 
     return (
-      <div className="-mx-5 sm:-mx-6">
-        <div className="hidden md:grid grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_7rem_6.5rem_minmax(11rem,auto)] gap-4 border-b border-border px-6 pb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-          <span>Profissional</span>
-          <span>Registro</span>
-          <span>Status</span>
-          <span>Cadastro</span>
-          <span className="text-right">Ações</span>
-        </div>
-        <ul className="divide-y divide-border">
-          {visibleProfessionals.map((professional) => {
-            const badge = STATUS_BADGES[professional.verificationStatus];
-            return (
-              <li
-                key={professional.id}
-                className="grid gap-3 px-5 py-4 sm:px-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_7rem_6.5rem_minmax(11rem,auto)] md:items-center md:gap-4"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-primary-dark truncate">{professional.name}</p>
-                  <p className="text-sm text-muted truncate">{professional.email}</p>
-                  {professional.verificationStatus === 'RECUSADO' && professional.rejectionReason && (
-                    <p className="mt-1 text-xs text-danger break-words">Motivo: {professional.rejectionReason}</p>
-                  )}
-                </div>
-                <p className="text-sm text-primary-dark">
-                  <span className="text-xs text-muted md:hidden">Registro: </span>
-                  {formatRegistry(professional.registry)}
-                </p>
-                <div>
-                  <Badge variant={badge.variant}>{badge.label}</Badge>
-                </div>
-                <p className="text-sm text-primary-dark">
-                  <span className="text-xs text-muted md:hidden">Cadastro: </span>
-                  {formatDate(professional.createdAt)}
-                </p>
-                {renderActions(professional)}
-              </li>
-            );
-          })}
-        </ul>
-        <Pagination
-          page={page}
-          totalPages={professionals.data.totalPages}
-          total={professionals.data.total}
-          onPageChange={setPage}
-          itemLabel={{ singular: 'profissional', plural: 'profissionais' }}
-          ariaLabel="Paginação dos profissionais"
-          className="border-t border-border px-5 pt-4 sm:px-6"
-        />
-      </div>
+      <DataTable
+        columns={COLUMNS}
+        footer={
+          <Pagination
+            page={page}
+            totalPages={professionals.data.totalPages}
+            total={professionals.data.total}
+            onPageChange={setPage}
+            itemLabel={{ singular: 'profissional', plural: 'profissionais' }}
+            ariaLabel="Paginação dos profissionais"
+            className="border-t border-border px-5 pt-4 sm:px-6"
+          />
+        }
+      >
+        {visibleProfessionals.map((professional) => {
+          const badge = STATUS_BADGES[professional.verificationStatus];
+          return (
+            <DataTableRow key={professional.id}>
+              <div>
+                <p className="text-sm font-semibold text-primary-dark truncate">{professional.name}</p>
+                <p className="text-sm text-muted truncate">{professional.email}</p>
+                {professional.verificationStatus === 'RECUSADO' && professional.rejectionReason && (
+                  <p className="mt-1 text-xs text-danger break-words">Motivo: {professional.rejectionReason}</p>
+                )}
+              </div>
+              <p className="text-sm text-primary-dark break-words">
+                <span className="text-xs text-muted xl:hidden">Registro: </span>
+                {formatRegistry(professional.registry)}
+              </p>
+              <div>
+                <Badge variant={badge.variant}>{badge.label}</Badge>
+              </div>
+              <p className="text-sm text-primary-dark whitespace-nowrap">
+                <span className="text-xs text-muted xl:hidden">Cadastro: </span>
+                {formatDate(professional.createdAt)}
+              </p>
+              {renderActions(professional)}
+            </DataTableRow>
+          );
+        })}
+      </DataTable>
     );
   };
 
@@ -227,7 +234,7 @@ export const Professionals: React.FC = () => {
               placeholder="Buscar pelo nome"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              className="w-full h-12 rounded-xl border border-border bg-white pl-4 pr-11 text-sm text-primary-dark placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+              className="w-full h-12 rounded-xl border border-input bg-white pl-4 pr-11 text-sm text-primary-dark placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             />
             <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
           </div>
@@ -269,7 +276,7 @@ export const Professionals: React.FC = () => {
               >
                 {option.label}
                 {counts && (
-                  <span className="ml-1.5 font-normal opacity-80">({formatNumber(counts[option.status])})</span>
+                  <span className="ml-1.5 font-normal">({formatNumber(counts[option.status])})</span>
                 )}
               </button>
             );

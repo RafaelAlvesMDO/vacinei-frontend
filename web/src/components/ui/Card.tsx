@@ -8,12 +8,12 @@ interface CardProps extends React.HTMLAttributes<HTMLElement> {
 
 export const Card: React.FC<CardProps> = ({ title, description, action, className = '', children, ...props }) => (
   <section
-    className={`bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col ${className}`}
+    className={`min-w-0 bg-white rounded-2xl border border-border shadow-sm p-5 sm:p-6 flex flex-col ${className}`}
     {...props}
   >
     {(title || action) && (
-      <header className="flex items-start justify-between gap-3 mb-4">
-        <div>
+      <header className="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div className="min-w-0 break-words">
           {title && <h2 className="text-base font-semibold text-primary-dark">{title}</h2>}
           {description && <p className="text-sm text-muted mt-0.5">{description}</p>}
         </div>
