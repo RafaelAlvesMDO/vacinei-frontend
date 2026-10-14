@@ -25,6 +25,7 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 6 concluída: cadastro de profissional (RF001) no "Criar conta" do login.
   - Etapa 5d concluída: gestão de UBS (RF008 nota 8) em `/ubs`.
   - Etapa 5b concluída: catálogo de vacinas em `/vacinas`.
+  - Etapa 5c concluída: gestão de usuários em `/usuarios`.
 - **Data da Última Atualização:** 2026-10-13
 
 ---
@@ -116,12 +117,19 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - `ConfirmDoseModal`: se a vacina do botão da caderneta estiver inativa (fora do `GET /vaccines`), mostra o aviso e bloqueia o envio. A API também responderia `404`.
   - Erros: `400` por campo (inclusive `doses.N.doseName`), `409` no nome e `404` com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizada agora", e a vacina cadastrada já aparece com o esquema expandido.
 
+- [x] **Gestão de Usuários (`/usuarios`, etapa 5c):** `pages/users/UserList.tsx` (só ADMIN, link "Usuários" na sidebar), no padrão das telas de UBS e vacinas.
+  - `listAllUsers` (`services/users.ts`) busca todas as páginas do `GET /users` (`limit=100`, a primeira e depois as demais em paralelo). A API não filtra por `isActive`, então a busca por nome ou e-mail (sem acentos), o status (`?status=inativos|todos`, padrão Ativos) e o perfil (`?perfil=CIDADAO|PROFISSIONAL_SAUDE|ADMIN`) rodam no cliente. Os contadores de status respeitam o perfil.
+  - Cada usuário mostra nome, e-mail, badge de perfil, CPF mascarado (como vem da API), data de cadastro e status. LGPD: só dados cadastrais, nada da caderneta.
+  - Profissionais: categoria, registro (`formatRegistry`), badge de verificação e o link "Ver em Profissionais" (`/profissionais?status=...`). O `professionalRegistry` do `GET /users` não traz `verificationStatus`: `getVerificationStatus` (`pages/users/utils.ts`) o deriva de `isVerified` e `rejectedAt`.
+  - `UserStatusDialog` usa `PUT /users/:id { isActive }` e avisa que o usuário perde o acesso imediatamente (o backend revoga as sessões ao desativar). Sem exclusão: o `DELETE /users/:id` não é usado, porque os registros de vacinação apontam para o usuário. O próprio admin aparece com o badge "Você" e sem a ação de desativar.
+  - Erros: `400`, `403` e `409` com mensagem no diálogo; `404` fecha com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizado agora".
+
 ---
 
 ## 4. Próximos Passos Imediatos
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-Ordem definida: **5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
+Ordem definida: **5e (perfil) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
 
-1. **Etapas 5e, 5c e 5f:** perfil (RF003), usuários e cidadãos com doses atrasadas. A 5e e a 5f dependem de rotas novas no backend.
+1. **Etapas 5e e 5f:** perfil (RF003) e cidadãos com doses atrasadas. As duas dependem de rotas novas no backend.

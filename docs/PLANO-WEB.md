@@ -4,7 +4,7 @@ Roteiro das etapas do front-end web (`web/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente
 
-Ordem das próximas etapas: 5e (perfil) → 5c (usuários) → 5f (atrasados) → revisão final.
+Ordem das próximas etapas: 5e (perfil) → 5f (atrasados) → revisão final.
 
 ---
 
@@ -95,10 +95,10 @@ Ordem das próximas etapas: 5e (perfil) → 5c (usuários) → 5f (atrasados) �
 - Ver e editar os próprios dados (`GET /users/me` e `PUT /users/me`: nome, celular e data de nascimento), com as mesmas regras de nome e celular do cadastro.
 - Trocar a senha informando a senha atual, com a nova senha validada pelo RF001. **Dependência do backend:** a API ainda não tem uma rota de troca de senha autenticada.
 
-## [ ] Etapa 5c: Gestão de usuários (só ADMIN)
+## [x] Etapa 5c: Gestão de usuários (só ADMIN)
 
-- Listar usuários com `GET /users` (filtro por perfil, busca e paginação).
-- Ativar/desativar contas: `PUT /users/:id` com `{ isActive }` e `DELETE /users/:id` (exclusão lógica), com confirmação.
+- Listar usuários com `GET /users` (todas as páginas, com `limit=100`). A busca por nome ou e-mail e os filtros de perfil e status rodam no cliente, porque a API não filtra por `isActive`.
+- Ativar/desativar contas com `PUT /users/:id` e `{ isActive }`, com confirmação. O `DELETE /users/:id` não é usado: usuários não são excluídos, porque os registros de vacinação apontam para eles.
 
 ## [ ] Etapa 5f: Cidadãos com doses atrasadas
 
