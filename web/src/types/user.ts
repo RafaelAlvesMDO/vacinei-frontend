@@ -1,4 +1,5 @@
 import type { UserRole } from './auth';
+import type { PaginatedList, PaginationParams } from './pagination';
 import type { ProfessionalCategory } from './professional';
 
 // Registro profissional como vem no GET /users (linha completa do banco, sem `verificationStatus`)
@@ -24,12 +25,30 @@ export interface ManagedUser {
   professionalRegistry: UserProfessionalRegistry | null;
 }
 
-export interface UserListPage {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  users: ManagedUser[];
+// GET /users: `counts` respeita `role` e `search`, mas não `isActive`
+export interface UserListPage extends PaginatedList<ManagedUser> {
+  counts: { active: number; inactive: number };
+}
+
+export interface ListUsersParams extends PaginationParams {
+  role?: UserRole;
+  isActive?: boolean;
+  // Nome, e-mail ou CPF (com ou sem máscara)
+  search?: string;
+}
+
+// Dados do próprio usuário (GET /users/me): CPF completo, por ser o titular, e registro profissional completo
+export interface OwnUser {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string | null;
+  phone: string | null;
+  birthDate: string | null;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  professionalRegistry: UserProfessionalRegistry | null;
 }
 
 // Resposta do PUT /users/:id

@@ -23,6 +23,7 @@ import type { ProfessionalCategory } from '../../types/professional';
 import { BRAZILIAN_UFS, PROFESSIONAL_CATEGORIES } from '../../utils/councils';
 import { formatCpf, isValidCpf } from '../../utils/cpf';
 import { formatPhone, onlyDigits } from '../../utils/format';
+import { NAME_MAX_LENGTH, normalizeName, validateFullName } from '../../utils/name';
 import { PASSWORD_MIN_LENGTH, validatePassword } from '../../utils/password';
 
 interface RequestAccessModalProps {
@@ -72,7 +73,6 @@ const INITIAL_VALUES: FormValues = {
 };
 
 // Limites do POST /users (RF001)
-const NAME_MAX_LENGTH = 120;
 const EMAIL_MAX_LENGTH = 100;
 const REGISTRY_MAX_LENGTH = 20;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -114,16 +114,10 @@ function isExistingDate(value: string): boolean {
 
 function validateForm(values: FormValues): FieldErrors {
   const errors: FieldErrors = {};
-  const name = values.name.trim();
   const email = values.email.trim();
 
-  if (!name) {
-    errors.name = 'Informe seu nome completo.';
-  } else if (name.split(/\s+/).length < 2) {
-    errors.name = 'Informe nome e sobrenome.';
-  } else if (name.length > NAME_MAX_LENGTH) {
-    errors.name = `O nome deve ter no máximo ${NAME_MAX_LENGTH} caracteres.`;
-  }
+  const nameError = validateFullName(values.name);
+  if (nameError) errors.name = nameError;
 
   if (!email) {
     errors.email = 'Informe seu e-mail.';
@@ -213,7 +207,7 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
 
     try {
       await registerProfessional({
-        name: values.name.trim().replace(/\s+/g, ' '),
+        name: normalizeName(values.name),
         email: values.email.trim(),
         password: values.password,
         phone: onlyDigits(values.phone),

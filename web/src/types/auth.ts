@@ -34,6 +34,24 @@ export interface UserProfile extends User {
   dependents: Dependent[];
 }
 
+// Resposta do PATCH /auth/me
+export interface UpdatedOwnProfile {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string | null;
+  phone: string | null;
+  birthDate: string | null;
+  role: UserRole;
+  avatarUrl: string | null;
+  updatedAt: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;

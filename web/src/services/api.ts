@@ -2,6 +2,13 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiSuccessResponse, RefreshResponse } from '../types/auth';
 import { clearSession, getRefreshToken, getToken, updateTokens } from './tokenStorage';
 
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    // Desliga a renovação automática no 401 (a chamada trata o erro por conta própria)
+    skipAuthRefresh?: boolean;
+  }
+}
+
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 
 export const api = axios.create({
@@ -47,6 +54,23 @@ async function refreshAccessToken(): Promise<string> {
   return token;
 }
 
+/**
+ * Renova o access token (POST /auth/refresh, com rotação do refresh token).
+ * Se a renovação falhar, encerra a sessão local e devolve o usuário ao login
+ */
+export async function renewSession(): Promise<string> {
+  try {
+    refreshPromise ??= refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+    return await refreshPromise;
+  } catch (error) {
+    clearSession();
+    sessionExpiredHandler?.();
+    throw error;
+  }
+}
+
 // Interceptor para injetar o Access Token JWT nas requisições
 api.interceptors.request.use((config) => {
   const token = getToken();
@@ -65,24 +89,24 @@ api.interceptors.response.use(
     const originalRequest = error.config as RetriableRequestConfig | undefined;
     const isAuthRoute = AUTH_ROUTES_WITHOUT_REFRESH.some((route) => originalRequest?.url?.includes(route));
 
-    if (error.response?.status !== 401 || !originalRequest || originalRequest._retry || isAuthRoute) {
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      originalRequest._retry ||
+      originalRequest.skipAuthRefresh ||
+      isAuthRoute
+    ) {
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
 
     try {
-      refreshPromise ??= refreshAccessToken().finally(() => {
-        refreshPromise = null;
-      });
-      const token = await refreshPromise;
-
+      const token = await renewSession();
       originalRequest.headers.Authorization = `Bearer ${token}`;
       return api(originalRequest);
     } catch {
-      // Falha irreversível: encerra a sessão local e devolve o usuário ao login
-      clearSession();
-      sessionExpiredHandler?.();
+      // Falha irreversível: a sessão local já foi encerrada por renewSession
       return Promise.reject(error);
     }
   }

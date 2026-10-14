@@ -26,6 +26,8 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Etapa 5d concluída: gestão de UBS (RF008 nota 8) em `/ubs`.
   - Etapa 5b concluída: catálogo de vacinas em `/vacinas`.
   - Etapa 5c concluída: gestão de usuários em `/usuarios`.
+  - Etapa 5e concluída: perfil do usuário (RF003) em `/perfil`.
+  - Etapa 5f concluída: busca ativa de doses atrasadas (RF009, D21) dentro de `/confirmar-vacina`.
 - **Data da Última Atualização:** 2026-10-13
 
 ---
@@ -118,11 +120,30 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Erros: `400` por campo (inclusive `doses.N.doseName`), `409` no nome e `404` com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizada agora", e a vacina cadastrada já aparece com o esquema expandido.
 
 - [x] **Gestão de Usuários (`/usuarios`, etapa 5c):** `pages/users/UserList.tsx` (só ADMIN, link "Usuários" na sidebar), no padrão das telas de UBS e vacinas.
-  - `listAllUsers` (`services/users.ts`) busca todas as páginas do `GET /users` (`limit=100`, a primeira e depois as demais em paralelo). A API não filtra por `isActive`, então a busca por nome ou e-mail (sem acentos), o status (`?status=inativos|todos`, padrão Ativos) e o perfil (`?perfil=CIDADAO|PROFISSIONAL_SAUDE|ADMIN`) rodam no cliente. Os contadores de status respeitam o perfil.
+  - `listUsers` (`services/users.ts`) busca uma página do `GET /users` (10 por página, D22). Busca (nome, e-mail ou CPF), status (`?status=inativos|todos`, padrão Ativos, enviado como `isActive`) e perfil (`?perfil=...`) vão para a API. Os contadores vêm de `counts` (respeitam perfil e busca).
   - Cada usuário mostra nome, e-mail, badge de perfil, CPF mascarado (como vem da API), data de cadastro e status. LGPD: só dados cadastrais, nada da caderneta.
   - Profissionais: categoria, registro (`formatRegistry`), badge de verificação e o link "Ver em Profissionais" (`/profissionais?status=...`). O `professionalRegistry` do `GET /users` não traz `verificationStatus`: `getVerificationStatus` (`pages/users/utils.ts`) o deriva de `isVerified` e `rejectedAt`.
   - `UserStatusDialog` usa `PUT /users/:id { isActive }` e avisa que o usuário perde o acesso imediatamente (o backend revoga as sessões ao desativar). Sem exclusão: o `DELETE /users/:id` não é usado, porque os registros de vacinação apontam para o usuário. O próprio admin aparece com o badge "Você" e sem a ação de desativar.
   - Erros: `400`, `403` e `409` com mensagem no diálogo; `404` fecha com o aviso de lista desatualizada. O sucesso usa o `FeedbackBanner` e o badge "Atualizado agora".
+
+- [x] **Perfil do Usuário (`/perfil`, etapa 5e, RF003):** `pages/profile/Profile.tsx` (PROFISSIONAL_SAUDE e ADMIN, sem link na sidebar). O ícone de perfil da `Topbar` abre um menu com "Meu perfil" e "Sair" (fecha com Esc ou clique fora).
+  - Dados via `getOwnUser` (`GET /users/me`, `services/users.ts`), que traz o registro profissional completo. O `GET /auth/me` só tem `isVerified`/`status`.
+  - `PersonalDataCard`: só o nome é editável (`updateOwnName`, `PATCH /auth/me`, D19). A regra do nome do RF001 foi extraída para `utils/name.ts` (`validateFullName`, `normalizeName`, `NAME_MAX_LENGTH`), também usada no cadastro. E-mail, celular, CPF completo (titular), nascimento e perfil são só leitura; e-mail e celular têm o aviso de verificação de identidade. Profissionais veem categoria, conselho, registro/UF e o badge de verificação. Após salvar, `refreshProfile()` atualiza o nome da barra superior.
+  - `ChangePasswordCard`: senha atual, nova senha com `PasswordChecklist` e confirmação (`changePassword`, `PATCH /auth/me/password`), enviando o `refreshToken` da sessão atual. `401` marca a senha atual; `400` marca a nova senha (igual à atual ou fora da regra). No sucesso, limpa os campos e avisa que as outras sessões foram encerradas.
+  - **Interceptor:** a opção `skipAuthRefresh` (augmentation do `AxiosRequestConfig`) desliga a renovação automática no `401`. A troca de senha a usa, porque o `401` pode ser a senha errada e porque a nova tentativa do interceptor reenviaria o `refreshToken` antigo, já revogado pela rotação. Com o token expirado (`401` com outra mensagem), o serviço chama `renewSession()` (exportada de `api.ts`) e reenvia com o refresh token novo.
+  - Feedback (RNF03): `FeedbackBanner` de 8 s, spinner nos botões e erros por campo.
+
+- [x] **Busca ativa de doses atrasadas (etapa 5f, RF009, D21):** sem página própria (decisão do usuário: nada de `/busca-ativa` nem item na sidebar). Fica em `/confirmar-vacina` sem `citizenId`, abaixo do card de orientação: `pages/records/components/OverdueCard.tsx`.
+  - `getOverdue({ limit, search }, signal)` em `services/dashboard.ts` (`GET /dashboard/overdue`, `limit=100`, o máximo). Tipos `OverdueList`/`OverduePerson`/`OverdueVaccine` em `types/dashboard.ts`.
+  - Totais (pessoas e doses), filtro por nome no servidor (debounce de 400 ms, mín. 2 caracteres, `AbortController`), ordem da API (mais atrasados primeiro). Item: nome, CPF mascarado, badge "Atrasado há X dias" e vacinas atrasadas (vacina · dose, "prevista para"). O item inteiro é um link para `?citizenId=`; a página rola ao topo quando o `citizenId` muda.
+  - Sem badge "Profissional": o `/overdue` não retorna `role` (o backend não foi alterado).
+  - Dashboard: `StatCard` ganhou `to`/`linkLabel` (vira `Link`, exceto no erro). "Doses atrasadas" leva o profissional a `/confirmar-vacina`; o ADMIN não tem link (D21). `RecentDosesCard`: o nome do cidadão abre a caderneta (RF009 nota 4).
+
+- [x] **Paginação no servidor (D22):** `GET /users`, `GET /professionals` e `GET /dashboard/overdue` respondem `{ items, total, page, limit, totalPages }` (tipo `PaginatedList` em `types/pagination.ts`); users e professionals trazem `counts`. O `/professionals` usa `?status=PENDENTE|VERIFICADO|RECUSADO` (o `verified` saiu).
+  - `components/ui/Pagination` (anterior/próxima, "Página X de Y", total, `nav` com `aria-label`, página anunciada por `aria-live`).
+  - `hooks/useUrlPagination.ts`: `usePageParam` (`?pagina=`, cria histórico), `useClampPage` (página além da última volta para a última), `useFilterParams` (troca filtros e volta à página 1) e `useSearchParamInput` (`?busca=`, debounce de 400 ms, `minLength`).
+  - Usuários: 10 por página. Profissionais: 20 por página, busca por nome nova e contadores nas abas. Busca ativa (`OverdueCard`): 10 por página, busca e página na URL de `/confirmar-vacina`. `PendingProfessionalsCard`: só `PENDENTE`, 5 itens e o total na descrição.
+  - UBS e Vacinas continuam carregando tudo (catálogos pequenos).
 
 ---
 
@@ -130,6 +151,4 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`).
 
-Ordem definida: **5e (perfil) → 5f (atrasados) → revisão de acessibilidade (WCAG 2.1 AA) e LGPD**.
-
-1. **Etapas 5e e 5f:** perfil (RF003) e cidadãos com doses atrasadas. As duas dependem de rotas novas no backend.
+1. **Etapa final:** revisão de acessibilidade (WCAG 2.1 AA) e LGPD.

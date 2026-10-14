@@ -1,4 +1,5 @@
 import type { ProfessionalVerificationStatus } from './auth';
+import type { PaginatedList, PaginationParams } from './pagination';
 
 // Categorias aceitas pelo backend (D13); o conselho é derivado delas (D12)
 export type ProfessionalCategory =
@@ -54,4 +55,16 @@ export interface Professional {
   rejectedAt: string | null;
   rejectedBy: UserReference | null;
   rejectionReason: string | null;
+}
+
+// GET /professionals: `counts` respeita `search`, mas não `status`
+export interface ProfessionalListPage extends PaginatedList<Professional> {
+  counts: Record<ProfessionalVerificationStatus, number>;
+}
+
+export interface ListProfessionalsParams extends PaginationParams {
+  // Sem ele, todos
+  status?: ProfessionalVerificationStatus;
+  // Nome, sem diferenciar maiúsculas
+  search?: string;
 }

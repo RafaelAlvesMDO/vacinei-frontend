@@ -76,6 +76,9 @@ export const Dashboard: React.FC = () => {
           isLoading={summary.isLoading}
           error={summaryError}
           onRetry={summary.reload}
+          // Só o profissional acessa a lista nominal (busca ativa); o ADMIN vê apenas o total (LGPD, D21)
+          to={isProfessional ? '/confirmar-vacina' : undefined}
+          linkLabel="Ver busca ativa"
         />
         <StatCard
           title="Registros neste mês"

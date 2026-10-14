@@ -13,6 +13,7 @@ const Professionals = lazy(() => import('./pages/professionals/Professionals'));
 const UbsList = lazy(() => import('./pages/ubs/UbsList'));
 const VaccineList = lazy(() => import('./pages/vaccines/VaccineList'));
 const UserList = lazy(() => import('./pages/users/UserList'));
+const Profile = lazy(() => import('./pages/profile/Profile'));
 
 export function App() {
   return (
@@ -27,6 +28,9 @@ export function App() {
             <Route element={<ProtectedRoute allowedRoles={['PROFISSIONAL_SAUDE', 'ADMIN']} />}>
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+
+                {/* Perfil do usuário (RF003) */}
+                <Route path="/perfil" element={<Profile />} />
 
                 {/* Confirmação de vacina (RF010) */}
                 <Route element={<ProtectedRoute allowedRoles={['PROFISSIONAL_SAUDE']} />}>

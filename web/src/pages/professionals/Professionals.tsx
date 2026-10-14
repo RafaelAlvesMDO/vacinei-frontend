@@ -1,21 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Loader2, ShieldCheck, UserCheck, UserX } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Loader2, Search, ShieldCheck, UserCheck, UserX } from 'lucide-react';
 import { FeedbackBanner, type Feedback } from '../../components/feedback/FeedbackBanner';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Badge, type BadgeVariant } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../components/ui/CardState';
+import { Pagination } from '../../components/ui/Pagination';
 import { useAsync } from '../../hooks/useAsync';
+import { useClampPage, useFilterParams, usePageParam, useSearchParamInput } from '../../hooks/useUrlPagination';
 import { listProfessionals } from '../../services/professionals';
 import type { ProfessionalVerificationStatus } from '../../types/auth';
 import type { Professional } from '../../types/professional';
 import { formatRegistry } from '../../utils/councils';
-import { formatDate } from '../../utils/format';
+import { formatDate, formatNumber } from '../../utils/format';
 import { RejectProfessionalModal } from './components/RejectProfessionalModal';
 import { VerifyProfessionalDialog } from './components/VerifyProfessionalDialog';
 
 const FEEDBACK_DURATION_MS = 8000;
+const SEARCH_MAX_LENGTH = 100;
+const PAGE_SIZE = 20;
 
 type StatusFilter = 'pendentes' | 'verificados' | 'recusados';
 
@@ -43,21 +46,22 @@ const STATUS_BADGES: Record<ProfessionalVerificationStatus, { label: string; var
   RECUSADO: { label: 'Recusado', variant: 'danger' },
 };
 
-// A API filtra só por `verified`: false traz pendentes e recusados, separados no cliente
-const fetchUnverified = () => listProfessionals({ verified: false });
-const fetchVerified = () => listProfessionals({ verified: true });
-
 type ModalState = { type: 'verify' | 'reject'; professional: Professional } | null;
 
 // Rota /profissionais (só ADMIN): verificação manual dos registros profissionais (RS001)
 export const Professionals: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { searchParams, setFilters } = useFilterParams();
   const filter = FILTERS.find((option) => option.value === searchParams.get('status')) ?? FILTERS[0];
+  const { input: searchInput, setInput: setSearchInput, search, isTyping } = useSearchParamInput();
+  const { page, setPage } = usePageParam();
 
-  const professionals = useAsync(
-    filter.status === 'VERIFICADO' ? fetchVerified : fetchUnverified,
-    'Não foi possível carregar os profissionais.'
+  // Busca, status e paginação rodam na API (D22)
+  const fetchProfessionals = useCallback(
+    () => listProfessionals({ status: filter.status, search, page, limit: PAGE_SIZE }),
+    [filter.status, search, page]
   );
+  const professionals = useAsync(fetchProfessionals, 'Não foi possível carregar os profissionais.');
+  useClampPage(page, professionals.data?.totalPages, professionals.isLoading, setPage);
 
   const [modal, setModal] = useState<ModalState>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -68,13 +72,12 @@ export const Professionals: React.FC = () => {
     return () => window.clearTimeout(timeout);
   }, [feedback]);
 
-  const visibleProfessionals = useMemo(
-    () => (professionals.data ?? []).filter((professional) => professional.verificationStatus === filter.status),
-    [professionals.data, filter.status]
-  );
+  const visibleProfessionals = professionals.data?.items ?? [];
+  // Contadores da API: respeitam a busca, mas não o status
+  const counts = professionals.data?.counts;
 
   const changeFilter = (value: StatusFilter) => {
-    setSearchParams(value === 'pendentes' ? {} : { status: value }, { replace: true });
+    setFilters({ status: value === 'pendentes' ? null : value });
   };
 
   const closeModal = useCallback(() => setModal(null), []);
@@ -131,8 +134,8 @@ export const Professionals: React.FC = () => {
   );
 
   const renderList = () => {
-    // Ao trocar de filtro, os dados anteriores continuam até a nova resposta chegar
-    if (professionals.isLoading && visibleProfessionals.length === 0) {
+    // Ao trocar de filtro ou de página, os dados anteriores continuam até a nova resposta chegar
+    if (professionals.isLoading && !professionals.data) {
       return <CardLoading label="Carregando profissionais..." />;
     }
 
@@ -141,7 +144,16 @@ export const Professionals: React.FC = () => {
     }
 
     if (visibleProfessionals.length === 0) {
-      return <CardEmpty icon={UserCheck} message={filter.emptyMessage} />;
+      return (
+        <CardEmpty
+          icon={UserCheck}
+          message={
+            search
+              ? `Nenhum profissional encontrado para “${search}” em ${filter.label}.`
+              : filter.emptyMessage
+          }
+        />
+      );
     }
 
     return (
@@ -184,25 +196,55 @@ export const Professionals: React.FC = () => {
             );
           })}
         </ul>
+        <Pagination
+          page={page}
+          totalPages={professionals.data.totalPages}
+          total={professionals.data.total}
+          onPageChange={setPage}
+          itemLabel={{ singular: 'profissional', plural: 'profissionais' }}
+          ariaLabel="Paginação dos profissionais"
+          className="border-t border-border px-5 pt-4 sm:px-6"
+        />
       </div>
     );
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Profissionais" subtitle="Verificação manual dos registros profissionais" />
+      <PageHeader
+        title="Profissionais"
+        subtitle="Verificação manual dos registros profissionais"
+        actions={
+          <div className="relative">
+            <label htmlFor="professional-search" className="sr-only">
+              Buscar profissional pelo nome
+            </label>
+            <input
+              id="professional-search"
+              type="search"
+              autoComplete="off"
+              maxLength={SEARCH_MAX_LENGTH}
+              placeholder="Buscar pelo nome"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              className="w-full h-12 rounded-xl border border-border bg-white pl-4 pr-11 text-sm text-primary-dark placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
+            />
+            <Search className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted" />
+          </div>
+        }
+      />
 
       {feedback && <FeedbackBanner feedback={feedback} onClose={() => setFeedback(null)} />}
 
       <Card
         title="Registros profissionais"
         description={
-          professionals.data && !professionals.isLoading
-            ? `${visibleProfessionals.length} ${visibleProfessionals.length === 1 ? 'profissional' : 'profissionais'}`
+          professionals.data
+            ? `${formatNumber(professionals.data.total)} ${professionals.data.total === 1 ? 'profissional' : 'profissionais'}`
             : undefined
         }
         action={
-          professionals.isLoading && visibleProfessionals.length > 0 ? (
+          (professionals.isLoading || isTyping) && professionals.data ? (
             <span role="status" className="flex items-center gap-1.5 text-xs text-muted">
               <Loader2 className="size-4 animate-spin text-primary" />
               Atualizando...
@@ -226,6 +268,9 @@ export const Professionals: React.FC = () => {
                 }`}
               >
                 {option.label}
+                {counts && (
+                  <span className="ml-1.5 font-normal opacity-80">({formatNumber(counts[option.status])})</span>
+                )}
               </button>
             );
           })}

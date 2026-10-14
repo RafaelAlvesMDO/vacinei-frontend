@@ -1,18 +1,18 @@
 import { api } from './api';
 import type { ApiSuccessResponse } from '../types/auth';
-import type { Professional } from '../types/professional';
-
-interface ListProfessionalsFilters {
-  // false: pendentes e recusados; true: verificados; omitido: todos
-  verified?: boolean;
-}
+import type { ListProfessionalsParams, Professional, ProfessionalListPage } from '../types/professional';
 
 /**
- * Lista os profissionais de saúde (apenas ADMIN)
+ * Página de profissionais de saúde (apenas ADMIN), por data de cadastro. Busca e filtros rodam na API (D22)
  */
-export async function listProfessionals({ verified }: ListProfessionalsFilters = {}): Promise<Professional[]> {
-  const response = await api.get<ApiSuccessResponse<Professional[]>>('/professionals', {
-    params: verified === undefined ? undefined : { verified },
+export async function listProfessionals({
+  status,
+  search,
+  page,
+  limit,
+}: ListProfessionalsParams = {}): Promise<ProfessionalListPage> {
+  const response = await api.get<ApiSuccessResponse<ProfessionalListPage>>('/professionals', {
+    params: { status, search: search || undefined, page, limit },
   });
   return response.data.data;
 }

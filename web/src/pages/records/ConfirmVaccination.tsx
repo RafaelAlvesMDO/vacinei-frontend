@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { CitizenSearch } from '../../components/citizens/CitizenSearch';
@@ -8,6 +8,7 @@ import { Card } from '../../components/ui/Card';
 import { CardEmpty } from '../../components/ui/CardState';
 import { useAuth } from '../../hooks/useAuth';
 import { CitizenVaccinationCard } from './components/CitizenVaccinationCard';
+import { OverdueCard } from './components/OverdueCard';
 
 const PAGE_TITLE = 'Confirmar vacina';
 const PAGE_SUBTITLE = 'Confirmação presencial de doses aplicadas';
@@ -19,6 +20,11 @@ export const ConfirmVaccination: React.FC = () => {
   const citizenId = searchParams.get('citizenId')?.trim() || null;
 
   const registryStatus = user?.professionalRegistry?.status;
+
+  // Ao abrir uma caderneta pela lista da busca ativa, volta ao topo da página
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [citizenId]);
 
   if (registryStatus !== 'VERIFICADO') {
     return (
@@ -37,12 +43,15 @@ export const ConfirmVaccination: React.FC = () => {
         // key: troca de cidadão reinicia a caderneta e os avisos
         <CitizenVaccinationCard key={citizenId} citizenId={citizenId} />
       ) : (
-        <Card>
-          <CardEmpty
-            icon={Search}
-            message="Busque o cidadão pelo nome ou CPF para abrir a caderneta e confirmar as doses aplicadas."
-          />
-        </Card>
+        <>
+          <Card>
+            <CardEmpty
+              icon={Search}
+              message="Busque o cidadão pelo nome ou CPF para abrir a caderneta e confirmar as doses aplicadas."
+            />
+          </Card>
+          <OverdueCard />
+        </>
       )}
     </div>
   );
