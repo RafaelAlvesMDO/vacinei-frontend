@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Syringe } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
@@ -40,7 +41,14 @@ export const RecentDosesCard: React.FC = () => {
           {data.map((dose) => (
             <li key={dose.id} className="py-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-primary-dark truncate">{dose.citizen.name}</p>
+                {/* RF009 nota 4: o nome abre a caderneta do cidadão */}
+                <Link
+                  to={`/confirmar-vacina?citizenId=${encodeURIComponent(dose.citizen.id)}`}
+                  title={`Abrir a caderneta de ${dose.citizen.name}`}
+                  className="block truncate rounded text-sm font-semibold text-primary-dark hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {dose.citizen.name}
+                </Link>
                 <p className="text-sm text-muted">
                   {dose.vaccine.name} · {dose.dose.doseName}
                 </p>

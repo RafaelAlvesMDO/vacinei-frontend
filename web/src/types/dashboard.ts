@@ -24,3 +24,33 @@ export interface RecentDose {
   // Mantém string para exibir valores ainda não mapeados
   status: VaccineStatus | (string & {});
 }
+
+// GET /dashboard/overdue (busca ativa, D21): vacina com a próxima dose atrasada
+export interface OverdueVaccine {
+  vaccineId: string;
+  vaccineName: string;
+  nextDose: { id: string; doseName: string };
+  nextDoseDate: string;
+  daysOverdue: number;
+}
+
+// Pessoa com ao menos uma vacina ATRASADA. O CPF já vem mascarado e não há `role`
+export interface OverduePerson {
+  id: string;
+  name: string;
+  cpf: string | null;
+  maxDaysOverdue: number;
+  overdueVaccines: OverdueVaccine[];
+}
+
+// Os totais consideram todos os resultados do filtro, não só os `items` retornados
+export interface OverdueList {
+  totalPessoas: number;
+  totalDosesAtrasadas: number;
+  items: OverduePerson[];
+}
+
+export interface OverdueParams {
+  limit?: number;
+  search?: string;
+}
