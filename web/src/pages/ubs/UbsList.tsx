@@ -6,6 +6,13 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../components/ui/CardState';
+import {
+  DataTable,
+  DataTableActions,
+  DataTableRow,
+  TOGGLE_ACTION_CLASS,
+  type DataTableColumn,
+} from '../../components/ui/DataTable';
 import { useAsync } from '../../hooks/useAsync';
 import { useDebounce } from '../../hooks/useDebounce';
 import { listAllUbs } from '../../services/ubs';
@@ -34,8 +41,14 @@ const FILTERS: FilterOption[] = [
   { value: 'todas', label: 'Todas', matches: () => true, emptyMessage: 'Nenhuma UBS cadastrada.' },
 ];
 
-const GRID_COLUMNS =
-  'lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(11.5rem,auto)_9rem_5.5rem_minmax(12rem,auto)]';
+const COLUMNS: DataTableColumn[] = [
+  { header: 'UBS', width: 'minmax(0,2fr)' },
+  { header: 'Bairro', width: 'minmax(0,1fr)' },
+  { header: 'Horário', width: '12rem' },
+  { header: 'Telefone', width: '8.5rem' },
+  { header: 'Status', width: '5.5rem' },
+  { header: 'Ações', width: '14rem', align: 'right' },
+];
 
 type ModalState = { type: 'form'; ubs?: Ubs } | { type: 'status'; ubs: Ubs } | null;
 
@@ -123,7 +136,7 @@ export const UbsList: React.FC = () => {
   };
 
   const renderActions = (ubs: Ubs) => (
-    <div className="flex flex-wrap gap-2 lg:justify-end">
+    <DataTableActions>
       <button
         type="button"
         onClick={() => setModal({ type: 'form', ubs })}
@@ -138,7 +151,7 @@ export const UbsList: React.FC = () => {
           type="button"
           onClick={() => setModal({ type: 'status', ubs })}
           aria-label={`Desativar ${ubs.name}`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30"
+          className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30`}
         >
           <PowerOff className="size-4" />
           Desativar
@@ -148,13 +161,13 @@ export const UbsList: React.FC = () => {
           type="button"
           onClick={() => setModal({ type: 'status', ubs })}
           aria-label={`Reativar ${ubs.name}`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30`}
         >
           <Power className="size-4" />
           Reativar
         </button>
       )}
-    </div>
+    </DataTableActions>
   );
 
   const renderList = () => {
@@ -177,52 +190,35 @@ export const UbsList: React.FC = () => {
     }
 
     return (
-      <div className="-mx-5 sm:-mx-6">
-        <div
-          className={`hidden lg:grid ${GRID_COLUMNS} gap-4 border-b border-border px-6 pb-3 text-xs font-semibold uppercase tracking-wide text-muted`}
-        >
-          <span>UBS</span>
-          <span>Bairro</span>
-          <span>Horário</span>
-          <span>Telefone</span>
-          <span>Status</span>
-          <span className="text-right">Ações</span>
-        </div>
-        <ul className="divide-y divide-border">
-          {visibleUbs.map((ubs) => (
-            <li
-              key={ubs.id}
-              className={`grid gap-2 px-5 py-4 sm:px-6 ${GRID_COLUMNS} lg:items-center lg:gap-4 transition-colors ${
-                ubs.id === highlightedId ? 'bg-success-soft/60' : ''
-              }`}
-            >
-              <div className="min-w-0">
-                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-dark">
-                  <span className="break-words">{ubs.name}</span>
-                  {ubs.id === highlightedId && <Badge variant="accent">Atualizada agora</Badge>}
-                </p>
-                <p className="text-sm text-muted break-words">{formatUbsAddress(ubs)}</p>
-              </div>
-              <p className="text-sm text-primary-dark">
-                <span className="text-xs text-muted lg:hidden">Bairro: </span>
-                {ubs.neighborhood || '—'}
+      <DataTable columns={COLUMNS}>
+        {visibleUbs.map((ubs) => (
+          <DataTableRow key={ubs.id} highlighted={ubs.id === highlightedId}>
+            <div>
+              <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-dark">
+                <span className="break-words">{ubs.name}</span>
+                {ubs.id === highlightedId && <Badge variant="accent">Atualizada agora</Badge>}
               </p>
-              <div className="text-sm text-primary-dark">
-                <span className="text-xs text-muted lg:hidden">Horário:</span>
-                <OpeningHoursLines text={ubs.openingHours} />
-              </div>
-              <p className="text-sm text-primary-dark whitespace-nowrap">
-                <span className="text-xs text-muted lg:hidden">Telefone: </span>
-                {ubs.phone ? formatPhone(ubs.phone) : '—'}
-              </p>
-              <div>
-                <Badge variant={ubs.isActive ? 'success' : 'neutral'}>{ubs.isActive ? 'Ativa' : 'Inativa'}</Badge>
-              </div>
-              <div className="pt-1 lg:pt-0">{renderActions(ubs)}</div>
-            </li>
-          ))}
-        </ul>
-      </div>
+              <p className="text-sm text-muted break-words">{formatUbsAddress(ubs)}</p>
+            </div>
+            <p className="text-sm text-primary-dark break-words">
+              <span className="text-xs text-muted xl:hidden">Bairro: </span>
+              {ubs.neighborhood || '—'}
+            </p>
+            <div className="text-sm text-primary-dark">
+              <span className="text-xs text-muted xl:hidden">Horário:</span>
+              <OpeningHoursLines text={ubs.openingHours} />
+            </div>
+            <p className="text-sm text-primary-dark whitespace-nowrap">
+              <span className="text-xs text-muted xl:hidden">Telefone: </span>
+              {ubs.phone ? formatPhone(ubs.phone) : '—'}
+            </p>
+            <div>
+              <Badge variant={ubs.isActive ? 'success' : 'neutral'}>{ubs.isActive ? 'Ativa' : 'Inativa'}</Badge>
+            </div>
+            {renderActions(ubs)}
+          </DataTableRow>
+        ))}
+      </DataTable>
     );
   };
 

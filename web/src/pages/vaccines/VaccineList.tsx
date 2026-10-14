@@ -6,6 +6,13 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../components/ui/CardState';
+import {
+  DataTable,
+  DataTableActions,
+  DataTableRow,
+  TOGGLE_ACTION_CLASS,
+  type DataTableColumn,
+} from '../../components/ui/DataTable';
 import { useAsync } from '../../hooks/useAsync';
 import { useDebounce } from '../../hooks/useDebounce';
 import { listAllVaccines } from '../../services/vaccines';
@@ -39,8 +46,14 @@ const FILTERS: FilterOption[] = [
   { value: 'todas', label: 'Todas', matches: () => true, emptyMessage: 'Nenhuma vacina cadastrada.' },
 ];
 
-const GRID_COLUMNS =
-  'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,2fr)_7.5rem_8.5rem_5.5rem_minmax(12rem,auto)]';
+const COLUMNS: DataTableColumn[] = [
+  { header: 'Vacina', width: 'minmax(0,1.6fr)' },
+  { header: 'Doença prevenida', width: 'minmax(0,1.4fr)' },
+  { header: 'Público', width: '7.5rem' },
+  { header: 'Doses', width: '6.5rem' },
+  { header: 'Status', width: '5.5rem' },
+  { header: 'Ações', width: '14rem', align: 'right' },
+];
 
 type ModalState = { type: 'form'; vaccine?: Vaccine } | { type: 'status'; vaccine: Vaccine } | null;
 
@@ -162,7 +175,7 @@ export const VaccineList: React.FC = () => {
   };
 
   const renderActions = (vaccine: Vaccine) => (
-    <div className="flex flex-wrap gap-2 lg:justify-end">
+    <DataTableActions>
       <button
         type="button"
         onClick={() => setModal({ type: 'form', vaccine })}
@@ -177,7 +190,7 @@ export const VaccineList: React.FC = () => {
           type="button"
           onClick={() => setModal({ type: 'status', vaccine })}
           aria-label={`Desativar ${vaccine.name}`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30"
+          className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30`}
         >
           <PowerOff className="size-4" />
           Desativar
@@ -187,13 +200,13 @@ export const VaccineList: React.FC = () => {
           type="button"
           onClick={() => setModal({ type: 'status', vaccine })}
           aria-label={`Reativar ${vaccine.name}`}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30`}
         >
           <Power className="size-4" />
           Reativar
         </button>
       )}
-    </div>
+    </DataTableActions>
   );
 
   const renderList = () => {
@@ -223,74 +236,61 @@ export const VaccineList: React.FC = () => {
     }
 
     return (
-      <div className="-mx-5 sm:-mx-6">
-        <div
-          className={`hidden lg:grid ${GRID_COLUMNS} gap-4 border-b border-border px-6 pb-3 text-xs font-semibold uppercase tracking-wide text-muted`}
-        >
-          <span>Vacina</span>
-          <span>Doença prevenida</span>
-          <span>Público</span>
-          <span>Doses</span>
-          <span>Status</span>
-          <span className="text-right">Ações</span>
-        </div>
-        <ul className="divide-y divide-border">
-          {visibleVaccines.map((vaccine) => {
-            const isExpanded = expandedIds.has(vaccine.id);
-            const scheduleId = `vaccine-doses-${vaccine.id}`;
-            return (
-              <li
-                key={vaccine.id}
-                className={`px-5 py-4 sm:px-6 transition-colors ${vaccine.id === highlightedId ? 'bg-success-soft/60' : ''}`}
-              >
-                <div className={`grid gap-2 ${GRID_COLUMNS} lg:items-center lg:gap-4`}>
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-dark">
-                      <span className="break-words">{vaccine.name}</span>
-                      {vaccine.id === highlightedId && <Badge variant="accent">Atualizada agora</Badge>}
-                    </p>
-                    {vaccine.description && (
-                      <p className="text-xs text-muted break-words line-clamp-2">{vaccine.description}</p>
-                    )}
-                  </div>
-                  <p className="text-sm text-primary-dark break-words">
-                    <span className="text-xs text-muted lg:hidden">Previne: </span>
-                    {vaccine.targetDisease}
-                  </p>
-                  <p className="text-sm text-primary-dark">
-                    <span className="text-xs text-muted lg:hidden">Público: </span>
-                    {TARGET_AUDIENCE_LABELS[vaccine.targetAudience]}
-                  </p>
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleExpanded(vaccine.id)}
-                      aria-expanded={isExpanded}
-                      aria-controls={scheduleId}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-xl px-2 -mx-2 text-sm font-semibold text-primary hover:bg-surface cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    >
-                      {formatDosesCount(vaccine.doses.length)}
-                      <ChevronDown className={`size-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                      <span className="sr-only">{isExpanded ? 'Ocultar esquema' : 'Ver esquema'}</span>
-                    </button>
-                  </div>
-                  <div>
-                    <Badge variant={vaccine.isActive ? 'success' : 'neutral'}>
-                      {vaccine.isActive ? 'Ativa' : 'Inativa'}
-                    </Badge>
-                  </div>
-                  <div className="pt-1 lg:pt-0">{renderActions(vaccine)}</div>
-                </div>
-                {isExpanded && (
+      <DataTable columns={COLUMNS}>
+        {visibleVaccines.map((vaccine) => {
+          const isExpanded = expandedIds.has(vaccine.id);
+          const scheduleId = `vaccine-doses-${vaccine.id}`;
+          return (
+            <DataTableRow
+              key={vaccine.id}
+              highlighted={vaccine.id === highlightedId}
+              details={
+                isExpanded && (
                   <div className="mt-4">
                     <DoseSchedule id={scheduleId} doses={vaccine.doses} />
                   </div>
+                )
+              }
+            >
+              <div>
+                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-dark">
+                  <span className="break-words">{vaccine.name}</span>
+                  {vaccine.id === highlightedId && <Badge variant="accent">Atualizada agora</Badge>}
+                </p>
+                {vaccine.description && (
+                  <p className="text-xs text-muted break-words line-clamp-2">{vaccine.description}</p>
                 )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+              </div>
+              <p className="text-sm text-primary-dark break-words">
+                <span className="text-xs text-muted xl:hidden">Previne: </span>
+                {vaccine.targetDisease}
+              </p>
+              <p className="text-sm text-primary-dark">
+                <span className="text-xs text-muted xl:hidden">Público: </span>
+                {TARGET_AUDIENCE_LABELS[vaccine.targetAudience]}
+              </p>
+              <div>
+                {/* -mx-2 compensa o px-2: o texto começa na mesma linha do título da coluna */}
+                <button
+                  type="button"
+                  onClick={() => toggleExpanded(vaccine.id)}
+                  aria-expanded={isExpanded}
+                  aria-controls={scheduleId}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl px-2 -mx-2 text-sm font-semibold text-primary whitespace-nowrap hover:bg-surface cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {formatDosesCount(vaccine.doses.length)}
+                  <ChevronDown className={`size-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  <span className="sr-only">{isExpanded ? 'Ocultar esquema' : 'Ver esquema'}</span>
+                </button>
+              </div>
+              <div>
+                <Badge variant={vaccine.isActive ? 'success' : 'neutral'}>{vaccine.isActive ? 'Ativa' : 'Inativa'}</Badge>
+              </div>
+              {renderActions(vaccine)}
+            </DataTableRow>
+          );
+        })}
+      </DataTable>
     );
   };
 

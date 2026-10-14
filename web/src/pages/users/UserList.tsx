@@ -6,6 +6,13 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../components/ui/CardState';
+import {
+  DataTable,
+  DataTableActions,
+  DataTableRow,
+  TOGGLE_ACTION_CLASS,
+  type DataTableColumn,
+} from '../../components/ui/DataTable';
 import { Pagination } from '../../components/ui/Pagination';
 import { useAsync } from '../../hooks/useAsync';
 import { useAuth } from '../../hooks/useAuth';
@@ -45,8 +52,14 @@ const FILTERS: FilterOption[] = [
   { value: 'todos', label: 'Todos', emptyMessage: 'Nenhum usuário cadastrado' },
 ];
 
-const GRID_COLUMNS =
-  'lg:grid-cols-[minmax(0,1.8fr)_8.5rem_9rem_6.5rem_5.5rem_minmax(8.5rem,auto)]';
+const COLUMNS: DataTableColumn[] = [
+  { header: 'Usuário', width: 'minmax(0,1fr)' },
+  { header: 'Perfil', width: '8rem' },
+  { header: 'CPF', width: '8.5rem' },
+  { header: 'Cadastro', width: '6.5rem' },
+  { header: 'Status', width: '5.5rem' },
+  { header: 'Ações', width: '7.75rem', align: 'right' },
+];
 
 // Rota /usuarios (só ADMIN): gestão de contas. LGPD: apenas dados cadastrais, nunca a caderneta.
 // Usuários não são excluídos, só desativados, porque os registros de vacinação apontam para eles
@@ -138,7 +151,7 @@ export const UserList: React.FC = () => {
   const renderActions = (user: ManagedUser) => {
     // O admin não pode desativar a própria conta
     if (user.id === currentUser?.id) {
-      return <p className="text-xs text-muted lg:text-right">Sua conta</p>;
+      return <p className="text-xs text-muted">Sua conta</p>;
     }
 
     return user.isActive ? (
@@ -146,7 +159,7 @@ export const UserList: React.FC = () => {
         type="button"
         onClick={() => setSelectedUser(user)}
         aria-label={`Desativar a conta de ${user.name}`}
-        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30"
+        className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl border border-danger/30 px-3 text-sm font-semibold text-danger hover:bg-danger-soft active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-danger/30`}
       >
         <PowerOff className="size-4" />
         Desativar
@@ -156,7 +169,7 @@ export const UserList: React.FC = () => {
         type="button"
         onClick={() => setSelectedUser(user)}
         aria-label={`Reativar a conta de ${user.name}`}
-        className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className={`inline-flex h-9 ${TOGGLE_ACTION_CLASS} items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark active:scale-[0.98] transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30`}
       >
         <Power className="size-4" />
         Reativar
@@ -187,62 +200,49 @@ export const UserList: React.FC = () => {
     }
 
     return (
-      <div className="-mx-5 sm:-mx-6">
-        <div
-          className={`hidden lg:grid ${GRID_COLUMNS} gap-4 border-b border-border px-6 pb-3 text-xs font-semibold uppercase tracking-wide text-muted`}
-        >
-          <span>Usuário</span>
-          <span>Perfil</span>
-          <span>CPF</span>
-          <span>Cadastro</span>
-          <span>Status</span>
-          <span className="text-right">Ações</span>
-        </div>
-        <ul className="divide-y divide-border">
-          {users.map((user) => (
-            <li
-              key={user.id}
-              className={`px-5 py-4 sm:px-6 transition-colors ${user.id === highlightedId ? 'bg-success-soft/60' : ''}`}
-            >
-              <div className={`grid gap-2 ${GRID_COLUMNS} lg:items-center lg:gap-4`}>
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-dark">
-                    <span className="break-words">{user.name}</span>
-                    {user.id === currentUser?.id && <Badge variant="neutral">Você</Badge>}
-                    {user.id === highlightedId && <Badge variant="accent">Atualizado agora</Badge>}
-                  </p>
-                  <p className="text-xs text-muted break-all">{user.email}</p>
-                  {renderProfessionalInfo(user)}
-                </div>
-                <div>
-                  <Badge variant={ROLE_BADGE_VARIANTS[user.role]}>{getRoleLabel(user.role)}</Badge>
-                </div>
-                <p className="text-sm text-primary-dark tabular-nums">
-                  <span className="text-xs text-muted lg:hidden">CPF: </span>
-                  {user.cpf}
-                </p>
-                <p className="text-sm text-primary-dark">
-                  <span className="text-xs text-muted lg:hidden">Cadastro: </span>
-                  {formatDate(user.createdAt)}
-                </p>
-                <div>
-                  <Badge variant={user.isActive ? 'success' : 'neutral'}>{user.isActive ? 'Ativo' : 'Inativo'}</Badge>
-                </div>
-                <div className="flex pt-1 lg:justify-end lg:pt-0">{renderActions(user)}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <Pagination
-          page={page}
-          totalPages={userList.data.totalPages}
-          total={userList.data.total}
-          onPageChange={setPage}
-          itemLabel={{ singular: 'usuário', plural: 'usuários' }}
-          ariaLabel="Paginação dos usuários"
-          className="border-t border-border px-5 pt-4 sm:px-6"
-        />
-      </div>
+      <DataTable
+        columns={COLUMNS}
+        footer={
+          <Pagination
+            page={page}
+            totalPages={userList.data.totalPages}
+            total={userList.data.total}
+            onPageChange={setPage}
+            itemLabel={{ singular: 'usuário', plural: 'usuários' }}
+            ariaLabel="Paginação dos usuários"
+            className="border-t border-border px-5 pt-4 sm:px-6"
+          />
+        }
+      >
+        {users.map((user) => (
+          <DataTableRow key={user.id} highlighted={user.id === highlightedId}>
+            <div>
+              <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-dark">
+                <span className="break-words">{user.name}</span>
+                {user.id === currentUser?.id && <Badge variant="neutral">Você</Badge>}
+                {user.id === highlightedId && <Badge variant="accent">Atualizado agora</Badge>}
+              </p>
+              <p className="text-xs text-muted break-all">{user.email}</p>
+              {renderProfessionalInfo(user)}
+            </div>
+            <div>
+              <Badge variant={ROLE_BADGE_VARIANTS[user.role]}>{getRoleLabel(user.role)}</Badge>
+            </div>
+            <p className="text-sm text-primary-dark tabular-nums whitespace-nowrap">
+              <span className="text-xs text-muted xl:hidden">CPF: </span>
+              {user.cpf}
+            </p>
+            <p className="text-sm text-primary-dark whitespace-nowrap">
+              <span className="text-xs text-muted xl:hidden">Cadastro: </span>
+              {formatDate(user.createdAt)}
+            </p>
+            <div>
+              <Badge variant={user.isActive ? 'success' : 'neutral'}>{user.isActive ? 'Ativo' : 'Inativo'}</Badge>
+            </div>
+            <DataTableActions>{renderActions(user)}</DataTableActions>
+          </DataTableRow>
+        ))}
+      </DataTable>
     );
   };
 

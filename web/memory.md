@@ -146,6 +146,9 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - Usuários: 10 por página. Profissionais: 20 por página, busca por nome nova e contadores nas abas. Busca ativa (`OverdueCard`): 10 por página, busca e página na URL de `/confirmar-vacina`. `PendingProfessionalsCard`: só `PENDENTE`, 5 itens e o total na descrição.
   - UBS e Vacinas continuam carregando tudo (catálogos pequenos).
 
+- [x] **Tabelas de listagem padronizadas (`components/ui/DataTable`):** Profissionais, UBS, Vacinas e Usuários usam `DataTable` (cabeçalho + `ul`), `DataTableRow` (linha, `highlighted`, `details` abaixo das colunas) e `DataTableActions`. As colunas são definidas uma vez (`DataTableColumn[]`: `header`, `width`, `align`) e o cabeçalho e as linhas leem o mesmo `grid-template-columns` pela variável `--data-table-columns`, sem colunas `auto`: o título fica alinhado ao conteúdo e a largura não varia por linha. Texto em `minmax(0,Nfr)` e colunas curtas (status, doses, datas, CPF, telefone) em `rem`; tudo à esquerda, só Ações à direita com largura fixa. `TOGGLE_ACTION_CLASS` dá a mesma largura mínima aos botões de alternar estado. A tabela aparece a partir do `xl` (no `lg`, com a sidebar, as colunas não cabiam); abaixo dele, os cards empilhados. A busca ativa continua em cards.
+
+
 ---
 
 - [x] **Etapa final: acessibilidade (WCAG 2.1 AA, RNF04) e LGPD (RNF10, RNF11):** detalhes em `docs/PLANO-WEB.md`.
