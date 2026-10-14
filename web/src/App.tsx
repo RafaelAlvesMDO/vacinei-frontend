@@ -12,6 +12,7 @@ const ConfirmVaccination = lazy(() => import('./pages/records/ConfirmVaccination
 const Professionals = lazy(() => import('./pages/professionals/Professionals'));
 const UbsList = lazy(() => import('./pages/ubs/UbsList'));
 const VaccineList = lazy(() => import('./pages/vaccines/VaccineList'));
+const UserList = lazy(() => import('./pages/users/UserList'));
 
 export function App() {
   return (
@@ -45,6 +46,11 @@ export function App() {
                 {/* Catálogo de vacinas */}
                 <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                   <Route path="/vacinas" element={<VaccineList />} />
+                </Route>
+
+                {/* Gestão de usuários */}
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                  <Route path="/usuarios" element={<UserList />} />
                 </Route>
               </Route>
             </Route>
