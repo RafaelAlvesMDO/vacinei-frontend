@@ -5,7 +5,7 @@
 Repositório das aplicações front-end da plataforma **VACINEI!?** (TCC CESMAC), que consomem a API Express do backend (porta `3333`).
 
 - **`web/`**: Gerenciador Web para `PROFISSIONAL_SAUDE` e `ADMIN`. Stack: Vite + React 19 + TypeScript, React Router DOM v7, Tailwind CSS v4, Axios e Lucide React. Comandos (em `web/`): `npm run dev`, `npm run build`, `npm run lint` (oxlint).
-- **`mobile/`**: Aplicativo para cidadãos e profissionais (login único com as alas Cidadão e Profissional). Stack: Expo (testado no Expo Go) + React Native + TypeScript, Expo Router, Axios, `expo-secure-store` (tokens) e tema com os tokens do `docs/DESIGN.md`. A URL da API vem de `EXPO_PUBLIC_API_URL` (IP do computador na rede). Em início: roteiro em `docs/PLANO-MOBILE.md`.
+- **`mobile/`**: Aplicativo para cidadãos e profissionais (login único com as alas Cidadão e Profissional). Stack: Expo (testado no Expo Go) + React Native + TypeScript, Expo Router, Axios, `expo-secure-store` (tokens) e tema com os tokens do `docs/DESIGN.md`. A URL da API vem de `EXPO_PUBLIC_API_URL` em `mobile/.env` (IP do computador na rede). Comandos (em `mobile/`): `npm run start`, `npm run lint`, `npm run typecheck`; bibliotecas com `npx expo install`. Roteiro e status em `docs/PLANO-MOBILE.md`.
 
 Documentos compartilhados em `docs/`: `API.md` (contrato), `DECISOES.md` (regras), `DESIGN.md` (identidade visual), `PLANO-WEB.md` e `PLANO-MOBILE.md` (roteiros).
 

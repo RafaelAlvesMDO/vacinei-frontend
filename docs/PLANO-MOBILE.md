@@ -9,7 +9,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 ## Base técnica
 
 - **Expo (SDK mais recente suportado pelo Expo Go) + React Native + TypeScript estrito** (sem `any`). Testes no celular pelo Expo Go.
-- **Navegação:** Expo Router (rotas por arquivo em `app/`), com grupos `(auth)`, `(cidadao)` e `(profissional)` e abas inferiores em cada ala.
+- **Navegação:** Expo Router (rotas por arquivo em `src/app/`), com grupos `(auth)`, `(cidadao)` e `(profissional)` e abas inferiores em cada ala.
 - **HTTP:** Axios em `src/services/api.ts`, no mesmo padrão do web: Bearer token, renovação única no `401` via `POST /auth/refresh`, opção `skipAuthRefresh` e `parseApiError` (erros por campo do Zod). Chamadas isoladas em `src/services/`.
 - **Sessão:** `expo-secure-store` para o access token, o refresh token e o usuário mínimo (`id`, `name`, `email`, `role`, `professionalRegistry`; sem CPF, como no web). Sem "Lembrar de mim": o app mantém a sessão até sair ou expirar.
 - **URL da API:** `EXPO_PUBLIC_API_URL` em `mobile/.env` (ex.: `http://192.168.0.10:3333`, IP do computador na rede local), com `mobile/.env.example` versionado. O backend precisa escutar em `0.0.0.0`.
@@ -20,16 +20,23 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ---
 
-## [ ] Etapa 1: Base do app
+## [x] Etapa 1: Base do app
 
-- Criar o projeto Expo em `mobile/` (TypeScript), Expo Router, lint e scripts (`npm run start`, `npm run lint`, `npx tsc --noEmit`).
-- `src/services/api.ts`, `tokenStorage.ts` (SecureStore) e `auth.ts`; `AuthContext` + `useAuth` (`signIn`, `signOut`, `refreshProfile`, restauração via `GET /auth/me`).
-- Tema, fonte Inter, ícone e splash com o `icone-vacinei.svg`, componentes de UI base.
+- [x] Projeto Expo SDK 58 em `mobile/` (TypeScript estrito), Expo Router, ESLint (`eslint-config-expo`, `no-explicit-any` como erro) e scripts (`npm run start`, `npm run lint`, `npm run typecheck`).
+- [x] `src/services/api.ts` (Bearer, renovação única no `401`, `skipAuthRefresh`, `renewSession`, `onSessionExpired`), `tokenStorage.ts` e `auth.ts` (`authenticate`, `getProfile`, `signOut`, `parseApiError`).
+  - O SecureStore é assíncrono: `tokenStorage` mantém uma cópia da sessão em memória, preenchida por `loadSession()` no layout raiz antes de esconder o splash, e grava no aparelho a cada alteração. Só o usuário mínimo (`StoredUser`) é gravado.
+- [x] Tema em `src/theme/` (`colors`, `spacing`, `radius`, `touchTarget`, `typography`, `fonts`) e Inter 400/500/600/700. Cada peso é uma família (`fonts.semibold` etc.), porque no React Native o `fontWeight` não troca o arquivo da fonte.
+- [x] Ícone, ícone adaptativo do Android, splash e favicon gerados do `icone-vacinei.svg`. O fundo do splash e do ícone adaptativo usa `#087F6B`, a cor do SVG oficial, para emendar com o logo.
+- [x] Utils portados do web: `password`, `cpf`, `name`, `councils` e `format` (com `formatDateInput`/`parseDateInput` novos para a data de nascimento).
+- [x] `EXPO_PUBLIC_API_URL` em `mobile/.env` (ignorado pelo `.gitignore` da raiz) e `.env.example`. A tela inicial provisória chama `GET /health` e mostra se a API respondeu.
+- [x] Telas provisórias: `(auth)/index` (`/`), `(cidadao)/inicio` (`/inicio`) e `(profissional)/painel` (`/painel`), com `components/ProvisionalScreen`.
+- Movidos para a etapa 2: `AuthContext` + `useAuth` e os componentes de UI base.
 - Requisitos: RNF03 (feedback), RNF04 (acessibilidade), RNF10 (LGPD: dados mínimos no aparelho).
 - **Backend:** nenhum. Conferir CORS/escuta em `0.0.0.0` para acesso pela rede.
 
 ## [ ] Etapa 2: Login, cadastro e recuperação de senha
 
+- **Base (vinda da etapa 1):** `AuthContext` + `useAuth` (`signIn`, `signOut`, `refreshProfile`, restauração via `GET /auth/me`) e componentes de UI em `src/components/ui/` (Button, TextField, PasswordField, Card, Badge, Banner, EmptyState, Screen), substituindo o `ProvisionalScreen`.
 - **Login único** (RF002, D23) por e-mail e senha, com mensagens do D17 (`401` genérico, `403` conta desativada).
   - `CIDADAO` → direto para a ala Cidadão.
   - `PROFISSIONAL_SAUDE` → escolhe entre a ala Cidadão e a ala Profissional, cada uma com sua barra de abas. O app lembra a última ala e permite alternar pelo Perfil. O não verificado vê o aviso de verificação na ala Profissional.
