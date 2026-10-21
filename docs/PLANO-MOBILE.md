@@ -30,47 +30,47 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 2: Login, cadastro e recuperação de senha
 
-- **Login único** (RF002) por e-mail e senha, com mensagens do D17 (`401` genérico, `403` conta desativada).
-  - `CIDADAO` → ala Cidadão.
-  - `PROFISSIONAL_SAUDE` → ala Cidadão (o profissional também é cidadão, D11) com alternância para a ala Profissional. Pendente ou recusado vê o aviso de verificação no lugar da ala Profissional.
-  - `ADMIN` → bloqueado no app, com aviso para usar o Gerenciador Web.
+- **Login único** (RF002, D23) por e-mail e senha, com mensagens do D17 (`401` genérico, `403` conta desativada).
+  - `CIDADAO` → direto para a ala Cidadão.
+  - `PROFISSIONAL_SAUDE` → escolhe entre a ala Cidadão e a ala Profissional, cada uma com sua barra de abas. O app lembra a última ala e permite alternar pelo Perfil. O não verificado vê o aviso de verificação na ala Profissional.
+  - `ADMIN` → não usa o app, com aviso para usar o Gerenciador Web.
+  - As alas são só navegação: as permissões continuam no backend.
 - **Cadastro** (RF001, D14) de cidadão por `POST /users` (`role: "CIDADAO"`): nome completo, e-mail, celular, CPF, nascimento, senha com checklist. Opção "Sou profissional de saúde" com categoria, registro e UF (D12, D13), que nasce pendente (RS001).
 - **Recuperação de senha** (RF011, RS007, D04): `POST /auth/forgot-password` e `POST /auth/reset-password`, com reenvio, `429` e retorno ao login.
 - Perfil (RF003, D19): ver dados, editar o nome (`PATCH /auth/me`), trocar a senha (`PATCH /auth/me/password`) e política de privacidade.
 - Encerramento por inatividade (RNF11) ao voltar do segundo plano (`AppState`).
-- **Backend:** registrar a decisão do login único com alas no `DECISOES.md` (ainda não existe). `POST /auth/logout` para revogar o refresh token ao sair (pendência já registrada no web).
+- **Backend novo:** `POST /auth/logout` para revogar o refresh token ao sair (pendência já registrada no web).
 
 ## [ ] Etapa 3: Caderneta digital
 
 - Tela inicial do cidadão: resumo (`emDia`, `atrasadas`, `completas`) e lista de vacinas por status (atrasadas primeiro), via `GET /citizens/:id/vaccination-records` com o próprio id.
 - Detalhe da vacina: doses aplicadas/total, próxima dose e data, registros com badge "Confirmado" ou "Aguardando confirmação" (D06), lote, UBS e profissional.
 - Puxar para atualizar, estados de carregando, vazio e erro.
-- Requisitos: RF006, RF007 (status `EM_DIA`/`ATRASADA`/`COMPLETA`), RS002.
+- Requisitos: RF006, RS004.
 - **Backend:** nenhum.
 
 ## [ ] Etapa 4: Mapa de UBS
 
 - Mapa (`react-native-maps`) e lista das UBS próximas: `GET /ubs?latitude=&longitude=&radiusKm=` (ordenado por `distanceKm`), com a localização do aparelho (`expo-location`). Sem permissão, busca por nome/bairro (`?search=`) centrada em Maceió.
 - Detalhe: endereço, horário (faixas em linhas), telefone (ligar) e "Como chegar" (abre o app de mapas).
-- Requisitos: RF008. LGPD: a localização fica só no aparelho e não é salva.
+- Requisitos: RF008, RNF09 (localização), RNF15. LGPD: a localização fica só no aparelho e não é salva.
 - **Backend:** nenhum.
 
 ## [ ] Etapa 5: Cadastro manual de vacina
 
 - Formulário: vacina e dose (`GET /vaccines`), data de aplicação (não futura), lote e UBS opcionais. O registro entra como `MANUAL` e fica "Aguardando confirmação" até um profissional confirmar (D06).
 - Editar ou excluir o próprio registro enquanto não estiver confirmado.
-- Requisitos: RF007 (nota 7), RS003 (sem datas futuras, vacina do catálogo), RS002.
+- Requisitos: RF005, RS003 (vacina do calendário e data de aplicação não futura).
 - **Backend novo:** `POST /vaccination-records` (titular, `origin: MANUAL`), e `PUT`/`DELETE /vaccination-records/:id` só para registros próprios não confirmados.
 
 ## [ ] Etapa 6: Ala profissional
 
 - Disponível só para `PROFISSIONAL_SAUDE` verificado; senão, aviso de verificação pendente/recusada (RS001).
 - Busca de cidadão por nome ou CPF (`GET /citizens`), caderneta do cidadão e confirmação de dose com lote (`POST /vaccination-records/confirm`), com o mesmo tratamento de `201`/`200`/`409` do web.
-- Leitura do QR Code da caderneta do cidadão (opcional): abre a caderneta direto.
 - Busca ativa de doses atrasadas (`GET /dashboard/overdue`, D21) e indicadores (`/dashboard/summary`).
 - Na própria caderneta, sem ação de confirmar (RS006, D11).
 - Requisitos: RF009, RF010, RS001, RS005, RS006.
-- **Backend:** nenhum para o fluxo principal. O QR Code exigiria um token de curta duração do cidadão (`GET /citizens/me/qr-token`), opcional.
+- **Backend:** nenhum.
 
 ## [ ] Etapa 7: Dependentes
 
@@ -82,17 +82,17 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 ## [ ] Etapa 8: OCR da caderneta física
 
 - Foto da caderneta (`expo-image-picker`/`expo-camera`), envio, revisão das doses reconhecidas (cada uma editável e descartável) e gravação como `OCR_ICR`, pendente de confirmação (D06).
-- Baixa confiança ou falha: aviso amigável e ida ao cadastro manual sem perder o que já foi lido (RF005).
-- Requisitos: RF004, RF005, RS003. LGPD: a imagem não fica salva depois do processamento.
-- **Backend novo:** serviço separado em Python (OpenCV no pré-processamento + `pytesseract`) chamado pelo backend. Rotas `POST /vaccination-records/ocr` (multipart, devolve sugestões, sem gravar) e gravação em lote (`POST /vaccination-records` com `origin: OCR_ICR`).
+- Baixa confiança ou falha: aviso amigável e oferta do cadastro manual, sem perder o que já foi lido (RNF12).
+- Requisitos: RF004, RS003, RNF05, RNF09 (câmera), RNF12. LGPD: a imagem não fica salva depois do processamento.
+- **Backend novo:** microsserviço em Python (D25) (OpenCV no pré-processamento + `pytesseract`) chamado pelo backend. Rotas `POST /vaccination-records/ocr` (multipart, devolve sugestões, sem gravar) e gravação em lote (`POST /vaccination-records` com `origin: OCR_ICR`).
 
 ## [ ] Etapa 9: Alertas de vacinação
 
 - **Notificações locais** (`expo-notifications`), sem custo e sem backend: a partir da caderneta (`nextDoseDate` de cada vacina, do titular e dos dependentes), agendar no aparelho um lembrete diário consolidado das doses pendentes e um aviso na data prevista. Reagendar ao abrir o app e após cada registro.
 - Tela de preferências (ligar/desligar, horário do lembrete) e pedido de permissão explicado.
 - **Expo Push (complemento):** campanhas e avisos do servidor. Exige development build, porque o Expo Go não recebe push remoto no Android.
-- Requisitos: RF007 (alerta diário único consolidado), RNF03.
-- **Backend novo (só para o push):** `POST/DELETE /devices` (token Expo do aparelho) e disparo pelo Expo Push Service. Substitui o FCM previsto no `agent.md` do backend; registrar a decisão no `DECISOES.md`.
+- Requisitos: RF007 (alerta diário único consolidado). Decisão D24.
+- **Backend novo (só para o push):** `POST/DELETE /devices` (token Expo do aparelho) e disparo pelo Expo Push Service, no lugar do FCM previsto no `agent.md` do backend.
 
 ---
 
@@ -111,4 +111,3 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 | Dependentes (CRUD, caderneta, confirmação, busca) | **Novo** |
 | OCR (serviço Python + `POST /vaccination-records/ocr`) | **Novo** |
 | Push (`/devices` + Expo Push) | **Novo** (complemento) |
-| QR Code da caderneta | **Novo** (opcional) |
