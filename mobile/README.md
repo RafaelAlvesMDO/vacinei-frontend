@@ -20,7 +20,9 @@ Para instalar bibliotecas, use `npx expo install <pacote>` (escolhe a versão co
 
 ## Estrutura
 
-- `src/app/`: rotas do Expo Router, com os grupos `(auth)`, `(cidadao)` e `(profissional)`.
+- `src/app/`: rotas do Expo Router: `(auth)` (login, cadastro e recuperação de senha), `escolher-ala`, as alas `cidadao/` e `profissional/` (cada uma com abas) e `privacidade`. O `_layout.tsx` raiz protege as rotas por sessão, perfil e ala (`Stack.Protected`).
+- `src/contexts/` e `src/hooks/`: `AuthContext` + `useAuth` (sessão, ala e restauração) e hooks reutilizáveis.
+- `src/components/ui/`: componentes do design system (Button, TextField, PasswordField, Banner, PasswordChecklist etc.).
 - `src/services/`: cliente Axios (`api.ts`), sessão no SecureStore (`tokenStorage.ts`) e chamadas à API.
 - `src/theme/`: tokens do `docs/DESIGN.md` e a fonte Inter.
 - `src/types/` e `src/utils/`: tipos e funções puras portados do web.
