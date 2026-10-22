@@ -64,6 +64,8 @@ export interface RegisterPayload {
   phone: string;
   cpf: string;
   birthDate: string;
+  // Consentimento à Política de Privacidade, obrigatório (D26)
+  acceptedPrivacyPolicy: true;
   role: RegisterRole;
   professionalRegistry?: {
     category: ProfessionalCategory;

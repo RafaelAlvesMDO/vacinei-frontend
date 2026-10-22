@@ -114,7 +114,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    // Pendência no backend: POST /auth/logout para revogar o refresh token
     await clearStoredSession();
     setSessionExpired(false);
     clearState();

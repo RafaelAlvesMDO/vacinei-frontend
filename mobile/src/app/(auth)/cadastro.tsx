@@ -197,6 +197,7 @@ export default function SignUp() {
       phone: onlyDigits(values.phone),
       cpf: onlyDigits(values.cpf),
       birthDate: parseDateInput(values.birthDate) ?? '',
+      acceptedPrivacyPolicy: true,
       role,
       ...(isProfessional &&
         values.category &&

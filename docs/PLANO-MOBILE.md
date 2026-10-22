@@ -53,7 +53,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - [x] **Política de privacidade** (`privacidade`): conteúdo do `/privacidade` do web, adaptado ao app (sessão no armazenamento seguro, consentimento do art. 11, I e direito de revogá-lo).
 - Requisitos: RF001, RF002, RF011, RS001, RS007, RNF03, RNF04, RNF10.
 - **Pendente (próximas etapas):** perfil completo (RF003, D19: editar o nome com `PATCH /auth/me` e trocar a senha com `PATCH /auth/me/password`) e encerramento por inatividade (RNF11) ao voltar do segundo plano (`AppState`).
-- **Backend novo:** `POST /auth/logout` para revogar o refresh token ao sair (pendência já registrada no web). Hoje o `signOut` só limpa o aparelho.
+- **Logout (D27):** o `signOut` limpa o aparelho e revoga o refresh token com `POST /auth/logout`, sem bloquear a saída se a chamada falhar. O cadastro envia `acceptedPrivacyPolicy: true` (D26).
 
 ## [ ] Etapa 3: Caderneta digital
 
@@ -134,7 +134,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
 | UBS próximas (`GET /ubs` com coordenadas) e catálogo de vacinas | Pronto |
 | Ala profissional: busca, confirmação, busca ativa e indicadores | Pronto |
 | Alertas locais | Pronto (usa a caderneta) |
-| Logout (`POST /auth/logout`) | **Novo** |
+| Logout (`POST /auth/logout`) | Pronto |
 | Registro manual de vacina (`POST/PUT/DELETE /vaccination-records`) | **Novo** |
 | Dependentes (CRUD, caderneta, confirmação, busca) | **Novo** |
 | OCR (serviço Python + `POST /vaccination-records/ocr`) | **Novo** |

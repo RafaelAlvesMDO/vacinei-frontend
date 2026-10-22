@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 import { api } from './api';
-import { clearSession } from './tokenStorage';
+import { clearSession, getRefreshToken } from './tokenStorage';
 import type {
   ApiErrorResponse,
   ApiMessageResponse,
@@ -57,10 +57,14 @@ export async function getProfile(): Promise<UserProfile> {
 }
 
 /**
- * Remove as credenciais do aparelho e encerra a sessão
+ * Remove as credenciais do aparelho e revoga o refresh token no servidor (POST /auth/logout, D27).
+ * A revogação não bloqueia a saída: se a chamada falhar, a sessão local já foi encerrada
  */
 export async function signOut(): Promise<void> {
+  const refreshToken = getRefreshToken();
   await clearSession();
+  if (!refreshToken) return;
+  api.post('/auth/logout', { refreshToken }, { skipAuthRefresh: true }).catch(() => undefined);
 }
 
 /**
