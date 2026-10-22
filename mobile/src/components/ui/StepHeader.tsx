@@ -16,26 +16,23 @@ interface Props {
  */
 export function StepHeader({ title, subtitle, onBack, backLabel = 'Voltar', step }: Props) {
   return (
-    <View style={styles.container}>
-      {onBack && (
-        <Button
-          label={backLabel}
-          variant="link"
-          icon="arrow-back"
-          onPress={onBack}
-          style={styles.back}
-        />
-      )}
-      {step && (
-        <Text style={styles.eyebrow}>
-          Etapa {step.current} de {step.total}
+    <>
+      <View style={styles.container}>
+        {onBack && (
+          <Button label={backLabel} variant="link" icon="arrow-back" onPress={onBack} style={styles.back} />
+        )}
+        {step && (
+          <Text style={styles.eyebrow}>
+            Etapa {step.current} de {step.total}
+          </Text>
+        )}
+        <Text style={typography.title} accessibilityRole="header">
+          {title}
         </Text>
-      )}
-      <Text style={typography.title} accessibilityRole="header">
-        {title}
-      </Text>
-      {subtitle && <Text style={typography.muted}>{subtitle}</Text>}
+        {subtitle && <Text style={typography.muted}>{subtitle}</Text>}
+      </View>
 
+      {/* Barra de progresso abaixo do cabeçalho, sobre o fundo da tela (como nos designs) */}
       {step && step.total > 1 && (
         <View
           style={styles.progress}
@@ -52,7 +49,7 @@ export function StepHeader({ title, subtitle, onBack, backLabel = 'Voltar', step
           </Text>
         </View>
       )}
-    </View>
+    </>
   );
 }
 
@@ -82,7 +79,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: spacing.md,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
   },
   segment: {
     flex: 1,
