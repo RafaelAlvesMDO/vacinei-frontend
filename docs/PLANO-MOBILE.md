@@ -57,7 +57,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 3: Caderneta digital
 
-- **Design:** `design-mobile/cidadao/` (exceto os arquivos do cadastro manual, da etapa 5).
+- **Design:** `design-mobile/cidadao/` (exceto os arquivos do cadastro manual, da etapa 5, e o `central-de-notificacoes-rf007.png`, da etapa 9).
 - Tela inicial do cidadão: resumo (`emDia`, `atrasadas`, `completas`) e lista de vacinas por status (atrasadas primeiro), via `GET /citizens/:id/vaccination-records` com o próprio id.
 - Detalhe da vacina: doses aplicadas/total, próxima dose e data, registros com badge "Confirmado" ou "Aguardando confirmação" (D06), lote, UBS e profissional.
 - Puxar para atualizar, estados de carregando, vazio e erro.
@@ -108,6 +108,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 9: Alertas de vacinação
 
+- **Design:** `design-mobile/cidadao/central-de-notificacoes-rf007.png`.
 - **Notificações locais** (`expo-notifications`), sem custo e sem backend: a partir da caderneta (`nextDoseDate` de cada vacina, do titular e dos dependentes), agendar no aparelho um lembrete diário consolidado das doses pendentes e um aviso na data prevista. Reagendar ao abrir o app e após cada registro.
 - Tela de preferências (ligar/desligar, horário do lembrete) e pedido de permissão explicado.
 - **Expo Push (complemento):** campanhas e avisos do servidor. Exige development build, porque o Expo Go não recebe push remoto no Android.
