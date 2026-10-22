@@ -1,221 +1,216 @@
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useRef, useState } from 'react';
+import { StyleSheet, Text, View, type TextInput } from 'react-native';
+import { BrandHeader } from '@/components/BrandHeader';
+import { Banner, Button, PasswordField, Screen, TextField, type BannerTone } from '@/components/ui';
+import { AdminAccessError } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { API_URL } from '@/services/api';
 import { parseApiError } from '@/services/auth';
-import { checkHealth } from '@/services/health';
-import { colors, fonts, radius, spacing, touchTarget, typography } from '@/theme';
-import { formatNumber } from '@/utils/format';
+import { colors, spacing, typography } from '@/theme';
+import { validateEmail } from '@/utils/email';
 
-type HealthState =
-  | { kind: 'loading' }
-  | { kind: 'ok'; uptime: number }
-  | { kind: 'error'; message: string };
+type LoginParams = {
+  email?: string;
+  // Volta do cadastro ("cidadao" | "profissional") ou da recuperação de senha ("redefinida")
+  cadastro?: string;
+  senha?: string;
+};
 
-const MISSING_URL_MESSAGE =
-  'EXPO_PUBLIC_API_URL não está definida. Crie o mobile/.env a partir do .env.example e reinicie o Expo.';
-
-// 3725 → "1 h 2 min"
-function formatUptime(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) return `${formatNumber(hours)} h ${minutes} min`;
-  if (minutes > 0) return `${minutes} min`;
-  return `${Math.floor(seconds)} s`;
+interface Notice {
+  tone: BannerTone;
+  title: string;
+  message: string;
 }
 
-// Tela inicial provisória (etapa 1): confere a conexão com a API pelo celular. Vira o login na etapa 2
-export default function Welcome() {
-  const [health, setHealth] = useState<HealthState>(() =>
-    API_URL ? { kind: 'loading' } : { kind: 'error', message: MISSING_URL_MESSAGE }
-  );
-  // Cada toque em "Testar de novo" incrementa a tentativa e refaz a chamada
-  const [attempt, setAttempt] = useState(0);
+type FieldErrors = Partial<Record<'email' | 'password', string>>;
 
-  useEffect(() => {
-    if (!API_URL) return;
-    const controller = new AbortController();
+function getReturnNotice({ cadastro, senha }: LoginParams): Notice | null {
+  if (cadastro === 'profissional') {
+    return {
+      tone: 'success',
+      title: 'Cadastro enviado',
+      message:
+        'Entre com seu e-mail e senha. Seu registro profissional ficará em análise; enquanto isso, você já pode usar a ala Cidadão.',
+    };
+  }
+  if (cadastro === 'cidadao') {
+    return { tone: 'success', title: 'Conta criada', message: 'Entre com seu e-mail e senha para começar.' };
+  }
+  if (senha === 'redefinida') {
+    return { tone: 'success', title: 'Senha redefinida', message: 'Entre com a nova senha.' };
+  }
+  return null;
+}
 
-    checkHealth(controller.signal).then(
-      (data) => setHealth({ kind: 'ok', uptime: data.uptime }),
-      (error: unknown) => {
-        if (controller.signal.aborted) return;
-        setHealth({ kind: 'error', message: parseApiError(error, 'A API respondeu com erro.').message });
+/**
+ * Login único por e-mail e senha (RF002, D23). Mensagens do D17: 401 genérico e 403 só para conta desativada
+ */
+export default function Login() {
+  const params = useLocalSearchParams<LoginParams>();
+  const { signIn, sessionExpired } = useAuth();
+  const passwordRef = useRef<TextInput>(null);
+
+  const [email, setEmail] = useState(params.email ?? '');
+  const [password, setPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [error, setError] = useState<Notice | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // O login pode já estar montado quando o cadastro ou a recuperação devolvem o e-mail
+  const [paramEmail, setParamEmail] = useState(params.email);
+  if (params.email !== paramEmail) {
+    setParamEmail(params.email);
+    if (params.email) setEmail(params.email);
+  }
+
+  const returnNotice = getReturnNotice(params);
+  const notice: Notice | null =
+    error ??
+    (!API_URL
+      ? {
+          tone: 'danger',
+          title: 'API não configurada',
+          message: 'EXPO_PUBLIC_API_URL não está definida. Crie o mobile/.env a partir do .env.example e reinicie o Expo.',
+        }
+      : sessionExpired
+        ? { tone: 'warning', title: 'Sessão encerrada', message: 'Sua sessão expirou. Entre novamente.' }
+        : returnNotice);
+
+  const handleSubmit = async () => {
+    const errors: FieldErrors = {
+      email: validateEmail(email) ?? undefined,
+      password: password ? undefined : 'Informe sua senha.',
+    };
+    setFieldErrors(errors);
+    setError(null);
+    if (errors.email || errors.password) return;
+
+    setLoading(true);
+    try {
+      // No sucesso, o layout raiz troca a rota (ala Cidadão, ala Profissional ou escolha da ala)
+      await signIn({ email, password });
+    } catch (err) {
+      setLoading(false);
+      if (err instanceof AdminAccessError) {
+        setError({ tone: 'warning', title: 'Use o Gerenciador Web', message: err.message });
+        return;
       }
-    );
-
-    return () => controller.abort();
-  }, [attempt]);
-
-  const testConnection = () => {
-    if (!API_URL) return;
-    setHealth({ kind: 'loading' });
-    setAttempt((current) => current + 1);
+      const { status, message, fieldErrors: apiErrors } = parseApiError(err, 'Não foi possível entrar. Tente novamente.');
+      if (status === 401) {
+        setError({ tone: 'danger', title: 'Não foi possível entrar', message: 'E-mail ou senha inválidos.' });
+        setFieldErrors({ password: 'Revise suas credenciais e tente novamente.' });
+      } else if (status === 403) {
+        setError({ tone: 'danger', title: 'Conta desativada', message });
+      } else if (status === 400 && (apiErrors.email || apiErrors.password)) {
+        setFieldErrors({ email: apiErrors.email, password: apiErrors.password });
+      } else {
+        setError({ tone: 'danger', title: 'Não foi possível entrar', message });
+      }
+    }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Image
-            source={require('@/assets/images/icon.png')}
-            style={styles.logo}
-            accessibilityLabel="Logo do Vacinei!?"
-          />
-          <Text style={typography.title} accessibilityRole="header">
-            Vacinei!?
-          </Text>
-          <Text style={[typography.muted, styles.center]}>
-            Base do app em construção. O login chega na etapa 2.
-          </Text>
-        </View>
+    <Screen>
+      <BrandHeader />
 
-        <View style={styles.card} accessibilityLiveRegion="polite">
-          <Text style={typography.subtitle}>Conexão com a API</Text>
-          <Text style={typography.muted} selectable>
-            {API_URL || 'URL não configurada'}
-          </Text>
+      <View style={styles.intro}>
+        <Text style={styles.title} accessibilityRole="header">
+          Boas-vindas
+        </Text>
+        <Text style={[typography.body, styles.subtitle]}>
+          Entre para acompanhar sua caderneta de vacinação com segurança.
+        </Text>
+      </View>
 
-          {health.kind === 'loading' && (
-            <View style={styles.statusRow}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={typography.body}>Testando a conexão...</Text>
-            </View>
-          )}
-          {health.kind === 'ok' && (
-            <View style={[styles.banner, styles.bannerSuccess]}>
-              <Text style={[styles.bannerTitle, { color: colors.success }]}>A API respondeu</Text>
-              <Text style={typography.muted}>No ar há {formatUptime(health.uptime)}.</Text>
-            </View>
-          )}
-          {health.kind === 'error' && (
-            <View style={[styles.banner, styles.bannerDanger]}>
-              <Text style={[styles.bannerTitle, { color: colors.danger }]}>A API não respondeu</Text>
-              <Text style={[typography.muted, { color: colors.danger }]}>{health.message}</Text>
-            </View>
-          )}
+      {notice && <Banner tone={notice.tone} title={notice.title} message={notice.message} />}
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ disabled: health.kind === 'loading' }}
-            disabled={health.kind === 'loading'}
-            onPress={testConnection}
-            style={({ pressed }) => [
-              styles.button,
-              styles.buttonPrimary,
-              pressed && styles.buttonPrimaryPressed,
-              health.kind === 'loading' && styles.buttonDisabled,
-            ]}
-          >
-            <Text style={typography.button}>Testar de novo</Text>
-          </Pressable>
-        </View>
+      <TextField
+        label="E-mail"
+        icon="mail-outline"
+        value={email}
+        onChangeText={(text) => {
+          setEmail(text);
+          setFieldErrors((current) => ({ ...current, email: undefined }));
+        }}
+        placeholder="nome@email.com"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="email"
+        textContentType="username"
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
+        editable={!loading}
+        error={fieldErrors.email}
+      />
 
-        <View style={styles.links}>
-          <Text style={typography.label}>Telas provisórias</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/inicio')}
-            style={({ pressed }) => [styles.button, styles.buttonSecondary, pressed && styles.buttonSecondaryPressed]}
-          >
-            <Text style={styles.buttonSecondaryText}>Ala Cidadão</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/painel')}
-            style={({ pressed }) => [styles.button, styles.buttonSecondary, pressed && styles.buttonSecondaryPressed]}
-          >
-            <Text style={styles.buttonSecondaryText}>Ala Profissional</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <PasswordField
+        ref={passwordRef}
+        label="Senha"
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          setFieldErrors((current) => ({ ...current, password: undefined }));
+        }}
+        placeholder="Sua senha"
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="go"
+        onSubmitEditing={handleSubmit}
+        editable={!loading}
+        error={fieldErrors.password}
+      />
+
+      <Button
+        label="Esqueci minha senha"
+        variant="link"
+        onPress={() => router.push({ pathname: '/recuperar-senha', params: { email: email.trim() } })}
+        style={styles.forgot}
+      />
+
+      <Button label="Entrar" icon="log-in-outline" loading={loading} loadingLabel="Entrando..." onPress={handleSubmit} />
+
+      <View style={styles.signUp}>
+        <Text style={typography.muted}>Ainda não tem acesso?</Text>
+        <Button label="Criar conta" variant="link" onPress={() => router.push('/cadastro')} />
+      </View>
+
+      <Banner icon="shield-checkmark-outline" message="Nunca compartilhe sua senha. O acesso é pessoal e protegido." />
+
+      <View style={styles.footer}>
+        <Button label="Política de privacidade" variant="link" onPress={() => router.push('/privacidade')} />
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: spacing.xl,
-    gap: spacing.xl,
-  },
-  header: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  logo: {
-    width: 96,
-    height: 96,
-    borderRadius: radius.lg,
-  },
-  center: {
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: colors.white,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  banner: {
-    borderRadius: radius.md,
-    padding: spacing.lg,
+  intro: {
     gap: spacing.xs,
+    marginTop: spacing.md,
   },
-  bannerSuccess: {
-    backgroundColor: colors.successSoft,
+  title: {
+    ...typography.title,
+    fontSize: 30,
+    lineHeight: 38,
   },
-  bannerDanger: {
-    backgroundColor: colors.dangerSoft,
+  subtitle: {
+    color: colors.muted,
   },
-  bannerTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 16,
-    lineHeight: 24,
+  forgot: {
+    alignSelf: 'flex-end',
+    marginTop: -spacing.sm,
   },
-  links: {
-    gap: spacing.md,
-  },
-  button: {
-    minHeight: touchTarget,
-    borderRadius: radius.md,
+  signUp: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
   },
-  buttonPrimary: {
-    backgroundColor: colors.primary,
-  },
-  buttonPrimaryPressed: {
-    backgroundColor: colors.primaryDark,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonSecondary: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  buttonSecondaryPressed: {
-    backgroundColor: colors.surface,
-  },
-  buttonSecondaryText: {
-    ...typography.button,
-    color: colors.primaryDark,
+  footer: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
 });

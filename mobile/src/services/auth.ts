@@ -1,30 +1,51 @@
 import { isAxiosError } from 'axios';
 import { api } from './api';
-import { clearSession, saveSession } from './tokenStorage';
+import { clearSession } from './tokenStorage';
 import type {
   ApiErrorResponse,
+  ApiMessageResponse,
   ApiSuccessResponse,
   AuthResponse,
   LoginCredentials,
   ParsedApiError,
+  RegisterPayload,
+  ResetPasswordPayload,
   UserProfile,
   ValidationIssue,
 } from '@/types/auth';
 
 /**
- * Autentica o usuário via POST /auth/login e grava a sessão no aparelho.
- * Sem "Lembrar de mim": a sessão dura até sair ou expirar
+ * Autentica o usuário via POST /auth/login. Quem grava a sessão é o AuthContext,
+ * depois de conferir se o perfil pode usar o app (ADMIN não pode, D23)
  */
 export async function authenticate({ email, password }: LoginCredentials): Promise<AuthResponse> {
   const response = await api.post<ApiSuccessResponse<AuthResponse>>('/auth/login', {
     email: email.trim(),
     password,
   });
-  const { user, token, refreshToken } = response.data.data;
+  return response.data.data;
+}
 
-  await saveSession(token, refreshToken, user);
+/**
+ * Cadastro público de cidadão ou profissional (POST /users). O profissional nasce pendente de verificação (RS001)
+ */
+export async function registerUser(payload: RegisterPayload): Promise<void> {
+  await api.post('/users', payload);
+}
 
-  return { user, token, refreshToken };
+/**
+ * Solicita o código de recuperação. A resposta é sempre a mesma, exista ou não a conta (D04)
+ */
+export async function forgotPassword(email: string): Promise<string> {
+  const response = await api.post<ApiMessageResponse>('/auth/forgot-password', { email: email.trim() });
+  return response.data?.message || 'Se o e-mail estiver cadastrado, você receberá um código de recuperação.';
+}
+
+/**
+ * Redefine a senha com o código de 6 dígitos. 3 códigos errados bloqueiam por 15 min (429)
+ */
+export async function resetPassword({ email, code, newPassword }: ResetPasswordPayload): Promise<void> {
+  await api.post<ApiMessageResponse>('/auth/reset-password', { email: email.trim(), code, newPassword });
 }
 
 /**

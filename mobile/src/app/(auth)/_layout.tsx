@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
+import { colors } from '@/theme';
 
-// Ala pública: login, cadastro e recuperação de senha (etapa 2)
+// Rotas sem sessão: login (/), cadastro e recuperação de senha
 export default function AuthLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />;
 }

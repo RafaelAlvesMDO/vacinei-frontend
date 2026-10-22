@@ -1,4 +1,6 @@
-export type UserRole = 'PROFISSIONAL_SAUDE' | 'ADMIN' | 'CIDADAO';
+import type { ProfessionalCategory } from './professional';
+
+export type UserRole ='PROFISSIONAL_SAUDE' | 'ADMIN' | 'CIDADAO';
 
 export type ProfessionalVerificationStatus = 'PENDENTE' | 'VERIFICADO' | 'RECUSADO';
 
@@ -46,6 +48,34 @@ export interface AuthResponse {
   user: User;
   token: string;
   refreshToken: string;
+}
+
+// Ala do app (D23): o cidadão usa só a ala Cidadão; o profissional alterna entre as duas
+export type Ala = 'cidadao' | 'profissional';
+
+// Perfis aceitos no cadastro público (D02)
+export type RegisterRole = Extract<UserRole, 'CIDADAO' | 'PROFISSIONAL_SAUDE'>;
+
+// Body do POST /users (RF001, D14). O conselho não é enviado: o backend o deriva da categoria (D12)
+export interface RegisterPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  cpf: string;
+  birthDate: string;
+  role: RegisterRole;
+  professionalRegistry?: {
+    category: ProfessionalCategory;
+    registryNumber: string;
+    uf: string;
+  };
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  code: string;
+  newPassword: string;
 }
 
 export interface RefreshResponse {
