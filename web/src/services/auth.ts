@@ -81,10 +81,14 @@ export async function changePassword(payload: ChangePasswordPayload): Promise<st
 }
 
 /**
- * Remove credenciais salvas e encerra a sessão
+ * Remove credenciais salvas e revoga o refresh token no servidor (POST /auth/logout, D27).
+ * A revogação não bloqueia a saída: se a chamada falhar, a sessão local já foi encerrada
  */
 export function signOut(): void {
+  const refreshToken = getRefreshToken();
   clearSession();
+  if (!refreshToken) return;
+  api.post('/auth/logout', { refreshToken }, { skipAuthRefresh: true }).catch(() => undefined);
 }
 
 /**

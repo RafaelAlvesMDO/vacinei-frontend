@@ -125,4 +125,4 @@ Todas as etapas do roteiro estão concluídas.
 - **Login (D17):** mostra a mensagem da API no `401` e no `403`, com textos de reserva por status (inclusive `429`).
 - **LGPD:** página pública `/privacidade` (dados, finalidades, quem acessa, segurança, retenção e direitos), com link no rodapé do login e do painel e aviso no cadastro. O storage do navegador guarda o usuário sem CPF, celular e nascimento.
 - **RNF11:** `hooks/useIdleTimeout` encerra a sessão após `VITE_IDLE_TIMEOUT_MINUTES` (padrão 30) sem uso, com aviso 1 minuto antes ("Continuar conectado" / "Sair agora"). A contagem segue o relógio e é compartilhada entre as abas. O login explica o encerramento.
-- **Pendência no backend:** não existe `POST /auth/logout`. Ao sair (ou por inatividade), o refresh token só é apagado do navegador e continua válido no servidor até expirar.
+- **Logout (D27):** ao sair (ou por inatividade), o refresh token é apagado do navegador e revogado com `POST /auth/logout`. Se a chamada falhar, a saída local não é bloqueada.

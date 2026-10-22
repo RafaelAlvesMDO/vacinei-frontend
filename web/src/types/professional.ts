@@ -20,6 +20,8 @@ export interface RegisterProfessionalPayload {
   cpf: string;
   // YYYY-MM-DD, não pode ser futura
   birthDate: string;
+  // Consentimento à Política de Privacidade, obrigatório (D26)
+  acceptedPrivacyPolicy: true;
   role: 'PROFISSIONAL_SAUDE';
   professionalRegistry: {
     category: ProfessionalCategory;
