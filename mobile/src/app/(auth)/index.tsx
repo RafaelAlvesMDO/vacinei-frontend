@@ -99,7 +99,8 @@ export default function Login() {
       const { status, message, fieldErrors: apiErrors } = parseApiError(err, 'Não foi possível entrar. Tente novamente.');
       if (status === 401) {
         setError({ tone: 'danger', title: 'Não foi possível entrar', message: 'E-mail ou senha inválidos.' });
-        setFieldErrors({ password: 'Revise suas credenciais e tente novamente.' });
+        // Os dois campos, para não sugerir qual deles estava certo (D17)
+        setFieldErrors({ email: 'Confira o e-mail digitado.', password: 'Confira a senha digitada.' });
       } else if (status === 403) {
         setError({ tone: 'danger', title: 'Conta desativada', message });
       } else if (status === 400 && (apiErrors.email || apiErrors.password)) {

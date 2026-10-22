@@ -1,9 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
 import { colors } from '@/theme';
 
-export type IconName = ComponentProps<typeof Ionicons>['name'];
+// Ícones que o Ionicons não tem vêm do MaterialCommunityIcons
+const COMMUNITY_ICONS = ['stethoscope'] as const;
+type CommunityIconName = (typeof COMMUNITY_ICONS)[number];
+
+export type IconName = ComponentProps<typeof Ionicons>['name'] | CommunityIconName;
 
 interface Props {
   name: IconName;
@@ -11,15 +16,13 @@ interface Props {
   color?: ColorValue;
 }
 
+function isCommunityIcon(name: IconName): name is CommunityIconName {
+  return (COMMUNITY_ICONS as readonly string[]).includes(name);
+}
+
 // Ícones decorativos: o texto ao lado (ou o accessibilityLabel do botão) é que é anunciado
 export function Icon({ name, size = 20, color = colors.primary }: Props) {
-  return (
-    <Ionicons
-      name={name}
-      size={size}
-      color={color}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    />
-  );
+  const hidden = { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' } as const;
+  if (isCommunityIcon(name)) return <MaterialCommunityIcons name={name} size={size} color={color} {...hidden} />;
+  return <Ionicons name={name} size={size} color={color} {...hidden} />;
 }

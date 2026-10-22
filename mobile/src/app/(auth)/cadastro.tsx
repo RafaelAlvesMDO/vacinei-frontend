@@ -74,6 +74,8 @@ const API_FIELD_MAP: Record<string, FieldName> = {
 
 const REGISTRY_MAX_LENGTH = 20;
 const REGISTRY_REGEX = /^[A-Z0-9]+$/;
+// Celular: DDD + 9 + 8 dígitos (como no web)
+const PHONE_REGEX = /^\d{2}9\d{8}$/;
 const MIN_BIRTH_YEAR = 1900;
 
 const CATEGORY_OPTIONS: SelectOption<ProfessionalCategory>[] = PROFESSIONAL_CATEGORIES.map((category) => ({
@@ -98,7 +100,8 @@ function validateStepOne(values: FormValues): FieldErrors {
   const nameError = validateFullName(values.name);
   if (nameError) errors.name = nameError;
 
-  if (onlyDigits(values.phone).length !== 11) errors.phone = 'Informe o celular com DDD, ex.: (82) 99999-0002.';
+  if (!PHONE_REGEX.test(onlyDigits(values.phone)))
+    errors.phone = 'Informe o celular com DDD no formato (DDD) 9XXXX-XXXX.';
 
   const emailError = validateEmail(values.email);
   if (emailError) errors.email = emailError;
@@ -216,9 +219,12 @@ export default function SignUp() {
       );
 
       const errors: FieldErrors = {};
+      // Erros de campos que a tela não tem vão para o aviso do topo, como no web
+      const unmapped: string[] = [];
       for (const [path, fieldMessage] of Object.entries(apiErrors)) {
         const field = API_FIELD_MAP[path];
-        if (field && !errors[field]) errors[field] = fieldMessage;
+        if (!field) unmapped.push(fieldMessage);
+        else if (!errors[field]) errors[field] = fieldMessage;
       }
       if (status === 409) {
         const field = getConflictField(message);
@@ -226,10 +232,9 @@ export default function SignUp() {
       }
 
       const fields = Object.keys(errors) as FieldName[];
-      if (fields.length === 0) {
-        setError(message);
-        return;
-      }
+      if (unmapped.length > 0) setError(unmapped.join(' '));
+      else if (fields.length === 0) setError(message);
+      if (fields.length === 0) return;
       setFieldErrors(errors);
       // Erro em campo da etapa 1 com a etapa 2 aberta: volta para mostrar o campo
       if (step === 2 && fields.some((field) => STEP_ONE_FIELDS.includes(field))) setStep(1);
@@ -288,7 +293,7 @@ export default function SignUp() {
               onPress={() => setRole('CIDADAO')}
             />
             <RadioCard
-              icon="medkit-outline"
+              icon="stethoscope"
               title="Profissional da Saúde"
               description="Atender e confirmar doses"
               selected={isProfessional}
@@ -313,7 +318,7 @@ export default function SignUp() {
             label="Celular"
             required
             icon="phone-portrait-outline"
-            hint="Com DDD: (82) 99999-0002."
+            hint="Formato: (DDD) 9XXXX-XXXX"
             value={values.phone}
             onChangeText={(text) => setField('phone', formatPhone(text))}
             placeholder="(82) 99999-0002"
