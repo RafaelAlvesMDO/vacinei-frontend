@@ -103,6 +103,19 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ---
 
+## Possíveis melhorias futuras (vindas dos designs)
+
+Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou estão fora do levantamento de requisitos. Ficam de fora por enquanto, para avaliação posterior:
+
+- **Busca ativa** (`profissional/busca-ativa.png`):
+  - "Contatados hoje": exigiria registrar o contato com o cidadão.
+  - "Prioridade crítica": exigiria uma regra de prioridade no `GET /dashboard/overdue`.
+- **Dashboard do profissional** (`profissional/dashboard.png`):
+  - "Tempo médio" (de atendimento).
+  - "Doses descartadas": o sistema não controla estoque nem descarte.
+
+---
+
 ## Resumo de endpoints
 
 | Função | Situação |
