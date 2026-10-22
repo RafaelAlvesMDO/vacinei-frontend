@@ -120,6 +120,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
 - **Dashboard do profissional** (`profissional/dashboard.png`):
   - "Tempo médio" (de atendimento).
   - "Doses descartadas": o sistema não controla estoque nem descarte.
+- **Rodapé do login** (`auth/login.png`): links "Termos de uso" e "Ajuda". Ainda não há conteúdo para essas páginas; o app mostra só a "Política de privacidade".
 
 ---
 
