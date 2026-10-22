@@ -52,11 +52,12 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - [x] **Abas provisórias:** ala Cidadão (Início, Perfil) e ala Profissional (Painel, Perfil). Perfil simples (`components/profile/ProfileScreen`): dados da conta, badge de verificação, "Trocar para a ala ..." (só profissional), política de privacidade e "Sair" (com confirmação).
 - [x] **Política de privacidade** (`privacidade`): conteúdo do `/privacidade` do web, adaptado ao app (sessão no armazenamento seguro, consentimento do art. 11, I e direito de revogá-lo).
 - Requisitos: RF001, RF002, RF011, RS001, RS007, RNF03, RNF04, RNF10.
-- **Pendente (próximas etapas):** perfil completo (RF003, D19: editar o nome com `PATCH /auth/me` e trocar a senha com `PATCH /auth/me/password`) e encerramento por inatividade (RNF11) ao voltar do segundo plano (`AppState`).
+- **Pendente (próximas etapas):** perfil completo (RF003, D19: editar o nome com `PATCH /auth/me` e trocar a senha com `PATCH /auth/me/password`; design em `design-mobile/perfil/`) e encerramento por inatividade (RNF11) ao voltar do segundo plano (`AppState`).
 - **Logout (D27):** o `signOut` limpa o aparelho e revoga o refresh token com `POST /auth/logout`, sem bloquear a saída se a chamada falhar. O cadastro envia `acceptedPrivacyPolicy: true` (D26).
 
 ## [ ] Etapa 3: Caderneta digital
 
+- **Design:** `design-mobile/cidadao/` (exceto os arquivos do cadastro manual, da etapa 5).
 - Tela inicial do cidadão: resumo (`emDia`, `atrasadas`, `completas`) e lista de vacinas por status (atrasadas primeiro), via `GET /citizens/:id/vaccination-records` com o próprio id.
 - Detalhe da vacina: doses aplicadas/total, próxima dose e data, registros com badge "Confirmado" ou "Aguardando confirmação" (D06), lote, UBS e profissional.
 - Puxar para atualizar, estados de carregando, vazio e erro.
@@ -65,6 +66,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 4: Mapa de UBS
 
+- **Design:** `design-mobile/ubs/`.
 - Mapa (`react-native-maps`) e lista das UBS próximas: `GET /ubs?latitude=&longitude=&radiusKm=` (ordenado por `distanceKm`), com a localização do aparelho (`expo-location`). Sem permissão, busca por nome/bairro (`?search=`) centrada em Maceió.
 - Detalhe: endereço, horário (faixas em linhas), telefone (ligar) e "Como chegar" (abre o app de mapas).
 - Requisitos: RF008, RNF09 (permissão de geolocalização), RNF15. LGPD: a localização fica só no aparelho e não é salva.
@@ -72,6 +74,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 5: Cadastro manual de vacina
 
+- **Design:** `design-mobile/cidadao/` (`cadastrar-ou-editar-vacina.png`, `resumo-da-vacina.png`, `registro-salvo.png`).
 - Formulário: vacina e dose (`GET /vaccines`), data de aplicação (não futura), lote e UBS opcionais. O registro entra como `MANUAL` e fica "Aguardando confirmação" até um profissional confirmar (D06).
 - Editar ou excluir o próprio registro enquanto não estiver confirmado.
 - Requisitos: RF005, RS003 (vacina do calendário e data de aplicação não futura).
@@ -79,6 +82,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 6: Ala profissional
 
+- **Design:** `design-mobile/profissional/`.
 - Disponível só para `PROFISSIONAL_SAUDE` verificado; senão, aviso de verificação pendente/recusada (RS001).
 - Busca de cidadão por nome ou CPF (`GET /citizens`), caderneta do cidadão e confirmação de dose com lote (`POST /vaccination-records/confirm`), com o mesmo tratamento de `201`/`200`/`409` do web.
 - Busca ativa de doses atrasadas (`GET /dashboard/overdue`, D21) e indicadores (`/dashboard/summary`).
@@ -88,6 +92,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 7: Dependentes
 
+- **Design:** `design-mobile/dependentes/`.
 - Listar, cadastrar e editar dependentes (nome, nascimento, CPF opcional, parentesco); caderneta de cada dependente; cadastro manual de vacina para o dependente; seletor "de quem é a caderneta" na tela inicial.
 - Ala profissional: o dependente aparece na busca e pode ter doses confirmadas (D09).
 - Requisitos: RF012, RS004 (só o responsável vê), RS008 (mesmo nome e nascimento não podem ter dois responsáveis).
@@ -95,6 +100,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [ ] Etapa 8: OCR da caderneta física
 
+- **Design:** `design-mobile/ocr/`.
 - Foto da caderneta (`expo-image-picker`/`expo-camera`), envio, revisão das doses reconhecidas (cada uma editável e descartável) e gravação como `OCR_ICR`, pendente de confirmação (D06).
 - Baixa confiança ou falha: aviso amigável e oferta do cadastro manual, sem perder o que já foi lido (RNF12).
 - Requisitos: RF004, RS003, RNF05, RNF12. Pede a permissão da câmera (e da galeria) com a finalidade explicada. LGPD: a imagem não fica salva depois do processamento.

@@ -18,6 +18,12 @@ Diretrizes completas e status atual (consultar no início de cada sessão; atual
 
 Resumo: TypeScript estrito sem `any`; chamadas HTTP isoladas em `web/src/services/` usando o cliente `api.ts`; componentes de UI reutilizáveis em `web/src/components/ui/`; textos e mensagens em pt-BR.
 
+## Regras do Mobile
+
+- **Design de referência:** antes de implementar ou alterar telas do app, abrir as imagens da etapa em `docs/design-mobile/` (usar o `README.md` da pasta para escolher os arquivos; a pasta de cada etapa está no `docs/PLANO-MOBILE.md`) e segui-las como referência visual de layout, componentes e textos, com as adaptações já decididas: nome "Vacinei!?", só os dados que a API oferece e as decisões do `docs/DECISOES.md`.
+- Abrir **somente** as imagens da tela em que estiver trabalhando, nunca as de outras etapas (economia de tokens).
+- Ao final, listar as diferenças intencionais em relação ao design.
+
 ## Git
 
 - Trabalhar sempre na branch `dev`. **Nunca** commitar ou fazer push na `main`.
