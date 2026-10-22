@@ -64,6 +64,15 @@ export function parseDateInput(value: string): string | null {
 }
 
 /**
+ * Contagem regressiva: 876 → "14:36"
+ */
+export function formatCountdown(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+/**
  * Minúsculas e sem acentos, para buscas no cliente: "pajucara" encontra "Pajuçara"
  */
 export function normalizeSearch(value: string): string {
