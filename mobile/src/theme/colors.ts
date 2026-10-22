@@ -15,6 +15,8 @@ export const colors = {
   success: '#077A66',
   successSoft: '#E8F4F0',
   white: '#FFFFFF',
+  // primaryDark com 40% de opacidade, atrás das folhas de seleção
+  overlay: 'rgba(16, 59, 52, 0.4)',
   // Fundo do ícone oficial (icone-vacinei.svg), usado no splash para emendar com o logo
   brand: '#087F6B',
 } as const;

@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
+    "@expo/vector-icons": "^15.0.2",
     "axios": "^1.20.0",
     "expo": "^57.0.31",
     "expo-constants": "~57.0.22",
