@@ -4,6 +4,7 @@ export { Button } from './Button';
 export { Card } from './Card';
 export { Checkbox } from './Checkbox';
 export { CodeInput } from './CodeInput';
+export { ConfirmDialog } from './ConfirmDialog';
 export { Icon, type IconName } from './Icon';
 export { PasswordChecklist } from './PasswordChecklist';
 export { PasswordField } from './PasswordField';

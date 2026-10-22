@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
-import { Alert, StyleSheet, Text, View } from 'react-native';
-import { Badge, Button, Card, Screen } from '@/components/ui';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Badge, Button, Card, ConfirmDialog, Screen } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { Ala } from '@/types/auth';
@@ -12,17 +13,22 @@ import { ALA_LABELS, getInitials, ROLE_LABELS, VERIFICATION_LABELS } from '@/uti
  */
 export function ProfileScreen() {
   const { user, ala, chooseAla, signOut } = useAuth();
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   if (!user) return null;
 
   const isProfessional = user.role === 'PROFISSIONAL_SAUDE';
   const registry = user.professionalRegistry;
   const otherAla: Ala = ala === 'profissional' ? 'cidadao' : 'profissional';
 
-  const confirmSignOut = () => {
-    Alert.alert('Sair da conta?', 'Você precisará entrar com e-mail e senha de novo.', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: () => void signOut() },
-    ]);
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+    } finally {
+      setSigningOut(false);
+      setConfirmingSignOut(false);
+    }
   };
 
   return (
@@ -78,7 +84,26 @@ export function ProfileScreen() {
         />
       </Card>
 
-      <Button label="Sair" variant="secondary" danger icon="log-out-outline" onPress={confirmSignOut} />
+      <Button
+        label="Sair"
+        variant="secondary"
+        danger
+        icon="log-out-outline"
+        onPress={() => setConfirmingSignOut(true)}
+      />
+
+      <ConfirmDialog
+        visible={confirmingSignOut}
+        variant="danger"
+        icon="log-out-outline"
+        title="Sair da conta?"
+        message="Você precisará entrar novamente para acessar sua caderneta."
+        confirmLabel="Sair"
+        loadingLabel="Saindo..."
+        loading={signingOut}
+        onConfirm={() => void handleSignOut()}
+        onCancel={() => setConfirmingSignOut(false)}
+      />
     </Screen>
   );
 }

@@ -51,6 +51,8 @@ export function Button({
         styles.base,
         variant === 'primary' && styles.primary,
         variant === 'primary' && pressed && styles.primaryPressed,
+        variant === 'primary' && danger && styles.primaryDanger,
+        variant === 'primary' && danger && pressed && styles.primaryDangerPressed,
         variant === 'secondary' && styles.secondary,
         variant === 'secondary' && danger && styles.secondaryDanger,
         variant === 'secondary' && pressed && styles.secondaryPressed,
@@ -91,6 +93,13 @@ const styles = StyleSheet.create({
   },
   primaryPressed: {
     backgroundColor: colors.primaryDark,
+  },
+  // Ações destrutivas (ex.: confirmar a saída)
+  primaryDanger: {
+    backgroundColor: colors.danger,
+  },
+  primaryDangerPressed: {
+    opacity: 0.85,
   },
   secondary: {
     backgroundColor: colors.white,
