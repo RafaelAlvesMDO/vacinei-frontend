@@ -42,7 +42,8 @@ type FieldName =
   | 'registryNumber'
   | 'uf'
   | 'password'
-  | 'confirmPassword';
+  | 'confirmPassword'
+  | 'acceptedPrivacyPolicy';
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 interface FormValues {
@@ -56,6 +57,7 @@ interface FormValues {
   uf: string;
   password: string;
   confirmPassword: string;
+  acceptedPrivacyPolicy: boolean;
 }
 
 const INITIAL_VALUES: FormValues = {
@@ -69,6 +71,7 @@ const INITIAL_VALUES: FormValues = {
   uf: '',
   password: '',
   confirmPassword: '',
+  acceptedPrivacyPolicy: false,
 };
 
 // Limites do POST /users (RF001)
@@ -89,6 +92,7 @@ const API_FIELD_MAP: Record<string, FieldName> = {
   cpf: 'cpf',
   birthDate: 'birthDate',
   password: 'password',
+  acceptedPrivacyPolicy: 'acceptedPrivacyPolicy',
   'professionalRegistry.category': 'category',
   'professionalRegistry.registryNumber': 'registryNumber',
   'professionalRegistry.uf': 'uf',
@@ -161,6 +165,10 @@ function validateForm(values: FormValues): FieldErrors {
     errors.confirmPassword = 'As senhas não coincidem.';
   }
 
+  if (!values.acceptedPrivacyPolicy) {
+    errors.acceptedPrivacyPolicy = 'Para criar a conta, aceite a Política de Privacidade.';
+  }
+
   return errors;
 }
 
@@ -212,6 +220,7 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
         phone: onlyDigits(values.phone),
         cpf: onlyDigits(values.cpf),
         birthDate: values.birthDate,
+        acceptedPrivacyPolicy: true,
         role: 'PROFISSIONAL_SAUDE',
         professionalRegistry: {
           category: values.category,
@@ -432,20 +441,40 @@ export const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ isOpen, 
             />
           </div>
 
-          {/* Transparência no momento da coleta (LGPD). Nova aba, para não perder o formulário */}
-          <p className="mt-6 text-xs leading-relaxed text-muted">
-            Seus dados (inclusive CPF e registro profissional) são usados para identificar você e verificar seu registro.
-            Saiba mais na{' '}
-            <a
-              href="/privacidade"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded font-semibold text-primary hover:text-primary-dark hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              Política de privacidade<span className="sr-only"> (abre em nova aba)</span>
-            </a>
-            .
-          </p>
+          {/* Consentimento específico e destacado para dados de saúde (LGPD, art. 11, I; D26).
+              A política abre em nova aba, para não perder o formulário */}
+          <div className="mt-6">
+            <label className="flex items-start gap-2.5 text-sm leading-relaxed text-primary-dark cursor-pointer">
+              <input
+                id="register-privacy"
+                type="checkbox"
+                checked={values.acceptedPrivacyPolicy}
+                onChange={(e) => setField('acceptedPrivacyPolicy', e.target.checked)}
+                disabled={isLoading}
+                required
+                aria-invalid={fieldErrors.acceptedPrivacyPolicy ? true : undefined}
+                aria-describedby={fieldErrors.acceptedPrivacyPolicy ? 'register-privacy-error' : undefined}
+                className="mt-1 size-4 shrink-0 accent-primary cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <span>
+                Li e concordo com a{' '}
+                <a
+                  href="/privacidade"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded font-semibold text-primary hover:text-primary-dark hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                >
+                  Política de Privacidade<span className="sr-only"> (abre em nova aba)</span>
+                </a>{' '}
+                e autorizo o tratamento dos meus dados de saúde
+              </span>
+            </label>
+            {fieldErrors.acceptedPrivacyPolicy && (
+              <p id="register-privacy-error" role="alert" className="mt-1.5 ml-6.5 text-xs text-danger">
+                {fieldErrors.acceptedPrivacyPolicy}
+              </p>
+            )}
+          </div>
 
           {/* Botões de Ação */}
           <div className="flex flex-col-reverse sm:flex-row items-stretch gap-3 mt-6 w-full">

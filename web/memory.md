@@ -161,7 +161,8 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
   - `/privacidade` (`pages/privacy/PrivacyPolicy.tsx`): rota pública fora do `PublicRoute`, acessível com ou sem sessão. Links no rodapé do login e no `Footer`; no cadastro, abre em nova aba.
   - `tokenStorage` grava só `id`, `name`, `email`, `role` e `professionalRegistry` do usuário (o `cpf` volta como `null`).
   - RNF11: `hooks/useIdleTimeout` + `utils/idleTimeout.ts` (funções puras). Configuração em `VITE_IDLE_TIMEOUT_MINUTES` (padrão 30, aceita decimais, tipada em `src/vite-env.d.ts`). O aviso aparece 1 minuto antes (metade do tempo quando ele é de até 2 min). A última atividade fica em `localStorage` (`@vacinei:lastActivity`), compartilhada entre as abas. Durante o aviso, a atividade não reinicia a contagem. O motivo `idle` vai para o `sessionStorage` e o login mostra o aviso uma vez. A lógica foi testada com relógio simulado (12 cenários).
-  - Pendência no backend: falta `POST /auth/logout` para revogar o refresh token ao sair.
+  - Logout (D27): `signOut` (`services/auth.ts`) limpa a sessão local e depois chama `POST /auth/logout` com o refresh token (`skipAuthRefresh`, falha ignorada), inclusive no encerramento por inatividade.
+  - Consentimento (D26): o cadastro de profissional tem o checkbox obrigatório da Política de Privacidade (link em nova aba) e envia `acceptedPrivacyPolicy: true`.
 
 ---
 
@@ -170,4 +171,3 @@ Este documento registra o status atual, decisões de arquitetura e próximos pas
 O roteiro detalhado das etapas está em `docs/PLANO-WEB.md` (contrato da API em `docs/API.md`). Todas as etapas foram concluídas.
 
 1. Validar manualmente com teclado e leitor de tela (NVDA) antes da Pré-Banca.
-2. Backend: criar `POST /auth/logout` (revogar o refresh token) e usá-lo no `signOut`.
