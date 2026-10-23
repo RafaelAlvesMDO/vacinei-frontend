@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors, spacing } from '@/theme';
 
@@ -10,12 +10,22 @@ interface Props {
   // Nas abas, a barra inferior já cuida da margem de baixo
   edges?: Edge[];
   contentStyle?: StyleProp<ViewStyle>;
+  // Puxar para atualizar (só quando onRefresh é informado)
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 /**
  * Base das telas: área segura, fundo `background`, rolagem e teclado sem cobrir os campos
  */
-export function Screen({ children, header, edges = ['top', 'bottom'], contentStyle }: Props) {
+export function Screen({
+  children,
+  header,
+  edges = ['top', 'bottom'],
+  contentStyle,
+  refreshing = false,
+  onRefresh,
+}: Props) {
   return (
     // Com cabeçalho, a área da barra de status fica branca como ele
     <SafeAreaView style={[styles.safeArea, header !== undefined && styles.safeAreaWithHeader]} edges={edges}>
@@ -25,6 +35,16 @@ export function Screen({ children, header, edges = ['top', 'bottom'], contentSty
           style={styles.scroll}
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            onRefresh ? (
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+              />
+            ) : undefined
+          }
         >
           <View style={styles.inner}>{children}</View>
         </ScrollView>
