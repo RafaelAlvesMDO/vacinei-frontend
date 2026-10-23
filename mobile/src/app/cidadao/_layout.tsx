@@ -1,15 +1,15 @@
-import { Tabs } from 'expo-router';
-import { tabIcon, tabScreenOptions } from '@/components/navigation/tabScreenOptions';
+import { Stack } from 'expo-router';
+import { VaccinationCardProvider } from '@/contexts/VaccinationCardContext';
+import { colors } from '@/theme';
 
-// Ala Cidadão (D23). Abas provisórias: as próximas etapas trazem caderneta, UBS e dependentes
+// Ala Cidadão (D23): as abas e, por cima delas, o detalhe da vacina. A caderneta é carregada uma vez para todas
 export default function CitizenLayout() {
   return (
-    <Tabs screenOptions={tabScreenOptions}>
-      <Tabs.Screen name="inicio" options={{ title: 'Início', tabBarIcon: tabIcon('home-outline', 'home') }} />
-      <Tabs.Screen
-        name="perfil"
-        options={{ title: 'Perfil', tabBarIcon: tabIcon('person-circle-outline', 'person-circle') }}
-      />
-    </Tabs>
+    <VaccinationCardProvider>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+        <Stack.Screen name="(abas)" />
+        <Stack.Screen name="vacina/[vaccineId]" />
+      </Stack>
+    </VaccinationCardProvider>
   );
 }
