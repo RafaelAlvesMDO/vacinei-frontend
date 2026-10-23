@@ -52,8 +52,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
+  // maxWidth: com a fonte ampliada, um rótulo maior que a linha quebra dentro da pílula
   chip: {
+    maxWidth: '100%',
     minHeight: touchTarget - 8,
+    paddingVertical: spacing.xs,
     justifyContent: 'center',
     borderRadius: radius.full,
     borderWidth: 1,
