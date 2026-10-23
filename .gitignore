@@ -9,6 +9,9 @@ dist-ssr/
 build/
 out/
 
+# Expo local cache (also created when Expo runs from the repository root)
+.expo/
+
 # Logs
 logs/
 *.log
