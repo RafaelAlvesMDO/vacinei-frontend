@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { Badge, Banner, Card, Icon, Screen, StateMessage, StepHeader } from '@/components/ui';
+import { Badge, Banner, Button, Card, Icon, Screen, StateMessage, StepHeader } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
@@ -134,6 +134,7 @@ function RecordCard({ record }: { record: CardRecord }) {
       <View style={styles.recordDetails}>
         <InfoRow label="Lote" value={record.lotNumber ?? 'Não informado'} />
         <InfoRow label="UBS" value={record.ubs?.name ?? 'Não informada'} />
+        {record.ubs && <SeeOnMapButton ubs={record.ubs} />}
         <InfoRow
           label="Profissional"
           value={record.appliedBy?.name ?? (isConfirmed ? 'Não informado' : 'Aguardando confirmação')}
@@ -147,7 +148,26 @@ function RecordCard({ record }: { record: CardRecord }) {
   );
 }
 
+// Atalho para o detalhe da UBS onde a dose foi aplicada (RF008 nota 9)
+function SeeOnMapButton({ ubs }: { ubs: { id: string; name: string } }) {
+  return (
+    <Button
+      label="Ver no mapa"
+      icon="map-outline"
+      variant="link"
+      accessibilityHint={`Abre o endereço e a rota até ${ubs.name}`}
+      onPress={() => router.push({ pathname: '/cidadao/ubs/[ubsId]', params: { ubsId: ubs.id } })}
+      style={styles.mapLink}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
+  mapLink: {
+    alignSelf: 'flex-end',
+    marginRight: -spacing.sm,
+    marginTop: -spacing.sm,
+  },
   hero: {
     backgroundColor: colors.surface,
     borderColor: colors.border,

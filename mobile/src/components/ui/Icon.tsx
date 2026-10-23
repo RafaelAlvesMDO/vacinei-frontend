@@ -5,7 +5,7 @@ import type { ColorValue } from 'react-native';
 import { colors } from '@/theme';
 
 // Ícones que o Ionicons não tem vêm do MaterialCommunityIcons
-const COMMUNITY_ICONS = ['stethoscope'] as const;
+const COMMUNITY_ICONS = ['stethoscope', 'map-marker-off-outline'] as const;
 type CommunityIconName = (typeof COMMUNITY_ICONS)[number];
 
 export type IconName = ComponentProps<typeof Ionicons>['name'] | CommunityIconName;
