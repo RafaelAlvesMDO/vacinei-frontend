@@ -49,18 +49,23 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
   - Consentimento obrigatório e destacado para dados de saúde (LGPD, art. 11, I): checkbox "Li e concordo com a Política de Privacidade e autorizo o tratamento dos meus dados de saúde", com link para `privacidade`. Sem marcar, o botão fica desabilitado. O consentimento não é enviado à API (não há campo no contrato).
   - Erros da API por campo (inclusive `professionalRegistry.*`); erro de um campo da etapa 1 com a etapa 2 aberta volta para a etapa 1. `409` marca o campo deduzido da mensagem (CPF, e-mail ou registro).
 - [x] **Recuperação de senha** (RF011, RS007, D04) em 2 etapas: e-mail (`POST /auth/forgot-password`) e código de 6 dígitos (`CodeInput`) + nova senha (`POST /auth/reset-password`). Validade do código (10 min) e reenvio (30 s) com `hooks/useCountdown`. O `429` abre a tela de bloqueio com contagem de 15:00 e, ao fim, "Solicitar novo código". A escolha de canal (SMS) do design ficou de fora: a API só envia por e-mail.
-- [x] **Abas provisórias:** ala Cidadão (Início, Perfil) e ala Profissional (Painel, Perfil). Perfil simples (`components/profile/ProfileScreen`): dados da conta, badge de verificação, "Trocar para a ala ..." (só profissional), política de privacidade e "Sair" (com confirmação).
+- [x] **Abas provisórias:** ala Cidadão (Início, Perfil; a etapa 3 trouxe a Caderneta) e ala Profissional (Painel, Perfil). Perfil simples (`components/profile/ProfileScreen`): dados da conta, badge de verificação, "Trocar para a ala ..." (só profissional), política de privacidade e "Sair" (com confirmação).
 - [x] **Política de privacidade** (`privacidade`): conteúdo do `/privacidade` do web, adaptado ao app (sessão no armazenamento seguro, consentimento do art. 11, I e direito de revogá-lo).
 - Requisitos: RF001, RF002, RF011, RS001, RS007, RNF03, RNF04, RNF10.
 - **Pendente (próximas etapas):** perfil completo (RF003, D19: editar o nome com `PATCH /auth/me` e trocar a senha com `PATCH /auth/me/password`; design em `design-mobile/perfil/`) e encerramento por inatividade (RNF11) ao voltar do segundo plano (`AppState`).
 - **Logout (D27):** o `signOut` limpa o aparelho e revoga o refresh token com `POST /auth/logout`, sem bloquear a saída se a chamada falhar. O cadastro envia `acceptedPrivacyPolicy: true` (D26).
 
-## [ ] Etapa 3: Caderneta digital
+## [x] Etapa 3: Caderneta digital
 
 - **Design:** `design-mobile/cidadao/` (exceto os arquivos do cadastro manual, da etapa 5, e o `central-de-notificacoes-rf007.png`, da etapa 9).
-- Tela inicial do cidadão: resumo (`emDia`, `atrasadas`, `completas`) e lista de vacinas por status (atrasadas primeiro), via `GET /citizens/:id/vaccination-records` com o próprio id.
-- Detalhe da vacina: doses aplicadas/total, próxima dose e data, registros com badge "Confirmado" ou "Aguardando confirmação" (D06), lote, UBS e profissional.
-- Puxar para atualizar, estados de carregando, vazio e erro.
+- [x] **Dados:** `services/citizens.ts` (`getVaccinationCard`, `GET /citizens/:id/vaccination-records` com o próprio id) e tipos em `types/vaccination.ts`. O `contexts/VaccinationCardContext` (+ `hooks/useVaccinationCard`) envolve a ala Cidadão: busca a caderneta uma vez e a compartilha com Início, Caderneta e Detalhe (`reload`, cancelamento da requisição anterior). Vale também para o profissional na ala Cidadão (D11).
+- [x] **Rotas:** `cidadao/_layout` virou um Stack com o grupo `(abas)` (Início, Caderneta e Perfil; as URLs não mudaram) e o detalhe `cidadao/vacina/[vaccineId]` por cima, sem a barra de abas.
+- [x] **Status:** sempre o da API (`EM_DIA`, `ATRASADA`, `COMPLETA`). O app só calcula, para exibição, os dias de atraso a partir do `nextDoseDate` (fuso de Maceió, em `utils/vaccination.ts`). Ordem: atrasadas, em dia e completas, e depois por nome.
+- [x] **Início:** saudação com o e-mail, resumo da API (`SummaryCard`: em dia, atrasadas e completas), "Alertas" com as atrasadas ("2ª dose · 18 dias em atraso", abre o detalhe) ou "Tudo em dia" e o atalho "Ver caderneta completa".
+- [x] **Caderneta (aba nova):** busca por vacina ou doença (sem acentos), filtros Todas, Em dia, Atrasadas e Completas (`components/ui/FilterChips`, com contadores que respeitam a busca) e um cartão por vacina (`VaccineListItem`) com a próxima dose ou "Esquema completo", o status, a data da última dose e a origem do último registro.
+- [x] **Detalhe:** status, doença, aviso de atraso, doses aplicadas/total, última aplicação, próxima dose e data prevista, e o histórico (da dose mais recente para a mais antiga) com badge "Confirmado" ou "Aguardando confirmação" (D06), lote, UBS e profissional.
+- [x] **Estados:** puxar para atualizar (`refreshing`/`onRefresh` no `Screen`), carregando, erro com "Tentar novamente" (`403` e `404` com mensagens próprias) e, com dados na tela, falha da atualização como banner, sem perder a caderneta (`components/ui/StateMessage` e `components/vaccination/CardLoadState`). Vazio: "Você ainda não tem vacinas registradas. Em breve você poderá digitalizar sua caderneta ou cadastrar manualmente."
+- Ficaram de fora (outras etapas): seletor de dependentes e "Adicionar dependente" (etapa 7), notificações (etapa 9), "Digitalizar" e "Cadastrar manualmente" (etapas 8 e 5), editar e "Registrar nova dose" (etapa 5), "Ver no mapa" e distância da UBS (etapa 4). O filtro avançado da busca do design não foi feito: os filtros por status já cobrem a lista.
 - Requisitos: RF006, RS004.
 - **Backend:** nenhum.
 
