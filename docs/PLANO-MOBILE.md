@@ -78,7 +78,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - [x] **Mapa (RNF15):** Leaflet 1.9.4 (unpkg, com SRI) numa `react-native-webview`, no lugar do `react-native-maps`: funciona no Expo Go, não depende do Google Maps e avisa falhas de tile (`tileerror`), o que o `UrlTile` não faz. Atribuição "© colaboradores do OpenStreetMap" sempre visível (o link abre no navegador), `User-Agent` identificando o app (`Vacinei/1.0`), `keepBuffer: 1`, sem pré-carregamento e cache HTTP da WebView. O mapa só é montado na aba Mapa. Marcadores das UBS, ponto do usuário e cartão da UBS selecionada (a mais próxima por padrão). Se o Leaflet não carregar, se só vierem erros de tile ou sem tile em 15 s: cartão "Mapa indisponível agora" com "Tentar novamente" e a lista abaixo.
 - [x] **Horário:** `utils/openingHours.ts` lê o padrão da API ("Seg a Sex: 07:00 às 17:00 · Sáb: 07:00 às 14:00") e calcula o status do dia no fuso de Maceió: "Aberto agora · até 17h", "Fechado · abre hoje às 7h", "Fechado · abre amanhã às 7h", "Fechado · abre segunda às 7h" ou "Fechado hoje". Texto fora do padrão: só as faixas, sem status.
 - [x] **Detalhe** (`cidadao/ubs/[ubsId]`, `GET /ubs/:id`): nome e distância, endereço completo (logradouro, número, bairro, cidade/UF e CEP), status e uma faixa de horário por linha, telefone (toque abre a discagem) e distância em linha reta. Rodapé com "Ligar" (só com telefone) e "Como chegar" (`geo:` no Android, Apple Maps no iOS, Google Maps no navegador se nada abrir). Aberto pela caderneta, a distância é calculada no aparelho (haversine), só se a permissão já tiver sido concedida. UBS desativada mostra aviso.
-- [x] **"Ver no mapa"** (RF008 nota 9) no histórico do detalhe da vacina, quando o registro tem UBS: abre o detalhe dela.
+- [x] **"Ver UBS no mapa"** (RF008 nota 9, D29) abaixo do cartão de informações do detalhe da vacina: abre a aba UBS já no Mapa (`/cidadao/ubs?modo=mapa`). O histórico de doses não mostra a UBS, porque a confirmação ainda não a registra.
 - Ficaram de fora do design: filtros avançados, "Serviços disponíveis", tempo de carro e compartilhar (a API não tem esses dados) e as abas Digitalizar e Dependentes (outras etapas). "Traçar rota" virou "Como chegar".
 - Requisitos: RF008, RNF09, RNF15.
 - **Backend:** nenhum.
@@ -128,6 +128,12 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ---
 
+## Revisão final de acessibilidade
+
+- Conferir ícones com a fonte do sistema ampliada.
+
+---
+
 ## Possíveis melhorias futuras (vindas dos designs)
 
 Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou estão fora do levantamento de requisitos. Ficam de fora por enquanto, para avaliação posterior:
@@ -139,6 +145,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
   - "Tempo médio" (de atendimento).
   - "Doses descartadas": o sistema não controla estoque nem descarte.
 - **Rodapé do login** (`auth/login.png`): links "Termos de uso" e "Ajuda". Ainda não há conteúdo para essas páginas; o app mostra só a "Política de privacidade".
+- **UBS da dose** (D29): registrar a UBS onde a dose foi aplicada na confirmação (backend e web) e exibi-la no histórico de doses.
 
 ---
 
