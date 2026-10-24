@@ -88,6 +88,15 @@ function VaccineContent({ item, citizenName }: { item: CardVaccine; citizenName:
         )}
       </Card>
 
+      {/* RF008 nota 9 (D29): abre a localização de UBS, já no mapa. A confirmação ainda não registra a UBS da dose */}
+      <Button
+        label="Ver UBS no mapa"
+        icon="map-outline"
+        variant="secondary"
+        accessibilityHint="Abre a aba UBS no mapa"
+        onPress={() => router.navigate({ pathname: '/cidadao/ubs', params: { modo: 'mapa' } })}
+      />
+
       <View style={styles.section}>
         <Text style={typography.subtitle} accessibilityRole="header">
           Histórico de doses
@@ -133,8 +142,6 @@ function RecordCard({ record }: { record: CardRecord }) {
 
       <View style={styles.recordDetails}>
         <InfoRow label="Lote" value={record.lotNumber ?? 'Não informado'} />
-        <InfoRow label="UBS" value={record.ubs?.name ?? 'Não informada'} />
-        {record.ubs && <SeeOnMapButton ubs={record.ubs} />}
         <InfoRow
           label="Profissional"
           value={record.appliedBy?.name ?? (isConfirmed ? 'Não informado' : 'Aguardando confirmação')}
@@ -148,26 +155,7 @@ function RecordCard({ record }: { record: CardRecord }) {
   );
 }
 
-// Atalho para o detalhe da UBS onde a dose foi aplicada (RF008 nota 9)
-function SeeOnMapButton({ ubs }: { ubs: { id: string; name: string } }) {
-  return (
-    <Button
-      label="Ver no mapa"
-      icon="map-outline"
-      variant="link"
-      accessibilityHint={`Abre o endereço e a rota até ${ubs.name}`}
-      onPress={() => router.push({ pathname: '/cidadao/ubs/[ubsId]', params: { ubsId: ubs.id } })}
-      style={styles.mapLink}
-    />
-  );
-}
-
 const styles = StyleSheet.create({
-  mapLink: {
-    alignSelf: 'flex-end',
-    marginRight: -spacing.sm,
-    marginTop: -spacing.sm,
-  },
   hero: {
     backgroundColor: colors.surface,
     borderColor: colors.border,

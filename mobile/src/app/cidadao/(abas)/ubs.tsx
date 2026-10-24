@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -72,6 +72,18 @@ export default function UbsScreen() {
   const controllerRef = useRef<AbortController | null>(null);
 
   const showPrompt = permission === 'undetermined' && !promptDismissed;
+
+  // Atalho "Ver UBS no mapa" do detalhe da vacina (D29): abre no mapa e limpa o parâmetro,
+  // para que um novo toque no atalho funcione depois de a pessoa voltar para a lista
+  const { modo } = useLocalSearchParams<{ modo?: string }>();
+  const [handledModo, setHandledModo] = useState(modo === 'mapa' ? undefined : modo);
+  if (modo !== handledModo) {
+    setHandledModo(modo);
+    if (modo === 'mapa') setView('mapa');
+  }
+  useEffect(() => {
+    if (modo === 'mapa') router.setParams({ modo: undefined });
+  }, [modo]);
 
   // Nova consulta: posição atual (se houver permissão) e lista da API. A anterior é cancelada
   const load = useCallback(
