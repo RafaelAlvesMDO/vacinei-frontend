@@ -11,6 +11,7 @@ export { PasswordChecklist } from './PasswordChecklist';
 export { PasswordField } from './PasswordField';
 export { RadioCard } from './RadioCard';
 export { Screen } from './Screen';
+export { SegmentedControl, type SegmentOption } from './SegmentedControl';
 export { SelectField, type SelectOption } from './SelectField';
 export { StateMessage } from './StateMessage';
 export { StepHeader } from './StepHeader';

@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { Badge, Banner, Card, Icon, Screen, StateMessage, StepHeader } from '@/components/ui';
+import { Badge, Banner, Button, Card, Icon, Screen, StateMessage, StepHeader } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
@@ -88,6 +88,15 @@ function VaccineContent({ item, citizenName }: { item: CardVaccine; citizenName:
         )}
       </Card>
 
+      {/* RF008 nota 9 (D29): abre a localização de UBS, já no mapa. A confirmação ainda não registra a UBS da dose */}
+      <Button
+        label="Ver UBS no mapa"
+        icon="map-outline"
+        variant="secondary"
+        accessibilityHint="Abre a aba UBS no mapa"
+        onPress={() => router.navigate({ pathname: '/cidadao/ubs', params: { modo: 'mapa' } })}
+      />
+
       <View style={styles.section}>
         <Text style={typography.subtitle} accessibilityRole="header">
           Histórico de doses
@@ -133,7 +142,6 @@ function RecordCard({ record }: { record: CardRecord }) {
 
       <View style={styles.recordDetails}>
         <InfoRow label="Lote" value={record.lotNumber ?? 'Não informado'} />
-        <InfoRow label="UBS" value={record.ubs?.name ?? 'Não informada'} />
         <InfoRow
           label="Profissional"
           value={record.appliedBy?.name ?? (isConfirmed ? 'Não informado' : 'Aguardando confirmação')}

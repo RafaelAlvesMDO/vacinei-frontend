@@ -16,7 +16,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - **Tema:** `src/theme/` com os tokens do `DESIGN.md` (`colors`, `spacing`, `radius`, `typography`) e a fonte Inter (`@expo-google-fonts/inter`). Estilos com `StyleSheet` lendo o tema; nada de cores soltas.
 - **Componentes:** `src/components/ui/` (Button, TextField, PasswordField, SelectField, CodeInput, Checkbox, RadioCard, Card, Badge, Banner, PasswordChecklist, StepHeader, Screen) com acessibilidade nativa (`accessibilityLabel`, `accessibilityRole`, alvos de toque de 48 px). Ícones: `@expo/vector-icons` (Ionicons).
 - **Reaproveitamento do web:** portar as funções puras de `web/src/utils/` (`password`, `cpf`, `name`, `format`, `councils`) e os tipos de `web/src/types/`.
-- **Bibliotecas por etapa:** `react-native-maps` + `expo-location` (mapa), `expo-image-picker`/`expo-camera` (OCR), `expo-notifications` (alertas).
+- **Bibliotecas por etapa:** `expo-location` + `react-native-webview` com Leaflet (mapa), `expo-image-picker`/`expo-camera` (OCR), `expo-notifications` (alertas).
 
 ---
 
@@ -69,12 +69,18 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - Requisitos: RF006, RS004.
 - **Backend:** nenhum.
 
-## [ ] Etapa 4: Mapa de UBS
+## [x] Etapa 4: Mapa de UBS
 
 - **Design:** `design-mobile/ubs/`.
-- Mapa (`react-native-maps`) e lista das UBS próximas: `GET /ubs?latitude=&longitude=&radiusKm=` (ordenado por `distanceKm`), com a localização do aparelho (`expo-location`). Sem permissão, busca por nome/bairro (`?search=`) centrada em Maceió.
-- Detalhe: endereço, horário (faixas em linhas), telefone (ligar) e "Como chegar" (abre o app de mapas).
-- Requisitos: RF008, RNF09 (permissão de geolocalização), RNF15. LGPD: a localização fica só no aparelho e não é salva.
+- [x] **Aba "UBS"** na ala Cidadão (`cidadao/(abas)/ubs`), entre Caderneta e Perfil, com Lista e Mapa (`components/ui/SegmentedControl`) e busca por nome, bairro, logradouro ou CEP no cliente, sem acentos (RF008 nota 7). A busca da API diferencia acentos e o catálogo é pequeno.
+- [x] **Permissão (RNF09, RF008 nota 6):** `hooks/useUserLocation` (`expo-location`, só em primeiro plano, conferida de novo quando o app volta das configurações). Na primeira entrada, `components/ubs/LocationPermissionPrompt` explica o uso ("não será salva nem compartilhada") antes do pedido do sistema; "Agora não" segue sem ordenação. Sem permissão, o aviso warning "Localização desativada" tem "Ativar" (pede de novo ou, se o sistema não deixar, "Abrir configurações"). Localização do aparelho desligada, posição indisponível e nenhuma UBS no raio têm avisos próprios.
+- [x] **Distância (RF008 nota 2):** com permissão, `GET /ubs?latitude=&longitude=&radiusKm=50` (`services/ubs.ts`), ordenado pela API. A posição é obtida de novo a cada foco da aba, ao puxar para atualizar e no botão de localizar (10 s de limite, depois a última posição de até 5 min). Sem UBS no raio, a lista completa. LGPD: a posição fica só na memória e vai apenas na consulta.
+- [x] **Mapa (RNF15):** Leaflet 1.9.4 (unpkg, com SRI) numa `react-native-webview`, no lugar do `react-native-maps`: funciona no Expo Go, não depende do Google Maps e avisa falhas de tile (`tileerror`), o que o `UrlTile` não faz. Atribuição "© colaboradores do OpenStreetMap" sempre visível (o link abre no navegador), `User-Agent` identificando o app (`Vacinei/1.0`), `keepBuffer: 1`, sem pré-carregamento e cache HTTP da WebView. O mapa só é montado na aba Mapa. Marcadores das UBS, ponto do usuário e cartão da UBS selecionada (a mais próxima por padrão). Se o Leaflet não carregar, se só vierem erros de tile ou sem tile em 15 s: cartão "Mapa indisponível agora" com "Tentar novamente" e a lista abaixo.
+- [x] **Horário:** `utils/openingHours.ts` lê o padrão da API ("Seg a Sex: 07:00 às 17:00 · Sáb: 07:00 às 14:00") e calcula o status do dia no fuso de Maceió: "Aberto agora · até 17h", "Fechado · abre hoje às 7h", "Fechado · abre amanhã às 7h", "Fechado · abre segunda às 7h" ou "Fechado hoje". Texto fora do padrão: só as faixas, sem status.
+- [x] **Detalhe** (`cidadao/ubs/[ubsId]`, `GET /ubs/:id`): nome e distância, endereço completo (logradouro, número, bairro, cidade/UF e CEP), status e uma faixa de horário por linha, telefone (toque abre a discagem) e distância em linha reta. Rodapé com "Ligar" (só com telefone) e "Como chegar" (`geo:` no Android, Apple Maps no iOS, Google Maps no navegador se nada abrir). Aberto pela caderneta, a distância é calculada no aparelho (haversine), só se a permissão já tiver sido concedida. UBS desativada mostra aviso.
+- [x] **"Ver UBS no mapa"** (RF008 nota 9, D29) abaixo do cartão de informações do detalhe da vacina: abre a aba UBS já no Mapa (`/cidadao/ubs?modo=mapa`). O histórico de doses não mostra a UBS, porque a confirmação ainda não a registra.
+- Ficaram de fora do design: filtros avançados, "Serviços disponíveis", tempo de carro e compartilhar (a API não tem esses dados) e as abas Digitalizar e Dependentes (outras etapas). "Traçar rota" virou "Como chegar".
+- Requisitos: RF008, RNF09, RNF15.
 - **Backend:** nenhum.
 
 ## [ ] Etapa 5: Cadastro manual de vacina
@@ -122,6 +128,12 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ---
 
+## Revisão final de acessibilidade
+
+- Conferir ícones com a fonte do sistema ampliada.
+
+---
+
 ## Possíveis melhorias futuras (vindas dos designs)
 
 Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou estão fora do levantamento de requisitos. Ficam de fora por enquanto, para avaliação posterior:
@@ -133,6 +145,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
   - "Tempo médio" (de atendimento).
   - "Doses descartadas": o sistema não controla estoque nem descarte.
 - **Rodapé do login** (`auth/login.png`): links "Termos de uso" e "Ajuda". Ainda não há conteúdo para essas páginas; o app mostra só a "Política de privacidade".
+- **UBS da dose** (D29): registrar a UBS onde a dose foi aplicada na confirmação (backend e web) e exibi-la no histórico de doses.
 
 ---
 
