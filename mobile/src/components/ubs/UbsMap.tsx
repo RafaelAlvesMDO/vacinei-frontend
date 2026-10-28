@@ -47,7 +47,8 @@ function handleNavigation(request: ShouldStartLoadRequest): boolean {
  * O `User-Agent` identifica o app, como pede a política de uso dos tiles do OSM
  */
 export function UbsMap({ items, selectedId, userCoords, onSelect, onUnavailable }: Props) {
-  const webViewRef = useRef<WebView>(null);
+  // O index.d.ts do react-native-webview 14 usa P = undefined, e WebViewProps & undefined vira never
+  const webViewRef = useRef<WebView<object>>(null);
   const [isReady, setIsReady] = useState(false);
   const tilesLoadedRef = useRef(false);
   const notifyUnavailable = useEffectEvent(onUnavailable);
@@ -79,7 +80,7 @@ export function UbsMap({ items, selectedId, userCoords, onSelect, onUnavailable 
   };
 
   return (
-    <WebView
+    <WebView<object>
       ref={webViewRef}
       source={{ html: MAP_HTML }}
       originWhitelist={['*']}

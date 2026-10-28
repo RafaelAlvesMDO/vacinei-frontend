@@ -1,7 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ComponentProps } from 'react';
-import type { ColorValue } from 'react-native';
 import { colors } from '@/theme';
 
 // Ícones que o Ionicons não tem vêm do MaterialCommunityIcons
@@ -13,7 +12,7 @@ export type IconName = ComponentProps<typeof Ionicons>['name'] | CommunityIconNa
 interface Props {
   name: IconName;
   size?: number;
-  color?: ColorValue;
+  color?: ComponentProps<typeof Ionicons>['color'];
 }
 
 function isCommunityIcon(name: IconName): name is CommunityIconName {

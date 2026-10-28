@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View, type TextInput } from 'react-native';
+import { StyleSheet, Text, View, type TextInputInstance } from 'react-native';
 import { BrandHeader } from '@/components/BrandHeader';
 import { Banner, Button, PasswordField, Screen, TextField, type BannerTone } from '@/components/ui';
 import { AdminAccessError } from '@/contexts/AuthContext';
@@ -49,7 +49,7 @@ function getReturnNotice({ cadastro, senha }: LoginParams): Notice | null {
 export default function Login() {
   const params = useLocalSearchParams<LoginParams>();
   const { signIn, sessionExpired } = useAuth();
-  const passwordRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');

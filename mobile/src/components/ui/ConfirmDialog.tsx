@@ -9,6 +9,7 @@ import {
   Text,
   View,
   findNodeHandle,
+  type TextInstance,
   useWindowDimensions,
 } from 'react-native';
 import { colors, radius, spacing, typography } from '@/theme';
@@ -55,7 +56,7 @@ export function ConfirmDialog({
 }: Props) {
   const { width, fontScale } = useWindowDimensions();
   const [progress] = useState(() => new Animated.Value(0));
-  const titleRef = useRef<Text>(null);
+  const titleRef = useRef<TextInstance>(null);
 
   const isDanger = variant === 'danger';
   const sideBySide = width >= SIDE_BY_SIDE_MIN_WIDTH && fontScale <= SIDE_BY_SIDE_MAX_FONT_SCALE;

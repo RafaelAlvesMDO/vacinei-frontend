@@ -22,7 +22,8 @@ export const tabScreenOptions: TabOptions = {
  */
 export function tabIcon(outline: IconName, filled: IconName): TabOptions['tabBarIcon'] {
   function TabIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
-    return <Icon name={focused ? filled : outline} size={24} color={color} />;
+    // As cores das abas vêm do tema (strings); o ColorValue do RN também admite número e null
+    return <Icon name={focused ? filled : outline} size={24} color={typeof color === 'string' ? color : undefined} />;
   }
   return TabIcon;
 }
