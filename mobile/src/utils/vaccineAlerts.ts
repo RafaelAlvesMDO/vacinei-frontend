@@ -149,7 +149,7 @@ export function formatDigestNotification(digest: DailyDigest): DigestNotificatio
     const [reminder] = digest.reminders;
 
     if (overdue) {
-      const extra = awaiting ? ` Há dose informada aguardando conferência (${formatPendingDoses(awaiting.doses)}).` : '';
+      const extra = awaiting ? ` Aguardando conferência: ${formatPendingDoses(awaiting.doses)}.` : '';
       return {
         title: `${overdue.vaccineName}: dose em atraso`,
         body: `${overdue.doseName} · ${formatOverdue(overdue.days)}. Toque para registrar a nova dose.${extra}`,
@@ -159,7 +159,7 @@ export function formatDigestNotification(digest: DailyDigest): DigestNotificatio
     if (awaiting) {
       return {
         title: `${awaiting.vaccineName}: aguardando conferência`,
-        body: `${AWAITING_MESSAGE} (${formatPendingDoses(awaiting.doses)}).`,
+        body: `${AWAITING_MESSAGE}: ${formatPendingDoses(awaiting.doses)}.`,
         url,
       };
     }
@@ -174,7 +174,8 @@ export function formatDigestNotification(digest: DailyDigest): DigestNotificatio
   if (digest.overdue.length > 0) {
     lines.push(
       `Em atraso: ${digest.overdue
-        .map((alert) => `${alert.vaccineName} (${alert.doseName}, ${formatShortOverdue(alert.days)})`)
+        // Separado por "·", sem parênteses: os nomes já trazem os seus ("Tríplice Viral (SCR) · 2ª Dose · 86 dias")
+        .map((alert) => `${alert.vaccineName} · ${alert.doseName} · ${formatShortOverdue(alert.days)}`)
         .join('; ')}.`,
     );
   }
