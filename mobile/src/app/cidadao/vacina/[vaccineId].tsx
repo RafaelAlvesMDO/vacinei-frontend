@@ -9,7 +9,15 @@ import { deleteRecord } from '@/services/vaccinationRecords';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { CardRecord, CardVaccine } from '@/types/vaccination';
 import { formatCalendarDate } from '@/utils/format';
-import { formatOverdue, getDaysOverdue, getRecordBadge, SCHEDULE_STATUS, sortRecords } from '@/utils/vaccination';
+import {
+  AWAITING_MESSAGE,
+  formatOverdue,
+  formatPendingDoses,
+  getDaysOverdue,
+  getRecordBadge,
+  SCHEDULE_STATUS,
+  sortRecords,
+} from '@/utils/vaccination';
 
 /**
  * Detalhe de uma vacina da caderneta (RF006): doses aplicadas, próxima dose e registros (D06)
@@ -110,12 +118,14 @@ interface VaccineContentProps {
 }
 
 function VaccineContent({ item, citizenName, onDelete }: VaccineContentProps) {
-  const status = SCHEDULE_STATUS[item.status];
+  // Situação do alerta (D32): só a dose confirmada encerra a pendência
+  const status = SCHEDULE_STATUS[item.alert.status];
   const records = sortRecords(item.records);
   // Ainda há dose do esquema sem registro na caderneta
   const hasFreeDose = item.records.length < item.vaccine.dosesCount;
-  const isOverdue = item.status === 'ATRASADA';
+  const isOverdue = item.alert.status === 'ATRASADA';
   const overdueText = formatOverdue(getDaysOverdue(item.nextDoseDate));
+  const pendingDoses = item.alert.pendingDoses;
 
   return (
     <>
@@ -137,6 +147,15 @@ function VaccineContent({ item, citizenName, onDelete }: VaccineContentProps) {
           tone="warning"
           title={overdueText}
           message="Procure uma Unidade Básica de Saúde para colocar esta vacina em dia."
+        />
+      )}
+
+      {pendingDoses.length > 0 && (
+        <Banner
+          tone="warning"
+          icon="time-outline"
+          title={`${formatPendingDoses(pendingDoses)}: aguardando conferência`}
+          message={`${AWAITING_MESSAGE}. O alerta só se encerra depois da confirmação por um profissional de saúde.`}
         />
       )}
 

@@ -1,17 +1,21 @@
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { Card } from '@/components/ui';
+import { Card, Icon } from '@/components/ui';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
-import type { VaccinationCard } from '@/types/vaccination';
+import type { AlertStatus, CardVaccine } from '@/types/vaccination';
 import { formatNumber } from '@/utils/format';
 
 interface Props {
-  summary: VaccinationCard['summary'];
+  vaccines: CardVaccine[];
 }
 
 /**
- * Resumo da caderneta com os contadores da API: em dia, atrasadas e completas
+ * Resumo da caderneta pela situação do alerta (D32): em dia, atrasadas e completas contam só doses
+ * confirmadas; as vacinas com doses aguardando conferência aparecem à parte
  */
-export function SummaryCard({ summary }: Props) {
+export function SummaryCard({ vaccines }: Props) {
+  const countOf = (status: AlertStatus) => vaccines.filter((item) => item.alert.status === status).length;
+  const summary = { emDia: countOf('EM_DIA'), atrasadas: countOf('ATRASADA'), completas: countOf('COMPLETA') };
+  const awaiting = countOf('AGUARDANDO_CONFERENCIA');
   const { width, fontScale } = useWindowDimensions();
   // Largura de cada contador lado a lado (descontando o padding da tela, do card e os espaços).
   // Se o rótulo mais longo ("Completas") não couber com a fonte atual, os contadores ficam empilhados
@@ -41,6 +45,16 @@ export function SummaryCard({ summary }: Props) {
           </View>
         ))}
       </View>
+      {awaiting > 0 && (
+        <View style={styles.awaiting} accessible>
+          <Icon name="time-outline" size={18} color={colors.warning} />
+          <Text style={styles.awaitingText}>
+            {awaiting === 1
+              ? '1 vacina aguardando conferência na UBS'
+              : `${formatNumber(awaiting)} vacinas aguardando conferência na UBS`}
+          </Text>
+        </View>
+      )}
     </Card>
   );
 }
@@ -87,5 +101,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 24,
     lineHeight: 32,
+  },
+  awaiting: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.warningSoft,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  awaitingText: {
+    flex: 1,
+    minWidth: 0,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.warning,
   },
 });
