@@ -168,6 +168,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
   - "Doses descartadas": o sistema não controla estoque nem descarte.
 - **Rodapé do login** (`auth/login.png`): links "Termos de uso" e "Ajuda". Ainda não há conteúdo para essas páginas; o app mostra só a "Política de privacidade".
 - **UBS da dose** (D29): registrar a UBS onde a dose foi aplicada na confirmação (backend e web) e exibi-la no histórico de doses.
+- **Doenças prevenidas em lista:** guardar as doenças prevenidas como lista no catálogo de vacinas (backend e Gerenciador Web), em vez de texto único, eliminando a heurística de separação dos chips no app.
 
 ---
 
