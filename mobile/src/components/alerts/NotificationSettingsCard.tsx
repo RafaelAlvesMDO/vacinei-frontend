@@ -105,6 +105,7 @@ const TEST_FEEDBACK: Record<TestNotificationResult, { tone: BannerTone; message:
   sent: { tone: 'success', message: 'A notificação de hoje chega em 5 segundos. Saia do app para vê-la na barra.' },
   empty: { tone: 'info', message: 'Hoje não há avisos na sua caderneta, então nenhuma notificação seria enviada.' },
   denied: { tone: 'warning', message: 'Permita as notificações para enviar o teste.' },
+  error: { tone: 'danger', message: 'Não foi possível agendar a notificação de teste. Veja o aviso no terminal.' },
 };
 
 /**

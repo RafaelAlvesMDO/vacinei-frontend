@@ -24,29 +24,52 @@ export interface PermissionInfo {
   canAskAgain: boolean;
 }
 
-let configured = false;
+const UNSUPPORTED: PermissionInfo = { state: 'denied', canAskAgain: false };
 
-/**
- * Mostra a notificação com o app aberto e cria o canal do Android (só uma vez)
- */
-export async function configureNotifications(): Promise<void> {
-  if (!isSupported || configured) return;
-  configured = true;
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
-  });
-  if (Platform.OS === 'android') {
+// Configuração feita uma vez (a mesma promessa é reaproveitada) e o canal criado, se deu certo
+let configuration: Promise<void> | null = null;
+let channelId: string | null = null;
+
+async function createAndroidChannel(): Promise<void> {
+  try {
+    // Só id, nome e importância: nenhuma opção nula ou indefinida chega ao módulo nativo
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
       name: 'Alertas de vacina',
-      description: 'Doses atrasadas, aguardando conferência e lembretes da próxima dose',
       importance: AndroidImportance.DEFAULT,
     });
+    channelId = CHANNEL_ID;
+  } catch (error) {
+    // Sem o canal próprio, o Android usa o canal padrão do expo-notifications
+    console.warn('Não foi possível criar o canal de notificações; usando o canal padrão.', error);
   }
+}
+
+/**
+ * Mostra a notificação com o app aberto e cria o canal do Android (só uma vez). Nunca rejeita
+ */
+export function configureNotifications(): Promise<void> {
+  if (!isSupported) return Promise.resolve();
+  configuration ??= (async () => {
+    try {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+        }),
+      });
+    } catch (error) {
+      console.warn('Não foi possível configurar a exibição das notificações.', error);
+    }
+    if (Platform.OS === 'android') await createAndroidChannel();
+  })();
+  return configuration;
+}
+
+// Canal do aviso, só quando o canal próprio foi criado
+function channelOption(): { channelId?: string } {
+  return channelId ? { channelId } : {};
 }
 
 function toPermissionInfo(response: Notifications.NotificationPermissionsStatus): PermissionInfo {
@@ -55,24 +78,37 @@ function toPermissionInfo(response: Notifications.NotificationPermissionsStatus)
 }
 
 export async function getNotificationPermission(): Promise<PermissionInfo> {
-  if (!isSupported) return { state: 'denied', canAskAgain: false };
-  return toPermissionInfo(await Notifications.getPermissionsAsync());
+  if (!isSupported) return UNSUPPORTED;
+  try {
+    return toPermissionInfo(await Notifications.getPermissionsAsync());
+  } catch (error) {
+    console.warn('Não foi possível consultar a permissão de notificações.', error);
+    return UNSUPPORTED;
+  }
 }
 
 /**
- * Pedido do sistema. Só é chamado depois da explicação do app (Início ou Perfil)
+ * Pedido do sistema. Só é chamado depois da explicação do app (Início ou Perfil). Nunca rejeita
  */
 export async function requestNotificationPermission(): Promise<PermissionInfo> {
-  if (!isSupported) return { state: 'denied', canAskAgain: false };
+  if (!isSupported) return UNSUPPORTED;
   await configureNotifications();
-  return toPermissionInfo(await Notifications.requestPermissionsAsync());
+  try {
+    return toPermissionInfo(await Notifications.requestPermissionsAsync());
+  } catch (error) {
+    console.warn('Não foi possível pedir a permissão de notificações.', error);
+    return getNotificationPermission();
+  }
 }
 
 // Os reagendamentos rodam em fila, para dois carregamentos seguidos não se misturarem
 let queue: Promise<void> = Promise.resolve();
 
+// A fila nunca rejeita: uma falha vira aviso e não impede as próximas tarefas
 function enqueue(task: () => Promise<void>): Promise<void> {
-  queue = queue.then(task).catch(() => undefined);
+  queue = queue.then(task).catch((error: unknown) => {
+    console.warn('Não foi possível atualizar as notificações de vacina.', error);
+  });
   return queue;
 }
 
@@ -103,15 +139,20 @@ export function rescheduleVaccineAlerts(vaccines: CardVaccine[], preferences: Al
       const notification = formatDigestNotification(buildDailyDigest(vaccines, date, preferences));
       if (!notification) continue;
 
-      await Notifications.scheduleNotificationAsync({
-        content: { title: notification.title, body: notification.body, data: { url: notification.url } },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId: CHANNEL_ID },
-      });
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: { title: notification.title, body: notification.body, data: { url: notification.url } },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, ...channelOption() },
+        });
+      } catch (error) {
+        // Um dia que falha não impede o agendamento dos outros
+        console.warn(`Não foi possível agendar a notificação de ${date.toLocaleDateString('pt-BR')}.`, error);
+      }
     }
   });
 }
 
-export type TestNotificationResult = 'sent' | 'empty' | 'denied';
+export type TestNotificationResult = 'sent' | 'empty' | 'denied' | 'error';
 
 /**
  * Só em desenvolvimento: dispara em 5 s a notificação consolidada de hoje, com a caderneta real e todos
@@ -119,22 +160,26 @@ export type TestNotificationResult = 'sent' | 'empty' | 'denied';
  */
 export async function sendTestVaccineAlert(vaccines: CardVaccine[]): Promise<TestNotificationResult> {
   if (!isSupported) return 'denied';
-  const permission = await Notifications.getPermissionsAsync();
-  if (!permission.granted) return 'denied';
+  if ((await getNotificationPermission()).state !== 'granted') return 'denied';
   const notification = formatDigestNotification(buildDailyDigest(vaccines, new Date()));
   if (!notification) return 'empty';
   await configureNotifications();
 
-  await Notifications.scheduleNotificationAsync({
-    identifier: TEST_NOTIFICATION_ID,
-    content: { title: notification.title, body: notification.body, data: { url: notification.url } },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: TEST_DELAY_SECONDS,
-      channelId: CHANNEL_ID,
-    },
-  });
-  return 'sent';
+  try {
+    await Notifications.scheduleNotificationAsync({
+      identifier: TEST_NOTIFICATION_ID,
+      content: { title: notification.title, body: notification.body, data: { url: notification.url } },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: TEST_DELAY_SECONDS,
+        ...channelOption(),
+      },
+    });
+    return 'sent';
+  } catch (error) {
+    console.warn('Não foi possível agendar a notificação de teste.', error);
+    return 'error';
+  }
 }
 
 /**

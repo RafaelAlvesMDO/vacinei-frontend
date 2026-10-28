@@ -92,7 +92,9 @@ export function VaccineAlertsProvider({ children }: { children: ReactNode }) {
     if (handledRef.current === id) return;
     handledRef.current = id;
     // Sem limpar, a mesma resposta voltaria ao montar a ala de novo (ex.: depois de trocar de ala)
-    void clearLastNotificationResponseAsync();
+    clearLastNotificationResponseAsync().catch((error: unknown) => {
+      console.warn('Não foi possível limpar a última notificação tocada.', error);
+    });
     const url = getNotificationUrl(response);
     if (url) router.push(url as Href);
   }, [response]);
