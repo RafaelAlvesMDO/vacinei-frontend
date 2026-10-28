@@ -79,15 +79,57 @@ export function getLastRecord(item: CardVaccine): CardRecord | null {
   return item.records.find((record) => record.dose.id === lastDoseId) ?? null;
 }
 
+const DISEASE_SEPARATOR = /^(\s*,\s*|\s+e\s+)/;
+
+// Separa por vírgula e " e " fora de parênteses; null se os parênteses não fecham
+function splitOutsideParentheses(text: string): string[] | null {
+  const parts: string[] = [];
+  let current = '';
+  let depth = 0;
+  let index = 0;
+  while (index < text.length) {
+    const separator = depth === 0 ? DISEASE_SEPARATOR.exec(text.slice(index)) : null;
+    if (separator) {
+      parts.push(current);
+      current = '';
+      index += separator[0].length;
+      continue;
+    }
+    const char = text[index];
+    if (char === '(') depth += 1;
+    if (char === ')') depth -= 1;
+    if (depth < 0) return null;
+    current += char;
+    index += 1;
+  }
+  parts.push(current);
+  return depth === 0 ? parts : null;
+}
+
 /**
- * "Difteria, tétano e coqueluche" → ["Difteria", "Tétano", "Coqueluche"], para exibir uma doença por chip
+ * "Difteria, tétano e coqueluche" → ["Difteria", "Tétano", "Coqueluche"], para exibir uma doença por chip.
+ * Na dúvida, o texto fica num chip só:
+ * - parênteses que não fecham;
+ * - complemento que vale para todas ("Pneumonia, Meningite e Otite média por Pneumococo"): o último item tem
+ *   " por " e os anteriores são palavras soltas, então separar daria "Pneumonia" sem a causa
  */
 export function splitDiseases(targetDisease: string): string[] {
-  return targetDisease
-    .split(/\s*,\s*|\s+e\s+/)
-    .map((disease) => disease.trim())
-    .filter(Boolean)
-    .map((disease) => disease.charAt(0).toLocaleUpperCase('pt-BR') + disease.slice(1));
+  const text = targetDisease.trim();
+  const parts = splitOutsideParentheses(text)
+    ?.map((disease) => disease.trim())
+    .filter(Boolean);
+  if (!parts) return text ? [capitalize(text)] : [];
+  if (parts.length < 2) return parts.map(capitalize);
+
+  const last = parts[parts.length - 1];
+  const sharedQualifier = / por /.test(last) && parts.slice(0, -1).every((disease) => !/\s/.test(disease));
+  if (sharedQualifier) return [capitalize(text)];
+
+  return parts.map(capitalize);
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toLocaleUpperCase('pt-BR') + text.slice(1);
 }
 
 // Registros da dose mais recente para a mais antiga
