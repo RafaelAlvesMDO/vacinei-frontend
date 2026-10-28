@@ -35,6 +35,12 @@
       "expo-image",
       "expo-status-bar",
       [
+        "expo-notifications",
+        {
+          "color": "#077A66"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "O Vacinei!? usa a sua localização apenas para ordenar as UBS por distância. Ela não é salva nem compartilhada."
