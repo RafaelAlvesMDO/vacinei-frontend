@@ -156,6 +156,10 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ---
 
+## Semana final: conferência no APK (build instalável)
+
+- **Notificações (etapa 9):** conferir que o canal "Alertas de vacina" aparece nas configurações de notificação do app e que tocar na notificação abre o detalhe da vacina (uma vacina) ou a Caderneta filtrada (várias), com o app fechado e aberto. No Expo Go do Android (SDK 58), criar o canal falha (NullPointerException) e o toque fecha o Expo Go sem erro no JavaScript: lá o app não cria o canal, agenda sem `channelId` e não trata o toque (`isExpoGo`, pelo `expo-constants`), que só abre o app.
+
 ## Revisão final de acessibilidade
 
 - Conferir ícones com a fonte do sistema ampliada.
