@@ -4,6 +4,7 @@ import { onSessionExpired } from '@/services/api';
 import { getLastAla, saveLastAla } from '@/services/alaStorage';
 import { authenticate, getProfile, signOut as clearStoredSession } from '@/services/auth';
 import { getStoredUser, getToken, loadSession, saveSession, updateStoredUser } from '@/services/tokenStorage';
+import { cancelVaccineAlerts } from '@/services/vaccineNotifications';
 import type { Ala, LoginCredentials, StoredUser } from '@/types/auth';
 
 /**
@@ -44,9 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isRestoring, setIsRestoring] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
 
+  // Ao sair ou com a sessão expirada, os alertas da caderneta não ficam agendados no aparelho (LGPD)
   const clearState = useCallback(() => {
     setUser(null);
     setAla(null);
+    void cancelVaccineAlerts();
   }, []);
 
   // Refresh recusado: o api.ts já limpou o aparelho, falta voltar ao login
@@ -64,12 +67,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function restore() {
       const session = await loadSession();
-      if (!session) return;
+      if (!session) {
+        // Sessão encerrada com o app fechado: nenhum alerta da conta anterior continua agendado
+        await cancelVaccineAlerts();
+        return;
+      }
 
       try {
         const profile = await getProfile();
         if (profile.role === 'ADMIN') {
           await clearStoredSession();
+          await cancelVaccineAlerts();
           return;
         }
         await updateStoredUser(profile);
@@ -77,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Sem rede, o app segue com o usuário salvo. 401 depois da renovação: conta desativada ou sessão revogada
         if (isAxiosError(error) && error.response?.status === 401) {
           await clearStoredSession();
+          await cancelVaccineAlerts();
           return;
         }
         if (!getToken()) return;

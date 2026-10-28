@@ -1,34 +1,65 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { AlertRow } from '@/components/alerts/AlertRow';
+import { NotificationPrompt } from '@/components/alerts/NotificationPrompt';
 import { Banner, Button, Card, Icon, Screen, StateMessage } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { SummaryCard } from '@/components/vaccination/SummaryCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
-import { colors, fonts, radius, spacing, typography } from '@/theme';
-import type { CardVaccine } from '@/types/vaccination';
+import { useVaccineAlerts } from '@/hooks/useVaccineAlerts';
+import { colors, fonts, radius, spacing, touchTarget, typography } from '@/theme';
 import { getFirstName, getInitials } from '@/utils/roles';
-import { EMPTY_CARD_MESSAGE, formatOverdue, getDaysOverdue, sortVaccines } from '@/utils/vaccination';
+import { buildDailyDigest, getDigestVaccineIds, type DailyDigest } from '@/utils/vaccineAlerts';
+import { AWAITING_MESSAGE, EMPTY_CARD_MESSAGE, formatOverdue, formatPendingDoses } from '@/utils/vaccination';
+
+function openVaccine(vaccineId: string) {
+  router.push({ pathname: '/cidadao/vacina/[vaccineId]', params: { vaccineId } });
+}
 
 /**
- * Início da ala Cidadão (RF006): saudação, resumo da caderneta e alertas das doses atrasadas
+ * Início da ala Cidadão (RF006, RF007): saudação, resumo da caderneta, alertas do dia (D32) e acesso à
+ * Central de notificações
  */
 export default function CitizenHome() {
   const { user } = useAuth();
   const { card, error, isRefreshing, reload } = useVaccinationCard();
+  const { shouldPrompt } = useVaccineAlerts();
   if (!user) return null;
 
-  const overdue = card ? sortVaccines(card.vaccines).filter((item) => item.status === 'ATRASADA') : [];
+  // Os avisos do app não dependem das preferências de notificação
+  const digest = card ? buildDailyDigest(card.vaccines, new Date()) : null;
+  const noticeCount = digest ? getDigestVaccineIds(digest).length : 0;
 
   return (
     <Screen edges={['top']} refreshing={isRefreshing} onRefresh={() => reload({ refreshing: true })}>
-      <View style={styles.brand}>
-        <View style={styles.brandIcon}>
-          <Icon name="shield-checkmark" size={18} color={colors.white} />
+      <View style={styles.brandRow}>
+        <View style={styles.brand}>
+          <View style={styles.brandIcon}>
+            <Icon name="shield-checkmark" size={18} color={colors.white} />
+          </View>
+          <Text style={[typography.title, styles.brandTitle]} accessibilityRole="header">
+            Minha caderneta
+          </Text>
         </View>
-        <Text style={typography.title} accessibilityRole="header">
-          Minha caderneta
-        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            noticeCount > 0
+              ? `Notificações: ${noticeCount} ${noticeCount === 1 ? 'aviso' : 'avisos'} hoje`
+              : 'Notificações'
+          }
+          accessibilityHint="Abre a Central de notificações"
+          onPress={() => router.push('/cidadao/notificacoes')}
+          style={({ pressed }) => [styles.bell, pressed && styles.bellPressed]}
+        >
+          <Icon name="notifications-outline" color={colors.primaryDark} />
+          {noticeCount > 0 && (
+            <View style={styles.bellBadge}>
+              <Text style={styles.bellBadgeText}>{noticeCount > 9 ? '9+' : noticeCount}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       <Card style={styles.greeting}>
@@ -43,7 +74,9 @@ export default function CitizenHome() {
         </View>
       </Card>
 
-      {!card ? (
+      {shouldPrompt && <NotificationPrompt />}
+
+      {!card || !digest ? (
         <CardLoadState error={error} onRetry={() => reload()} />
       ) : (
         <>
@@ -63,8 +96,8 @@ export default function CitizenHome() {
             />
           ) : (
             <>
-              <SummaryCard summary={card.summary} />
-              <AlertsCard overdue={overdue} />
+              <SummaryCard vaccines={card.vaccines} />
+              <AlertsCard digest={digest} />
               <Button
                 label="Ver caderneta completa"
                 variant="secondary"
@@ -79,61 +112,58 @@ export default function CitizenHome() {
   );
 }
 
-function AlertsCard({ overdue }: { overdue: CardVaccine[] }) {
+// Alertas do dia: doses atrasadas e aguardando conferência (os lembretes ficam na Central)
+function AlertsCard({ digest }: { digest: DailyDigest }) {
+  const { overdue, awaiting } = digest;
+  const hasAlerts = overdue.length > 0 || awaiting.length > 0;
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={typography.subtitle} accessibilityRole="header">
           Alertas
         </Text>
-        {overdue.length > 0 && (
-          <Text style={styles.sectionCount}>{overdue.length} em atraso</Text>
-        )}
+        {overdue.length > 0 && <Text style={styles.sectionCount}>{overdue.length} em atraso</Text>}
       </View>
 
       <Card style={styles.alerts}>
-        {overdue.map((item) => {
-          const dose = item.nextDose?.doseName;
-          const overdueText = formatOverdue(getDaysOverdue(item.nextDoseDate));
-          return (
-            <Pressable
-              key={item.vaccine.id}
-              accessibilityRole="button"
-              accessibilityLabel={[item.vaccine.name, dose, overdueText].filter(Boolean).join('. ')}
-              accessibilityHint="Abre o detalhe da vacina"
-              onPress={() =>
-                router.push({ pathname: '/cidadao/vacina/[vaccineId]', params: { vaccineId: item.vaccine.id } })
-              }
-              style={({ pressed }) => [styles.alertRow, pressed && styles.alertRowPressed]}
-            >
-              <View style={[styles.alertIcon, styles.alertIconDanger]}>
-                <Icon name="alert-circle-outline" color={colors.danger} />
-              </View>
-              <View style={styles.alertText}>
-                <Text style={styles.alertTitle}>{item.vaccine.name}</Text>
-                <Text style={typography.muted}>
-                  {dose ? `${dose} · ` : ''}
-                  <Text style={styles.overdue}>{overdueText}</Text>
-                </Text>
-              </View>
-              <Text style={styles.details}>Ver detalhes</Text>
-              <Icon name="chevron-forward" size={16} />
-            </Pressable>
-          );
-        })}
+        {overdue.map((alert) => (
+          <AlertRow
+            key={`atrasada-${alert.vaccineId}`}
+            tone="danger"
+            icon="alert-circle-outline"
+            title={alert.vaccineName}
+            dose={alert.doseName}
+            detail={formatOverdue(alert.days)}
+            actionLabel="Ver detalhes"
+            accessibilityHint="Abre o detalhe da vacina"
+            onPress={() => openVaccine(alert.vaccineId)}
+          />
+        ))}
+        {awaiting.map((alert) => (
+          <AlertRow
+            key={`aguardando-${alert.vaccineId}`}
+            tone="warning"
+            icon="time-outline"
+            title={alert.vaccineName}
+            dose={formatPendingDoses(alert.doses)}
+            detail={AWAITING_MESSAGE}
+            actionLabel="Ver detalhes"
+            accessibilityHint="Abre o detalhe da vacina"
+            onPress={() => openVaccine(alert.vaccineId)}
+          />
+        ))}
 
         <View style={styles.alertRow} accessible>
           <View style={styles.alertIcon}>
             <Icon name="checkmark" />
           </View>
           <View style={styles.alertText}>
-            <Text style={[styles.alertTitle, styles.ok]}>
-              {overdue.length > 0 ? 'Demais vacinas em dia' : 'Tudo em dia'}
-            </Text>
+            <Text style={[styles.alertTitle, styles.ok]}>{hasAlerts ? 'Demais vacinas em dia' : 'Tudo em dia'}</Text>
             <Text style={typography.muted}>
-              {overdue.length > 0
-                ? 'As outras vacinas da caderneta não têm atraso.'
-                : 'Nenhuma dose atrasada na sua caderneta.'}
+              {hasAlerts
+                ? 'As outras vacinas da caderneta não têm pendências.'
+                : 'Nenhuma dose atrasada ou aguardando conferência na sua caderneta.'}
             </Text>
           </View>
         </View>
@@ -143,10 +173,52 @@ function AlertsCard({ overdue }: { overdue: CardVaccine[] }) {
 }
 
 const styles = StyleSheet.create({
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
   brand: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  brandTitle: {
+    flexShrink: 1,
+  },
+  bell: {
+    width: touchTarget,
+    height: touchTarget,
+    borderRadius: radius.full,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellPressed: {
+    backgroundColor: colors.surface,
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: radius.full,
+    backgroundColor: colors.danger,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    lineHeight: 14,
+    color: colors.white,
   },
   brandIcon: {
     width: 32,
@@ -205,9 +277,6 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     minHeight: 56,
   },
-  alertRowPressed: {
-    backgroundColor: colors.surface,
-  },
   alertIcon: {
     width: 40,
     height: 40,
@@ -215,9 +284,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  alertIconDanger: {
-    backgroundColor: colors.dangerSoft,
   },
   alertText: {
     flex: 1,
@@ -231,15 +297,6 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
   },
   ok: {
-    color: colors.primary,
-  },
-  overdue: {
-    fontFamily: fonts.medium,
-    color: colors.danger,
-  },
-  details: {
-    fontFamily: fonts.semibold,
-    fontSize: 14,
     color: colors.primary,
   },
 });
