@@ -1,8 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Badge, Banner, Button, Card, Icon, Screen, StateMessage, StepHeader } from '@/components/ui';
+import { Badge, Banner, Button, Card, ConfirmDialog, Icon, Screen, StateMessage, StepHeader } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
+import { parseApiError } from '@/services/auth';
+import { deleteRecord } from '@/services/vaccinationRecords';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { CardRecord, CardVaccine } from '@/types/vaccination';
 import { formatCalendarDate } from '@/utils/format';
@@ -15,8 +18,34 @@ export default function VaccineDetail() {
   const { vaccineId } = useLocalSearchParams<{ vaccineId: string }>();
   const { card, error, isRefreshing, reload } = useVaccinationCard();
   const item = card?.vaccines.find((vaccine) => vaccine.vaccine.id === vaccineId);
+  const [toDelete, setToDelete] = useState<CardRecord | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [feedback, setFeedback] = useState<{ tone: 'success' | 'danger'; message: string } | null>(null);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/cidadao/caderneta'));
+
+  // Exclusão do próprio registro ainda não confirmado (D30)
+  const confirmDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    try {
+      await deleteRecord(toDelete.id);
+      setFeedback({ tone: 'success', message: `O registro "${toDelete.dose.doseName}" foi removido da sua caderneta.` });
+    } catch (reason) {
+      const parsed = parseApiError(reason, 'Não foi possível excluir o registro. Tente novamente.');
+      const message =
+        parsed.status === 404
+          ? 'Este registro não foi encontrado. Ele pode já ter sido excluído.'
+          : parsed.status === 403
+            ? 'Este registro já foi confirmado por um profissional de saúde e não pode mais ser excluído.'
+            : parsed.message;
+      setFeedback({ tone: 'danger', message });
+    } finally {
+      setDeleting(false);
+      setToDelete(null);
+      reload();
+    }
+  };
 
   return (
     <Screen
@@ -24,6 +53,29 @@ export default function VaccineDetail() {
       refreshing={isRefreshing}
       onRefresh={() => reload({ refreshing: true })}
     >
+      {feedback && (
+        <Banner
+          tone={feedback.tone}
+          title={feedback.tone === 'success' ? 'Registro excluído' : 'Não foi possível excluir'}
+          message={feedback.message}
+        />
+      )}
+      <ConfirmDialog
+        visible={toDelete !== null}
+        variant="danger"
+        icon="trash-outline"
+        title="Excluir registro?"
+        message={
+          toDelete
+            ? `O registro "${toDelete.dose.doseName}", aplicado em ${formatCalendarDate(toDelete.applicationDate)}, será removido da sua caderneta. Você pode cadastrá-lo de novo depois.`
+            : ''
+        }
+        confirmLabel="Excluir"
+        loadingLabel="Excluindo..."
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
       {!card ? (
         <CardLoadState error={error} onRetry={() => reload()} />
       ) : !item ? (
@@ -37,31 +89,47 @@ export default function VaccineDetail() {
       ) : (
         <>
           {error && <Banner tone="danger" title="Não foi possível atualizar" message={error} />}
-          <VaccineContent item={item} citizenName={card.citizen.name} />
+          <VaccineContent
+            item={item}
+            citizenName={card.citizen.name}
+            onDelete={(record) => {
+              setFeedback(null);
+              setToDelete(record);
+            }}
+          />
         </>
       )}
     </Screen>
   );
 }
 
-function VaccineContent({ item, citizenName }: { item: CardVaccine; citizenName: string }) {
+interface VaccineContentProps {
+  item: CardVaccine;
+  citizenName: string;
+  onDelete: (record: CardRecord) => void;
+}
+
+function VaccineContent({ item, citizenName, onDelete }: VaccineContentProps) {
   const status = SCHEDULE_STATUS[item.status];
   const records = sortRecords(item.records);
+  // Ainda há dose do esquema sem registro na caderneta
+  const hasFreeDose = item.records.length < item.vaccine.dosesCount;
   const isOverdue = item.status === 'ATRASADA';
   const overdueText = formatOverdue(getDaysOverdue(item.nextDoseDate));
 
   return (
     <>
       <View style={styles.hero}>
-        <View style={styles.heroHeader}>
-          <Text style={[typography.title, styles.heroTitle]} accessibilityRole="header">
-            {item.vaccine.name}
-          </Text>
-          <Badge label={status.label} tone={status.tone} icon={status.icon} />
-        </View>
+        <Text style={typography.title} accessibilityRole="header">
+          {item.vaccine.name}
+        </Text>
         <Text style={typography.muted}>
           {item.vaccine.targetDisease} · {citizenName}
         </Text>
+        {/* Badge em linha própria, para o nome usar a largura inteira */}
+        <View style={styles.heroBadge}>
+          <Badge label={status.label} tone={status.tone} icon={status.icon} />
+        </View>
       </View>
 
       {isOverdue && (
@@ -88,6 +156,17 @@ function VaccineContent({ item, citizenName }: { item: CardVaccine; citizenName:
         )}
       </Card>
 
+      {hasFreeDose && (
+        <Button
+          label="Registrar nova dose"
+          icon="add-circle-outline"
+          accessibilityHint="Abre o cadastro manual com esta vacina preenchida"
+          onPress={() =>
+            router.push({ pathname: '/cidadao/registro-vacina', params: { vaccineId: item.vaccine.id } })
+          }
+        />
+      )}
+
       {/* RF008 nota 9 (D29): abre a localização de UBS, já no mapa. A confirmação ainda não registra a UBS da dose */}
       <Button
         label="Ver UBS no mapa"
@@ -106,7 +185,7 @@ function VaccineContent({ item, citizenName }: { item: CardVaccine; citizenName:
             <Text style={typography.muted}>Nenhuma dose desta vacina foi registrada.</Text>
           </Card>
         ) : (
-          records.map((record) => <RecordCard key={record.id} record={record} />)
+          records.map((record) => <RecordCard key={record.id} record={record} onDelete={() => onDelete(record)} />)
         )}
       </View>
     </>
@@ -122,7 +201,7 @@ function InfoRow({ label, value, danger = false }: { label: string; value: strin
   );
 }
 
-function RecordCard({ record }: { record: CardRecord }) {
+function RecordCard({ record, onDelete }: { record: CardRecord; onDelete: () => void }) {
   const badge = getRecordBadge(record);
   const isConfirmed = record.status === 'CONFIRMADO';
   const date = formatCalendarDate(record.applicationDate);
@@ -149,7 +228,29 @@ function RecordCard({ record }: { record: CardRecord }) {
       </View>
 
       {!isConfirmed && (
-        <Text style={styles.note}>Registro informado por você. Ele passa a valer como confirmado depois que um profissional de saúde o conferir presencialmente.</Text>
+        <>
+          <Text style={styles.note}>Registro informado por você. Ele passa a valer como confirmado depois que um profissional de saúde o conferir presencialmente.</Text>
+          {/* Só registros não confirmados podem ser alterados pelo titular (D30) */}
+          <View style={styles.recordActions}>
+            <Button
+              label="Editar"
+              icon="create-outline"
+              variant="link"
+              accessibilityHint={`Edita o registro: ${record.dose.doseName}`}
+              onPress={() =>
+                router.push({ pathname: '/cidadao/registro-vacina', params: { recordId: record.id } })
+              }
+            />
+            <Button
+              label="Excluir"
+              icon="trash-outline"
+              variant="link"
+              danger
+              accessibilityHint={`Exclui o registro: ${record.dose.doseName}`}
+              onPress={onDelete}
+            />
+          </View>
+        </>
       )}
     </Card>
   );
@@ -164,15 +265,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.xs,
   },
-  heroHeader: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  heroTitle: {
-    flexShrink: 1,
+  heroBadge: {
+    marginTop: spacing.xs,
   },
   info: {
     gap: spacing.md,
@@ -237,5 +331,12 @@ const styles = StyleSheet.create({
     ...typography.muted,
     fontSize: 13,
     lineHeight: 18,
+  },
+  recordActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    marginRight: -spacing.sm,
   },
 });

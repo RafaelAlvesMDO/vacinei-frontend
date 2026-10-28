@@ -40,3 +40,35 @@ export interface VaccinationCard {
   summary: { totalVaccines: number; emDia: number; atrasadas: number; completas: number };
   vaccines: CardVaccine[];
 }
+
+// GET /vaccines: vacina ativa do catálogo, com as doses em ordem
+export interface CatalogDose extends DoseSummary {
+  recommendedAgeMonths: number | null;
+  intervalDaysFromPrevious: number | null;
+}
+
+export interface CatalogVaccine {
+  id: string;
+  name: string;
+  targetDisease: string;
+  dosesCount: number;
+  isActive: boolean;
+  doses: CatalogDose[];
+}
+
+// POST e PUT /vaccination-records (cadastro manual pelo titular, D30). Sem o lote, ele fica nulo
+export interface ManualRecordPayload {
+  vaccineId: string;
+  doseId: string;
+  applicationDate: string;
+  lote?: string;
+}
+
+export interface SavedRecord {
+  id: string;
+  status: RecordStatus;
+  origin: RecordOrigin;
+  applicationDate: string;
+  lotNumber: string | null;
+  dose: DoseSummary & { vaccine: { id: string; name: string } };
+}

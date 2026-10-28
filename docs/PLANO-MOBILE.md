@@ -8,7 +8,8 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## Base técnica
 
-- **Expo SDK 57 + React Native 0.86 + TypeScript estrito** (sem `any`). Testes no celular pelo Expo Go, que só abre projetos do SDK que ele suporta (a versão 57.0.9 do Expo Go aceita apenas o SDK 57). Atualizar o SDK só quando o Expo Go das lojas suportar a versão nova (`npm install expo@^N` + `npx expo install --fix`).
+- **Expo SDK 58 + React Native 0.88 + React 19.3 + TypeScript estrito** (sem `any`). Testes no celular pelo Expo Go, que só abre projetos do SDK que ele suporta (a versão 58.0.5 do Expo Go aceita apenas o SDK 58). Atualizar o SDK só quando o Expo Go das lojas suportar a versão nova (`npm install expo@^N` + `npx expo install --fix`; se o npm acusar conflito de peer com pacotes do SDK anterior, apagar `node_modules` e `package-lock.json` e reinstalar).
+  - Migração 57 → 58: o RN 0.88 tipa refs pelas instâncias (`TextInputInstance`, `TextInstance`) e o `ColorValue` passou a admitir número e `null`, por isso o `Icon` recebe o tipo de cor do `@expo/vector-icons`. O `index.d.ts` do `react-native-webview` 14 resolve as props como `never` com o genérico padrão, então o mapa usa `WebView<object>`. No `Stack.Protected` do SDK 58, uma guarda sem `redirectTo` leva à primeira rota liberada em ordem alfabética (o profissional na ala Profissional caía em `privacidade`): o layout raiz passa `redirectTo` com o destino do estado (`getHomeHref`).
 - **Navegação:** Expo Router (rotas por arquivo em `src/app/`): grupo `(auth)` e as alas em pastas `cidadao/` e `profissional/` (URLs `/cidadao/...` e `/profissional/...`), cada uma com abas inferiores. As alas não são grupos porque as duas têm a aba Perfil, e dois grupos com `perfil` gerariam a mesma URL. A proteção fica no `_layout.tsx` raiz (`Stack.Protected`).
 - **HTTP:** Axios em `src/services/api.ts`, no mesmo padrão do web: Bearer token, renovação única no `401` via `POST /auth/refresh`, opção `skipAuthRefresh` e `parseApiError` (erros por campo do Zod). Chamadas isoladas em `src/services/`.
 - **Sessão:** `expo-secure-store` para o access token, o refresh token e o usuário mínimo (`id`, `name`, `email`, `role`, `professionalRegistry`; sem CPF, como no web). Sem "Lembrar de mim": o app mantém a sessão até sair ou expirar.
@@ -22,7 +23,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ## [x] Etapa 1: Base do app
 
-- [x] Projeto Expo SDK 57 em `mobile/` (TypeScript estrito), Expo Router, ESLint (`eslint-config-expo`, `no-explicit-any` como erro) e scripts (`npm run start`, `npm run lint`, `npm run typecheck`).
+- [x] Projeto Expo SDK 58 (criado no 57) em `mobile/` (TypeScript estrito), Expo Router, ESLint (`eslint-config-expo`, `no-explicit-any` como erro) e scripts (`npm run start`, `npm run lint`, `npm run typecheck`).
 - [x] `src/services/api.ts` (Bearer, renovação única no `401`, `skipAuthRefresh`, `renewSession`, `onSessionExpired`), `tokenStorage.ts` e `auth.ts` (`authenticate`, `getProfile`, `signOut`, `parseApiError`).
   - O SecureStore é assíncrono: `tokenStorage` mantém uma cópia da sessão em memória, preenchida por `loadSession()` no layout raiz antes de esconder o splash, e grava no aparelho a cada alteração. Só o usuário mínimo (`StoredUser`) é gravado.
 - [x] Tema em `src/theme/` (`colors`, `spacing`, `radius`, `touchTarget`, `typography`, `fonts`) e Inter 400/500/600/700. Cada peso é uma família (`fonts.semibold` etc.), porque no React Native o `fontWeight` não troca o arquivo da fonte.
@@ -64,7 +65,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - [x] **Início:** saudação com o e-mail, resumo da API (`SummaryCard`: em dia, atrasadas e completas), "Alertas" com as atrasadas ("2ª dose · 18 dias em atraso", abre o detalhe) ou "Tudo em dia" e o atalho "Ver caderneta completa".
 - [x] **Caderneta (aba nova):** busca por vacina ou doença (sem acentos), filtros Todas, Em dia, Atrasadas e Completas (`components/ui/FilterChips`, com contadores que respeitam a busca) e um cartão por vacina (`VaccineListItem`) com a próxima dose ou "Esquema completo", o status, a data da última dose e a origem do último registro.
 - [x] **Detalhe:** status, doença, aviso de atraso, doses aplicadas/total, última aplicação, próxima dose e data prevista, e o histórico (da dose mais recente para a mais antiga) com badge "Confirmado" ou "Aguardando confirmação" (D06), lote, UBS e profissional.
-- [x] **Estados:** puxar para atualizar (`refreshing`/`onRefresh` no `Screen`), carregando, erro com "Tentar novamente" (`403` e `404` com mensagens próprias) e, com dados na tela, falha da atualização como banner, sem perder a caderneta (`components/ui/StateMessage` e `components/vaccination/CardLoadState`). Vazio: "Você ainda não tem vacinas registradas. Em breve você poderá digitalizar sua caderneta ou cadastrar manualmente."
+- [x] **Estados:** puxar para atualizar (`refreshing`/`onRefresh` no `Screen`), carregando, erro com "Tentar novamente" (`403` e `404` com mensagens próprias) e, com dados na tela, falha da atualização como banner, sem perder a caderneta (`components/ui/StateMessage` e `components/vaccination/CardLoadState`). Vazio: "Você ainda não tem vacinas registradas. Cadastre as doses que já tomou. Em breve você também poderá digitalizar sua caderneta." (texto ajustado na etapa 5).
 - Ficaram de fora (outras etapas): seletor de dependentes e "Adicionar dependente" (etapa 7), notificações (etapa 9), "Digitalizar" e "Cadastrar manualmente" (etapas 8 e 5), editar e "Registrar nova dose" (etapa 5), "Ver no mapa" e distância da UBS (etapa 4). O filtro avançado da busca do design não foi feito: os filtros por status já cobrem a lista.
 - Requisitos: RF006, RS004.
 - **Backend:** nenhum.
@@ -83,13 +84,34 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - Requisitos: RF008, RNF09, RNF15.
 - **Backend:** nenhum.
 
-## [ ] Etapa 5: Cadastro manual de vacina
+## [x] Etapa 5: Cadastro manual de vacina
 
 - **Design:** `design-mobile/cidadao/` (`cadastrar-ou-editar-vacina.png`, `resumo-da-vacina.png`, `registro-salvo.png`).
-- Formulário: vacina e dose (`GET /vaccines`), data de aplicação (não futura), lote e UBS opcionais. O registro entra como `MANUAL` e fica "Aguardando confirmação" até um profissional confirmar (D06).
-- Editar ou excluir o próprio registro enquanto não estiver confirmado.
+- [x] **Dados:** `services/vaccines.ts` (`listVaccines`, `GET /vaccines`) + `hooks/useVaccineCatalog` e `services/vaccinationRecords.ts` (`createRecord`, `updateRecord`, `deleteRecord`). Tipos `CatalogVaccine`, `ManualRecordPayload` e `SavedRecord` em `types/vaccination.ts`. Regras em `utils/vaccineRecord.ts` (funções puras).
+- [x] **Rota:** `cidadao/registro-vacina` (Stack, sem as abas). `?vaccineId=` preenche a vacina e `?recordId=` edita. Um registro confirmado ou que sumiu da caderneta mostra um aviso no lugar do formulário.
+- [x] **Fluxo** (`components/vaccination/VaccineRecordFlow`): formulário → resumo ("Confira antes de salvar", origem "Informado por você" e aviso de "Aguardando confirmação") → registro salvo (badge "Aguardando confirmação", "Ver minha caderneta" e "Adicionar outra vacina", ou "Voltar para a vacina" na edição). O voltar do Android no resumo retorna ao formulário.
+- [x] **Formulário** (`components/vaccination/VaccineRecordForm`): é controlado e não chama a API. Recebe os valores e devolve só os campos alterados.
+  - Vacina: busca por nome ou doença (sem acentos), com sugestões em pílulas (até 8).
+  - Dose: `SelectField`, que ganhou `disabled` por opção. As doses já registradas aparecem bloqueadas, com "Já está na sua caderneta".
+  - Data: `DD/MM/AAAA`, não futura (fuso de Maceió) e não anterior ao nascimento.
+  - Lote: opcional, em maiúsculas, `^[A-Z0-9]{1,20}$`.
+  - Sem dose escolhida, o fluxo sugere a próxima pendente da caderneta ou, sem ela, a primeira livre (`suggestDose`).
+- [x] **Reaproveitamento no OCR (etapa 8):** o `VaccineRecordFlow` recebe `initialValues` (`RecordInitialValues`: `vaccineId`, `doseId`, `applicationDate` em `YYYY-MM-DD` e `lote`), além de `title` e `subtitle`. O cidadão confere e corrige os dados lidos antes de salvar (RF004, RNF12). A leitura precisa entregar os ids do catálogo.
+- [x] **Erros:**
+  - `400`: erro por campo e volta ao formulário.
+  - `409`: "Esta dose já está na sua caderneta." na dose, com recarga da caderneta.
+  - `404`: vacina indisponível ou registro não encontrado, com recarga do catálogo e da caderneta.
+  - `403`: mensagem da API, por exemplo quando o registro foi confirmado durante a edição.
+  - Falha de conexão: o fluxo continua no resumo para tentar de novo.
+  - Depois de salvar, editar ou excluir, a caderneta do contexto é recarregada.
+- [x] **Pontos de entrada:** "Cadastrar vacina" na Caderneta (topo e estado vazio) e no estado vazio da Início. "Registrar nova dose" no detalhe, enquanto houver dose sem registro. No histórico, os registros não confirmados ganham "Editar" e "Excluir" (`ConfirmDialog` danger, com banner de sucesso ou erro: `403` confirmado e `404` já excluído).
+- **Diferenças intencionais do design:**
+  - Sem "Próxima dose" e "Profissional responsável" (e sem a UBS citada antes): a API não aceita esses campos. A próxima dose é calculada pela caderneta, e o profissional é quem confirma.
+  - Data digitada com máscara, sem calendário nativo, como no cadastro.
+  - O "Salvo" do design virou o badge "Aguardando confirmação" (D06).
+  - O resumo mostra a doença no lugar da próxima dose e do profissional.
 - Requisitos: RF005, RS003 (vacina do calendário e data de aplicação não futura).
-- **Backend novo:** `POST /vaccination-records` (titular, `origin: MANUAL`), e `PUT`/`DELETE /vaccination-records/:id` só para registros próprios não confirmados.
+- **Backend novo (D30):** `POST /vaccination-records` (titular, `origin: MANUAL`), e `PUT`/`DELETE /vaccination-records/:id` só para registros próprios não confirmados.
 
 ## [ ] Etapa 6: Ala profissional
 
@@ -146,6 +168,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
   - "Doses descartadas": o sistema não controla estoque nem descarte.
 - **Rodapé do login** (`auth/login.png`): links "Termos de uso" e "Ajuda". Ainda não há conteúdo para essas páginas; o app mostra só a "Política de privacidade".
 - **UBS da dose** (D29): registrar a UBS onde a dose foi aplicada na confirmação (backend e web) e exibi-la no histórico de doses.
+- **Doenças prevenidas em lista:** guardar as doenças prevenidas como lista no catálogo de vacinas (backend e Gerenciador Web), em vez de texto único, eliminando a heurística de separação dos chips no app.
 
 ---
 

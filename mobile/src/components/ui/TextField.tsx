@@ -1,5 +1,5 @@
 import { useState, type ReactNode, type Ref } from 'react';
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { StyleSheet, Text, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import { colors, fonts, radius, spacing, touchTarget, typography } from '@/theme';
 import { Icon, type IconName } from './Icon';
 
@@ -11,7 +11,7 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   // Ícone decorativo à direita ou um elemento interativo (ex.: mostrar senha)
   icon?: IconName;
   trailing?: ReactNode;
-  ref?: Ref<TextInput>;
+  ref?: Ref<TextInputInstance>;
 }
 
 /**

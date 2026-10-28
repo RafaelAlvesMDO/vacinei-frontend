@@ -78,14 +78,11 @@ const styles = StyleSheet.create({
   cardPressed: {
     backgroundColor: colors.surface,
   },
+  // Badge abaixo do nome e da dose, para o nome usar a largura inteira e não quebrar no meio da palavra
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   title: {
-    flex: 1,
-    minWidth: 0,
     gap: 2,
   },
   name: {

@@ -31,6 +31,8 @@ export function Badge({ label, tone = 'primary', icon }: Props) {
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
+    // Com a fonte ampliada em 320px, o texto quebra dentro do badge em vez de vazar do cartão
+    maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -39,6 +41,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   text: {
+    flexShrink: 1,
     fontFamily: fonts.semibold,
     fontSize: 12,
     lineHeight: 16,
