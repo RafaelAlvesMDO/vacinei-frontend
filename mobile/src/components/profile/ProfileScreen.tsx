@@ -2,9 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Badge, Button, Card, ConfirmDialog, Screen } from '@/components/ui';
-import { NotificationSettingsCard } from '@/components/alerts/NotificationSettingsCard';
 import { useAuth } from '@/hooks/useAuth';
-import { useOptionalVaccineAlerts } from '@/hooks/useVaccineAlerts';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { Ala } from '@/types/auth';
 import { ALA_LABELS, getInitials, ROLE_LABELS, VERIFICATION_LABELS } from '@/utils/roles';
@@ -15,7 +13,6 @@ import { ALA_LABELS, getInitials, ROLE_LABELS, VERIFICATION_LABELS } from '@/uti
  */
 export function ProfileScreen() {
   const { user, ala, chooseAla, signOut } = useAuth();
-  const vaccineAlerts = useOptionalVaccineAlerts();
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   if (!user) return null;
@@ -76,9 +73,6 @@ export function ProfileScreen() {
           />
         </Card>
       )}
-
-      {/* Os alertas são da caderneta pessoal: só aparecem na ala Cidadão */}
-      {vaccineAlerts && <NotificationSettingsCard />}
 
       <Card>
         <Button

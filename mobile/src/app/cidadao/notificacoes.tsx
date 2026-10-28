@@ -1,15 +1,14 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { AlertRow } from '@/components/alerts/AlertRow';
-import { Badge, Banner, Button, Card, Icon, Screen, StepHeader } from '@/components/ui';
+import { Badge, Banner, Card, Icon, Screen, StepHeader } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
-import { useVaccineAlerts } from '@/hooks/useVaccineAlerts';
-import { colors, fonts, radius, spacing, typography } from '@/theme';
+import { colors, radius, spacing, typography } from '@/theme';
 import {
-  buildDailyDigest,
   formatReminderWhen,
   getDigestVaccineIds,
+  getTodayNotices,
   getUpcomingDoses,
   type DailyDigest,
   type ReminderAlert,
@@ -42,25 +41,22 @@ function openVaccine(vaccineId: string) {
 }
 
 /**
- * Central de notificações (RF007, D31): os avisos de hoje (atrasadas, aguardando conferência e lembretes)
- * e as doses previstas para os próximos 7 dias. Não há histórico: as notificações locais não ficam
- * registradas, e os avisos são recalculados da caderneta
+ * Central de notificações (RF007, D31), dentro do app: os avisos de hoje (atrasadas, aguardando conferência e
+ * lembretes) e as doses previstas para os próximos 7 dias, recalculados da caderneta. As notificações do
+ * sistema ficam para a etapa final (D24)
  */
 export default function NotificationCenter() {
   const { card, error, isRefreshing, reload } = useVaccinationCard();
-  const { preferences, permission } = useVaccineAlerts();
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/cidadao/inicio'));
 
   const now = new Date();
-  const digest = card ? buildDailyDigest(card.vaccines, now) : null;
+  const digest = card ? getTodayNotices(card.vaccines, now) : null;
   const upcoming = card ? getUpcomingDoses(card.vaccines, now) : [];
   const todayCount = digest ? getDigestVaccineIds(digest).length : 0;
 
-  const notificationsOff = permission?.state !== 'granted' || (!preferences.alerts && !preferences.reminders);
-
   return (
     <Screen
-      header={<StepHeader title="Notificações" subtitle="Lembretes agrupados por dia" onBack={goBack} />}
+      header={<StepHeader title="Notificações" subtitle="Avisos da sua caderneta" onBack={goBack} />}
       refreshing={isRefreshing}
       onRefresh={() => reload({ refreshing: true })}
     >
@@ -70,7 +66,7 @@ export default function NotificationCenter() {
         </View>
         <View style={styles.summaryText}>
           <Text style={typography.subtitle}>Resumo dos seus avisos</Text>
-          <Text style={typography.muted}>Você recebe uma notificação consolidada por dia, às 8h.</Text>
+          <Text style={typography.muted}>Doses atrasadas, aguardando conferência e as próximas da sua caderneta.</Text>
         </View>
         {digest && (
           <Badge
@@ -80,23 +76,6 @@ export default function NotificationCenter() {
         )}
       </View>
 
-      {notificationsOff && (
-        <View style={styles.off}>
-          <Banner
-            tone="warning"
-            icon="notifications-off-outline"
-            title="Notificações desativadas"
-            message="Os avisos continuam aqui no app. Para recebê-los no celular, ative-os no Perfil."
-          />
-          <Button
-            label="Ativar no Perfil"
-            variant="secondary"
-            icon="person-circle-outline"
-            onPress={() => router.navigate('/cidadao/perfil')}
-          />
-        </View>
-      )}
-
       {!card || !digest ? (
         <CardLoadState error={error} onRetry={() => reload()} />
       ) : (
@@ -105,8 +84,7 @@ export default function NotificationCenter() {
           <TodayCard digest={digest} count={todayCount} now={now} />
           <UpcomingSection upcoming={upcoming} />
           <Text style={styles.note}>
-            Os avisos são calculados a partir da sua caderneta. As notificações no celular refletem a caderneta da
-            última vez que você abriu o app.
+            Os avisos são calculados a partir da sua caderneta. Puxe para baixo para atualizar.
           </Text>
         </>
       )}
@@ -141,7 +119,6 @@ function TodayCard({ digest, count, now }: { digest: DailyDigest; count: number;
                 : `${count} vacinas precisam da sua atenção`}
           </Text>
         </View>
-        <Text style={styles.time}>08:00</Text>
       </View>
 
       {count > 0 && (
@@ -211,7 +188,7 @@ function UpcomingSection({ upcoming }: { upcoming: ReminderAlert[] }) {
           upcoming.map((reminder) => <ReminderRow key={reminder.vaccineId} reminder={reminder} />)
         )}
       </Card>
-      <Text style={styles.note}>Você recebe um lembrete 7 dias antes e outro no dia da data prevista.</Text>
+      <Text style={styles.note}>As doses previstas aparecem aqui até 7 dias antes da data.</Text>
     </View>
   );
 }
@@ -238,9 +215,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: 2,
   },
-  off: {
-    gap: spacing.sm,
-  },
   today: {
     padding: spacing.sm,
     gap: 0,
@@ -266,10 +240,6 @@ const styles = StyleSheet.create({
   todayTitle: {
     flex: 1,
     minWidth: 0,
-  },
-  time: {
-    ...typography.muted,
-    fontFamily: fonts.medium,
   },
   rows: {
     borderTopWidth: 1,

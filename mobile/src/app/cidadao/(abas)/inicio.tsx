@@ -1,16 +1,14 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AlertRow } from '@/components/alerts/AlertRow';
-import { NotificationPrompt } from '@/components/alerts/NotificationPrompt';
 import { Banner, Button, Card, Icon, Screen, StateMessage } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { SummaryCard } from '@/components/vaccination/SummaryCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
-import { useVaccineAlerts } from '@/hooks/useVaccineAlerts';
 import { colors, fonts, radius, spacing, touchTarget, typography } from '@/theme';
 import { getFirstName, getInitials } from '@/utils/roles';
-import { buildDailyDigest, getDigestVaccineIds, type DailyDigest } from '@/utils/vaccineAlerts';
+import { getDigestVaccineIds, getTodayNotices, type DailyDigest } from '@/utils/vaccineAlerts';
 import { AWAITING_MESSAGE, EMPTY_CARD_MESSAGE, formatOverdue, formatPendingDoses } from '@/utils/vaccination';
 
 function openVaccine(vaccineId: string) {
@@ -24,11 +22,10 @@ function openVaccine(vaccineId: string) {
 export default function CitizenHome() {
   const { user } = useAuth();
   const { card, error, isRefreshing, reload } = useVaccinationCard();
-  const { shouldPrompt } = useVaccineAlerts();
   if (!user) return null;
 
-  // Os avisos do app não dependem das preferências de notificação
-  const digest = card ? buildDailyDigest(card.vaccines, new Date()) : null;
+  // Avisos do dia, calculados da caderneta (RF007 dentro do app; as notificações do sistema ficam para a etapa final)
+  const digest = card ? getTodayNotices(card.vaccines, new Date()) : null;
   const noticeCount = digest ? getDigestVaccineIds(digest).length : 0;
 
   return (
@@ -73,8 +70,6 @@ export default function CitizenHome() {
           <Text style={styles.initials}>{getInitials(user.name)}</Text>
         </View>
       </Card>
-
-      {shouldPrompt && <NotificationPrompt />}
 
       {!card || !digest ? (
         <CardLoadState error={error} onRetry={() => reload()} />

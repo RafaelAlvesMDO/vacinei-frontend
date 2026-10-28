@@ -19,13 +19,13 @@ function isFilter(value: string | undefined): value is Filter {
 
 /**
  * Caderneta completa (RF006): vacinas pela situação do alerta (D32, atrasadas primeiro), com busca e filtros.
- * `?filtro=` vem da notificação consolidada (RF007 nota 4)
+ * `?filtro=` abre a lista já filtrada (ex.: pelas notificações do sistema, na etapa final)
  */
 export default function VaccinationCardScreen() {
   const { card, error, isRefreshing, reload } = useVaccinationCard();
   const { filtro } = useLocalSearchParams<{ filtro?: string }>();
   const [search, setSearch] = useState('');
-  // A escolha nos chips vale até chegar outro `filtro` (ex.: novo toque numa notificação)
+  // A escolha nos chips vale até chegar outro `filtro` pela URL
   const [chosen, setChosen] = useState<{ source: string | undefined; filter: Filter } | null>(null);
   const filter: Filter = chosen && chosen.source === filtro ? chosen.filter : isFilter(filtro) ? filtro : 'TODAS';
   const setFilter = (value: Filter) => setChosen({ source: filtro, filter: value });
