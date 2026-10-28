@@ -17,7 +17,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - **Tema:** `src/theme/` com os tokens do `DESIGN.md` (`colors`, `spacing`, `radius`, `typography`) e a fonte Inter (`@expo-google-fonts/inter`). Estilos com `StyleSheet` lendo o tema; nada de cores soltas.
 - **Componentes:** `src/components/ui/` (Button, TextField, PasswordField, SelectField, CodeInput, Checkbox, RadioCard, Card, Badge, Banner, PasswordChecklist, StepHeader, Screen) com acessibilidade nativa (`accessibilityLabel`, `accessibilityRole`, alvos de toque de 48 px). Ícones: `@expo/vector-icons` (Ionicons).
 - **Reaproveitamento do web:** portar as funções puras de `web/src/utils/` (`password`, `cpf`, `name`, `format`, `councils`) e os tipos de `web/src/types/`.
-- **Bibliotecas por etapa:** `expo-location` + `react-native-webview` com Leaflet (mapa), `expo-image-picker`/`expo-camera` (OCR), `expo-notifications` (alertas).
+- **Bibliotecas por etapa:** `expo-location` + `react-native-webview` com Leaflet (mapa), `expo-image-picker`/`expo-camera` (OCR), `expo-notifications` (notificações do sistema, etapa final; retirada por agora).
 
 ---
 
@@ -139,16 +139,28 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - Requisitos: RF004, RS003, RNF05, RNF12. Pede a permissão da câmera (e da galeria) com a finalidade explicada. LGPD: a imagem não fica salva depois do processamento.
 - **Backend novo:** microsserviço em Python (D25) (OpenCV no pré-processamento + `pytesseract`) chamado pelo backend. Rotas `POST /vaccination-records/ocr` (multipart, devolve sugestões, sem gravar) e gravação em lote (`POST /vaccination-records` com `origin: OCR_ICR`).
 
-## [ ] Etapa 9: Alertas de vacinação
+## [~] Etapa 9: Alertas de vacinação (concluída parcialmente: alertas dentro do app)
 
 - **Design:** `design-mobile/cidadao/central-de-notificacoes-rf007.png`.
-- **Notificações locais** (`expo-notifications`), sem custo e sem backend: a partir da caderneta (`nextDoseDate` de cada vacina, do titular e dos dependentes), agendar no aparelho um lembrete diário consolidado das doses pendentes e um aviso na data prevista. Reagendar ao abrir o app e após cada registro.
-- Tela de preferências (ligar/desligar, horário do lembrete) e pedido de permissão explicado.
-- **Expo Push (complemento):** campanhas e avisos do servidor. Exige development build, porque o Expo Go não recebe push remoto no Android.
-- Requisitos: RF007 (alerta diário único consolidado). Decisão D24.
-- **Backend novo (só para o push):** `POST/DELETE /devices` (token Expo do aparelho) e disparo pelo Expo Push Service, no lugar do FCM previsto no `agent.md` do backend.
+- **Decisão (2026-10-28):** as notificações do sistema foram retiradas por agora (D24), para não deixar funcionalidade com erro no projeto: no Expo Go do Android (SDK 58), criar o canal falhava (NullPointerException) e tocar na notificação fechava o app. Ficam para a etapa final "Notificações do sistema". Os alertas continuam dentro do app.
+- [x] **Regra (D32, RF007 nota 7):** a caderneta da API ganhou `alert: { status, pendingDoses }` por vacina. `ATRASADA` = dose vencida sem nenhum registro; `AGUARDANDO_CONFERENCIA` = doses informadas e não confirmadas, sem dias de atraso ("Dose informada · leve sua caderneta à UBS para conferência"); `EM_DIA`/`COMPLETA` = sem pendências. Só a confirmação por um profissional encerra o alerta. O app exibe essa situação em toda a ala Cidadão: badge, filtros (novo "Aguardando conferência", `?filtro=` na URL), ordem, resumo da Início (com a linha "N vacinas aguardando conferência") e aviso no detalhe. Atraso acima de 1 ano: "Há mais de 1 ano em atraso".
+- [x] **Avisos (`utils/vaccineAlerts.ts`, funções puras):** `getTodayNotices` monta os avisos de hoje, agregados por vacina (nota 2): atrasada a partir do dia seguinte à data prevista (nota 6), com os dias de atraso (nota 3); aguardando conferência; e a dose prevista para hoje. `getUpcomingDoses` lista as previstas para os próximos 7 dias (D31).
+- [x] **Início:** sino com a quantidade de avisos do dia (abre a Central) e o cartão "Alertas" com atrasadas e aguardando conferência (`components/alerts/AlertRow`).
+- [x] **Central de notificações** (`cidadao/notificacoes`): resumo, cartão "Hoje" com atrasadas ("Registrar dose", que abre o cadastro com a vacina), aguardando conferência e doses previstas para hoje ("Ver detalhes"), e "Próximos 7 dias".
+- **Diferenças intencionais do design:** sem "Anteriores", "Marcar como lidas", "2 novas", o horário e o menu "…" (não há histórico de notificações; a Central recalcula os avisos da caderneta); "Próximos 7 dias" no lugar do histórico; sem as abas Digitalizar e Dependentes (outras etapas).
+- Requisitos: RF007 (notas 2, 3, 6 e 7 dentro do app; as notas 4, 5 e 8 dependem das notificações do sistema) e a ampliação D31. Decisões D24, D31 e D32.
+- **Backend:** campo `alert` na caderneta e busca ativa e `/summary` com os grupos do D32. O web separa a busca ativa em Atrasadas e Aguardando conferência.
 
 ---
+
+## [ ] Etapa final: Notificações do sistema
+
+- **Código de referência:** o commit `840e50dbedb0f48525dc1adbaefe053a8f140995` (`840e50d`, branch `dev`) é o último com as notificações locais completas. Para recuperar um arquivo: `git show 840e50d:mobile/src/services/vaccineNotifications.ts`.
+  - `services/vaccineNotifications.ts`: agendamento diário às 8h nos próximos 30 dias, cancelando os anteriores a cada carga da caderneta (nota 5), canal Android "Alertas de vacina", notificação de teste (`__DEV__`) e `isExpoGo`.
+  - `utils/vaccineAlerts.ts`: `buildDailyDigest` (com o lembrete 7 dias antes e no dia, D31) e `formatDigestNotification` (notificação consolidada, nota 8, e destino do toque, nota 4), testados com relógio simulado (16 cenários).
+  - `contexts/VaccineAlertsContext`, `services/notificationPreferences.ts`, `components/alerts/NotificationPrompt` (permissão explicada), `NotificationSettingsCard` (interruptores no Perfil) e o cancelamento no `AuthContext` ao sair (LGPD).
+- **1. Validar as notificações locais num APK (EAS Build):** gerar o build instalável e conferir o pedido de permissão, a chegada diária, o canal "Alertas de vacina" nas configurações do app e a navegação ao tocar (detalhe da vacina ou Caderneta filtrada), com o app fechado e aberto.
+- **2. Se não funcionarem, envio diário por e-mail pelo backend** (sugestão do orientador): rotina agendada que calcula os avisos do D32 (atrasadas e aguardando conferência, consolidados por pessoa, uma vez por dia e sem duplicar) e os lembretes do D31. Funciona com o app fechado e usa a caderneta atual.
 
 ## Revisão final de acessibilidade
 
@@ -181,9 +193,10 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
 | Caderneta do titular (`GET /citizens/:id/vaccination-records`) | Pronto |
 | UBS próximas (`GET /ubs` com coordenadas) e catálogo de vacinas | Pronto |
 | Ala profissional: busca, confirmação, busca ativa e indicadores | Pronto |
-| Alertas locais | Pronto (usa a caderneta) |
+| Alertas dentro do app | Pronto (usa a caderneta) |
 | Logout (`POST /auth/logout`) | Pronto |
 | Registro manual de vacina (`POST/PUT/DELETE /vaccination-records`) | **Novo** |
 | Dependentes (CRUD, caderneta, confirmação, busca) | **Novo** |
 | OCR (serviço Python + `POST /vaccination-records/ocr`) | **Novo** |
-| Push (`/devices` + Expo Push) | **Novo** (complemento) |
+| Situação do alerta na caderneta (`alert`, D32) | Pronto |
+| Push (`/devices` + Expo Push) | **Novo** (complemento, melhoria futura) |

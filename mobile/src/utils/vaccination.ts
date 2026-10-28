@@ -1,28 +1,43 @@
 import type { BadgeTone, IconName } from '@/components/ui';
-import type { CardRecord, CardVaccine, VaccineScheduleStatus } from '@/types/vaccination';
+import type { AlertStatus, CardRecord, CardVaccine, PendingDose } from '@/types/vaccination';
 import { normalizeSearch } from './format';
 
 // Caderneta sem vacinas. O cadastro manual já existe; a digitalização (etapa 8) ainda não
 export const EMPTY_CARD_MESSAGE =
   'Você ainda não tem vacinas registradas. Cadastre as doses que já tomou. Em breve você também poderá digitalizar sua caderneta.';
 
-// O status vem sempre da API; o app só escolhe rótulo, cor e ícone
-export const SCHEDULE_STATUS: Record<VaccineScheduleStatus, { label: string; tone: BadgeTone; icon: IconName }> = {
+// Mensagem das doses informadas e não confirmadas (D32): não é atraso, falta a conferência presencial
+export const AWAITING_MESSAGE = 'Dose informada · leve sua caderneta à UBS para conferência';
+
+/**
+ * O app mostra a situação do `alert` da API (D32): uma vacina só fica em dia ou completa com as doses
+ * confirmadas. O app só escolhe rótulo, cor e ícone
+ */
+export const SCHEDULE_STATUS: Record<AlertStatus, { label: string; tone: BadgeTone; icon: IconName }> = {
   ATRASADA: { label: 'Atrasada', tone: 'danger', icon: 'alert-circle-outline' },
+  AGUARDANDO_CONFERENCIA: { label: 'Aguardando conferência', tone: 'warning', icon: 'time-outline' },
   EM_DIA: { label: 'Em dia', tone: 'primary', icon: 'checkmark-circle-outline' },
   COMPLETA: { label: 'Completa', tone: 'primary', icon: 'shield-checkmark-outline' },
 };
 
-const STATUS_ORDER: Record<VaccineScheduleStatus, number> = { ATRASADA: 0, EM_DIA: 1, COMPLETA: 2 };
+const STATUS_ORDER: Record<AlertStatus, number> = { ATRASADA: 0, AGUARDANDO_CONFERENCIA: 1, EM_DIA: 2, COMPLETA: 3 };
 
 /**
- * Atrasadas primeiro, depois em dia e completas; dentro do mesmo status, por nome
+ * Atrasadas primeiro, depois aguardando conferência, em dia e completas; dentro do mesmo status, por nome
  */
 export function sortVaccines(vaccines: CardVaccine[]): CardVaccine[] {
   return [...vaccines].sort(
     (a, b) =>
-      STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || a.vaccine.name.localeCompare(b.vaccine.name, 'pt-BR'),
+      STATUS_ORDER[a.alert.status] - STATUS_ORDER[b.alert.status] ||
+      a.vaccine.name.localeCompare(b.vaccine.name, 'pt-BR'),
   );
+}
+
+// "1ª Dose" ou "1ª Dose e 2ª Dose"
+export function formatPendingDoses(doses: PendingDose[]): string {
+  const names = doses.map((dose) => dose.doseName);
+  if (names.length <= 1) return names.join('');
+  return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`;
 }
 
 /**
@@ -36,31 +51,40 @@ export function matchesVaccineSearch(item: CardVaccine, search: string): boolean
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Hoje no fuso de Maceió, como data sem horário (meia-noite UTC)
-function todayInMaceio(now: Date): number {
+// Dia no fuso de Maceió, como data sem horário (meia-noite UTC)
+function dayInMaceio(now: Date): number {
   const [year, month, day] = now.toLocaleDateString('en-CA', { timeZone: 'America/Maceio' }).split('-').map(Number);
   return Date.UTC(year, month - 1, day);
 }
 
 /**
- * Dias desde a data prevista da próxima dose, só para exibição (o status continua o da API).
- * null sem data ou quando a data ainda não passou
+ * Dias entre a data prevista e o dia de `now` (fuso de Maceió): positivo depois da data, 0 no dia e
+ * negativo antes. null sem data
  */
-export function getDaysOverdue(nextDoseDate: string | null, now = new Date()): number | null {
+export function getDaysFromDue(nextDoseDate: string | null, now = new Date()): number | null {
   if (!nextDoseDate) return null;
   const due = new Date(nextDoseDate);
   if (Number.isNaN(due.getTime())) return null;
-  const days = Math.floor(
-    (todayInMaceio(now) - Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate())) / DAY_MS,
-  );
-  return days > 0 ? days : null;
+  return Math.round((dayInMaceio(now) - Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate())) / DAY_MS);
 }
 
 /**
- * 1 → "1 dia em atraso"; sem a contagem, "Dose atrasada"
+ * Dias desde a data prevista da próxima dose, só para exibição (o status continua o da API).
+ * O atraso começa no dia seguinte à data prevista (RF007 nota 6). null sem data ou quando a data ainda não passou
+ */
+export function getDaysOverdue(nextDoseDate: string | null, now = new Date()): number | null {
+  const days = getDaysFromDue(nextDoseDate, now);
+  return days !== null && days > 0 ? days : null;
+}
+
+const DAYS_PER_YEAR = 365;
+
+/**
+ * 1 → "1 dia em atraso"; acima de 1 ano, "Há mais de 1 ano em atraso" (D32); sem a contagem, "Dose atrasada"
  */
 export function formatOverdue(days: number | null): string {
   if (days === null) return 'Dose atrasada';
+  if (days > DAYS_PER_YEAR) return 'Há mais de 1 ano em atraso';
   return `${days} ${days === 1 ? 'dia' : 'dias'} em atraso`;
 }
 

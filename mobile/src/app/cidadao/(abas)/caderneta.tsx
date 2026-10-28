@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Banner, Button, FilterChips, Icon, Screen, StateMessage, TextField, type FilterOption } from '@/components/ui';
@@ -6,27 +6,39 @@ import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { VaccineListItem } from '@/components/vaccination/VaccineListItem';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { colors, spacing, touchTarget, typography } from '@/theme';
-import type { VaccineScheduleStatus } from '@/types/vaccination';
+import type { AlertStatus } from '@/types/vaccination';
 import { EMPTY_CARD_MESSAGE, matchesVaccineSearch, sortVaccines } from '@/utils/vaccination';
 
-type Filter = 'TODAS' | VaccineScheduleStatus;
+type Filter = 'TODAS' | AlertStatus;
+
+const FILTERS: Filter[] = ['TODAS', 'EM_DIA', 'ATRASADA', 'AGUARDANDO_CONFERENCIA', 'COMPLETA'];
+
+function isFilter(value: string | undefined): value is Filter {
+  return FILTERS.some((filter) => filter === value);
+}
 
 /**
- * Caderneta completa (RF006): vacinas por status (atrasadas primeiro), com busca e filtros
+ * Caderneta completa (RF006): vacinas pela situação do alerta (D32, atrasadas primeiro), com busca e filtros.
+ * `?filtro=` abre a lista já filtrada (ex.: pelas notificações do sistema, na etapa final)
  */
 export default function VaccinationCardScreen() {
   const { card, error, isRefreshing, reload } = useVaccinationCard();
+  const { filtro } = useLocalSearchParams<{ filtro?: string }>();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<Filter>('TODAS');
+  // A escolha nos chips vale até chegar outro `filtro` pela URL
+  const [chosen, setChosen] = useState<{ source: string | undefined; filter: Filter } | null>(null);
+  const filter: Filter = chosen && chosen.source === filtro ? chosen.filter : isFilter(filtro) ? filtro : 'TODAS';
+  const setFilter = (value: Filter) => setChosen({ source: filtro, filter: value });
 
   const searched = card ? sortVaccines(card.vaccines).filter((item) => matchesVaccineSearch(item, search)) : [];
-  const visible = filter === 'TODAS' ? searched : searched.filter((item) => item.status === filter);
+  const visible = filter === 'TODAS' ? searched : searched.filter((item) => item.alert.status === filter);
   // Os contadores respeitam a busca, como no web
-  const countOf = (status: VaccineScheduleStatus) => searched.filter((item) => item.status === status).length;
+  const countOf = (status: AlertStatus) => searched.filter((item) => item.alert.status === status).length;
   const options: FilterOption<Filter>[] = [
     { value: 'TODAS', label: 'Todas', count: searched.length },
     { value: 'EM_DIA', label: 'Em dia', count: countOf('EM_DIA') },
     { value: 'ATRASADA', label: 'Atrasadas', count: countOf('ATRASADA') },
+    { value: 'AGUARDANDO_CONFERENCIA', label: 'Aguardando conferência', count: countOf('AGUARDANDO_CONFERENCIA') },
     { value: 'COMPLETA', label: 'Completas', count: countOf('COMPLETA') },
   ];
   const openRegistration = () => router.push('/cidadao/registro-vacina');

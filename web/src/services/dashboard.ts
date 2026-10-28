@@ -35,11 +35,12 @@ export async function getRecentDoses(limit = 10): Promise<RecentDose[]> {
 }
 
 /**
- * Pessoas com doses atrasadas, mais atrasadas primeiro (busca ativa, apenas profissional verificado, D21)
+ * Busca ativa (apenas profissional verificado, D21): pessoas com doses atrasadas (mais atrasadas primeiro)
+ * ou com doses aguardando conferência (por nome), conforme o `status` (D32)
  */
 export async function getOverdue(params: OverdueParams = {}, signal?: AbortSignal): Promise<OverdueList> {
   const response = await api.get<ApiSuccessResponse<OverdueList>>('/dashboard/overdue', {
-    params: { page: params.page, limit: params.limit, search: params.search || undefined },
+    params: { page: params.page, limit: params.limit, search: params.search || undefined, status: params.status },
     signal,
   });
   return response.data.data;

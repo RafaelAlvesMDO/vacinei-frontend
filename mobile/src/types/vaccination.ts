@@ -23,14 +23,25 @@ export interface CardRecord {
   appliedBy: { id: string; name: string } | null;
 }
 
+// Situação para os alertas (D32): só a dose confirmada encerra a pendência. AGUARDANDO_CONFERENCIA = doses
+// informadas pelo cidadão e não confirmadas, sem dose vencida sem registro
+export type AlertStatus = 'ATRASADA' | 'AGUARDANDO_CONFERENCIA' | 'EM_DIA' | 'COMPLETA';
+
+export interface PendingDose extends DoseSummary {
+  applicationDate: string | null;
+}
+
 export interface CardVaccine {
   vaccine: { id: string; name: string; targetDisease: string; dosesCount: number };
+  // Esquema: todo registro conta como aplicado. É a base da próxima dose e da data prevista
   status: VaccineScheduleStatus;
   appliedDoses: number;
   totalDoses: number;
   lastDose: (DoseSummary & { applicationDate: string | null }) | null;
+  // Dose seguinte ao último registro (nunca tem registro)
   nextDose: DoseSummary | null;
   nextDoseDate: string | null;
+  alert: { status: AlertStatus; pendingDoses: PendingDose[] };
   records: CardRecord[];
 }
 

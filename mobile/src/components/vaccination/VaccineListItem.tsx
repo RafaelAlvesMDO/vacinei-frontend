@@ -4,19 +4,29 @@ import { Badge, Icon } from '@/components/ui';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { CardVaccine } from '@/types/vaccination';
 import { formatCalendarDate } from '@/utils/format';
-import { formatOverdue, getDaysOverdue, getLastRecord, getRecordBadge, SCHEDULE_STATUS } from '@/utils/vaccination';
+import {
+  formatOverdue,
+  formatPendingDoses,
+  getDaysOverdue,
+  getLastRecord,
+  getRecordBadge,
+  SCHEDULE_STATUS,
+} from '@/utils/vaccination';
 
 interface Props {
   item: CardVaccine;
 }
 
-// Linha de apoio: próxima dose (com o atraso, se houver) ou esquema completo
+// Linha de apoio: dose atrasada, doses aguardando conferência (D32), próxima dose ou esquema completo
 function getDoseLine(item: CardVaccine): string {
+  if (item.alert.status === 'ATRASADA' && item.nextDose) {
+    return `${item.nextDose.doseName} · ${formatOverdue(getDaysOverdue(item.nextDoseDate))}`;
+  }
+  if (item.alert.status === 'AGUARDANDO_CONFERENCIA') {
+    return `${formatPendingDoses(item.alert.pendingDoses)} · leve a caderneta à UBS para conferência`;
+  }
   if (!item.nextDose) {
     return item.status === 'COMPLETA' ? 'Esquema completo' : `${item.appliedDoses} de ${item.totalDoses} doses`;
-  }
-  if (item.status === 'ATRASADA') {
-    return `${item.nextDose.doseName} · ${formatOverdue(getDaysOverdue(item.nextDoseDate))}`;
   }
   return `Próxima: ${item.nextDose.doseName}`;
 }
@@ -25,7 +35,7 @@ function getDoseLine(item: CardVaccine): string {
  * Cartão de uma vacina na caderneta: abre o detalhe ao tocar
  */
 export function VaccineListItem({ item }: Props) {
-  const status = SCHEDULE_STATUS[item.status];
+  const status = SCHEDULE_STATUS[item.alert.status];
   const lastRecord = getLastRecord(item);
   const recordBadge = lastRecord ? getRecordBadge(lastRecord) : null;
   const doseLine = getDoseLine(item);
@@ -50,7 +60,7 @@ export function VaccineListItem({ item }: Props) {
       <View style={styles.header}>
         <View style={styles.title}>
           <Text style={styles.name}>{item.vaccine.name}</Text>
-          <Text style={[typography.muted, item.status === 'ATRASADA' && styles.overdue]}>{doseLine}</Text>
+          <Text style={[typography.muted, item.alert.status === 'ATRASADA' && styles.overdue]}>{doseLine}</Text>
         </View>
         <Badge label={status.label} tone={status.tone} />
       </View>
