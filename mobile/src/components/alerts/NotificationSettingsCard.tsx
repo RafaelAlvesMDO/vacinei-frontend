@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Linking, StyleSheet, Switch, Text, View } from 'react-native';
-import { Banner, Button, Card } from '@/components/ui';
+import { Banner, Button, Card, type BannerTone } from '@/components/ui';
+import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { useVaccineAlerts } from '@/hooks/useVaccineAlerts';
+import { sendTestVaccineAlert, type TestNotificationResult } from '@/services/vaccineNotifications';
 import { colors, spacing, typography } from '@/theme';
 import type { AlertPreferences } from '@/utils/vaccineAlerts';
 
@@ -71,6 +73,8 @@ export function NotificationSettingsCard() {
         );
       })}
 
+      {__DEV__ && <TestNotificationButton granted={granted} />}
+
       {!granted && anyOn && permission && (
         <>
           <Banner
@@ -97,7 +101,55 @@ export function NotificationSettingsCard() {
   );
 }
 
+const TEST_FEEDBACK: Record<TestNotificationResult, { tone: BannerTone; message: string }> = {
+  sent: { tone: 'success', message: 'A notificação de hoje chega em 5 segundos. Saia do app para vê-la na barra.' },
+  empty: { tone: 'info', message: 'Hoje não há avisos na sua caderneta, então nenhuma notificação seria enviada.' },
+  denied: { tone: 'warning', message: 'Permita as notificações para enviar o teste.' },
+};
+
+/**
+ * Só em desenvolvimento (__DEV__): dispara em 5 s a notificação consolidada de hoje, com a caderneta real,
+ * para testar o conteúdo e o toque sem mudar o relógio
+ */
+function TestNotificationButton({ granted }: { granted: boolean }) {
+  const { card } = useVaccinationCard();
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<TestNotificationResult | null>(null);
+
+  const send = async () => {
+    if (!card) return;
+    setSending(true);
+    setResult(null);
+    try {
+      setResult(await sendTestVaccineAlert(card.vaccines));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <View style={styles.test}>
+      <Button
+        label="Enviar notificação de teste"
+        variant="secondary"
+        icon="paper-plane-outline"
+        onPress={() => void send()}
+        loading={sending}
+        loadingLabel="Agendando..."
+        disabled={!card || !granted}
+      />
+      {result && <Banner tone={TEST_FEEDBACK[result].tone} message={TEST_FEEDBACK[result].message} />}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  test: {
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.md,
+  },
   card: {
     gap: spacing.md,
   },

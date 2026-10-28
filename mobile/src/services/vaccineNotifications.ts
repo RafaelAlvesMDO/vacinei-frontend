@@ -10,6 +10,9 @@ const CHANNEL_ID = 'alertas-vacina';
 const NOTIFY_HOUR = 8;
 // Dias agendados a partir de hoje, reagendados a cada carga da caderneta (o iOS aceita até 64)
 const SCHEDULE_DAYS = 30;
+// Notificação de teste do Perfil (só em desenvolvimento), preservada pelo reagendamento
+const TEST_NOTIFICATION_ID = 'teste-alerta-diario';
+const TEST_DELAY_SECONDS = 5;
 
 const isSupported = Platform.OS !== 'web';
 
@@ -74,14 +77,20 @@ function enqueue(task: () => Promise<void>): Promise<void> {
 }
 
 /**
- * Cancela tudo e agenda de novo os próximos dias (sem acumular). Cada dia tem no máximo uma notificação,
+ * Cancela os agendamentos e agenda de novo os próximos dias (sem acumular). Cada dia tem no máximo uma notificação,
  * com os avisos calculados para aquele dia. Hoje só entra se ainda não passou das 8h, para não repetir
  * um aviso já entregue (nota 5)
  */
 export function rescheduleVaccineAlerts(vaccines: CardVaccine[], preferences: AlertPreferences): Promise<void> {
   return enqueue(async () => {
     if (!isSupported) return;
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    // Mantém a notificação de teste, que pode estar a segundos de disparar
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      scheduled
+        .filter((request) => request.identifier !== TEST_NOTIFICATION_ID)
+        .map((request) => Notifications.cancelScheduledNotificationAsync(request.identifier)),
+    );
     if (!preferences.alerts && !preferences.reminders) return;
     const permission = await Notifications.getPermissionsAsync();
     if (!permission.granted) return;
@@ -100,6 +109,32 @@ export function rescheduleVaccineAlerts(vaccines: CardVaccine[], preferences: Al
       });
     }
   });
+}
+
+export type TestNotificationResult = 'sent' | 'empty' | 'denied';
+
+/**
+ * Só em desenvolvimento: dispara em 5 s a notificação consolidada de hoje, com a caderneta real e todos
+ * os avisos (sem depender das 8h nem das preferências), para conferir o texto e o toque
+ */
+export async function sendTestVaccineAlert(vaccines: CardVaccine[]): Promise<TestNotificationResult> {
+  if (!isSupported) return 'denied';
+  const permission = await Notifications.getPermissionsAsync();
+  if (!permission.granted) return 'denied';
+  const notification = formatDigestNotification(buildDailyDigest(vaccines, new Date()));
+  if (!notification) return 'empty';
+  await configureNotifications();
+
+  await Notifications.scheduleNotificationAsync({
+    identifier: TEST_NOTIFICATION_ID,
+    content: { title: notification.title, body: notification.body, data: { url: notification.url } },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: TEST_DELAY_SECONDS,
+      channelId: CHANNEL_ID,
+    },
+  });
+  return 'sent';
 }
 
 /**
