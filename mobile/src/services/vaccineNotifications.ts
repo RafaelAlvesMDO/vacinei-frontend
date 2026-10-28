@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance } from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import type { CardVaccine } from '@/types/vaccination';
 import { buildDailyDigest, formatDigestNotification, type AlertPreferences } from '@/utils/vaccineAlerts';
@@ -15,6 +16,13 @@ const TEST_NOTIFICATION_ID = 'teste-alerta-diario';
 const TEST_DELAY_SECONDS = 5;
 
 const isSupported = Platform.OS !== 'web';
+
+/**
+ * Rodando no Expo Go (e não no build instalável). No Expo Go do Android (SDK 58), criar o canal falha com
+ * NullPointerException e tocar na notificação fecha o app, sem erro no JavaScript: lá o app não cria o
+ * canal, agenda sem `channelId` e não trata o toque (que só abre o app)
+ */
+export const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 export type PermissionState = 'granted' | 'denied' | 'undetermined';
 
@@ -62,7 +70,7 @@ export function configureNotifications(): Promise<void> {
     } catch (error) {
       console.warn('Não foi possível configurar a exibição das notificações.', error);
     }
-    if (Platform.OS === 'android') await createAndroidChannel();
+    if (Platform.OS === 'android' && !isExpoGo) await createAndroidChannel();
   })();
   return configuration;
 }

@@ -1,4 +1,4 @@
-import { router, type Href } from 'expo-router';
+import { router, useRootNavigationState, type Href } from 'expo-router';
 import { clearLastNotificationResponseAsync, useLastNotificationResponse } from 'expo-notifications';
 import { createContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
@@ -14,6 +14,7 @@ import {
   configureNotifications,
   getNotificationPermission,
   getNotificationUrl,
+  isExpoGo,
   requestNotificationPermission,
   rescheduleVaccineAlerts,
   type PermissionInfo,
@@ -36,7 +37,7 @@ export const VaccineAlertsContext = createContext<VaccineAlertsContextValue | nu
 
 /**
  * Alertas de vacina (RF007) e lembretes (D31) da ala Cidadão: preferências, permissão, reagendamento a cada
- * carga da caderneta e abertura da tela certa ao tocar na notificação (nota 4)
+ * carga da caderneta e abertura da tela certa ao tocar na notificação (nota 4, fora do Expo Go)
  */
 export function VaccineAlertsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -83,22 +84,6 @@ export function VaccineAlertsProvider({ children }: { children: ReactNode }) {
     void rescheduleVaccineAlerts(card.vaccines, preferences);
   }, [card, loaded, permission, preferences]);
 
-  // Toque na notificação: detalhe da vacina ou caderneta (a resposta só é tratada uma vez)
-  const response = useLastNotificationResponse();
-  const handledRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!response) return;
-    const id = response.notification.request.identifier;
-    if (handledRef.current === id) return;
-    handledRef.current = id;
-    // Sem limpar, a mesma resposta voltaria ao montar a ala de novo (ex.: depois de trocar de ala)
-    clearLastNotificationResponseAsync().catch((error: unknown) => {
-      console.warn('Não foi possível limpar a última notificação tocada.', error);
-    });
-    const url = getNotificationUrl(response);
-    if (url) router.push(url as Href);
-  }, [response]);
-
   const updatePreferences = useCallback(
     (changes: Partial<NotificationPreferences>) => {
       setPreferences((current) => {
@@ -138,5 +123,38 @@ export function VaccineAlertsProvider({ children }: { children: ReactNode }) {
     [preferences, permission, shouldPrompt, enable, dismissPrompt, setPreference],
   );
 
-  return <VaccineAlertsContext.Provider value={value}>{children}</VaccineAlertsContext.Provider>;
+  return (
+    <VaccineAlertsContext.Provider value={value}>
+      {/* No Expo Go, tocar na notificação fecha o app (falha nativa): lá o toque só abre o app */}
+      {!isExpoGo && <NotificationTapHandler />}
+      {children}
+    </VaccineAlertsContext.Provider>
+  );
+}
+
+/**
+ * Toque na notificação (nota 4): detalhe da vacina ou caderneta filtrada. Só no build instalável. Este
+ * componente fica na ala Cidadão, que só é montada com a sessão restaurada; a navegação ainda espera o
+ * navegador raiz estar pronto. Cada resposta é tratada uma vez
+ */
+function NotificationTapHandler() {
+  const response = useLastNotificationResponse();
+  const navigationState = useRootNavigationState();
+  const isNavigationReady = Boolean(navigationState?.key);
+  const handledRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!response || !isNavigationReady) return;
+    const id = response.notification.request.identifier;
+    if (handledRef.current === id) return;
+    handledRef.current = id;
+    // Sem limpar, a mesma resposta voltaria ao montar a ala de novo (ex.: depois de trocar de ala)
+    clearLastNotificationResponseAsync().catch((error: unknown) => {
+      console.warn('Não foi possível limpar a última notificação tocada.', error);
+    });
+    const url = getNotificationUrl(response);
+    if (url) router.push(url as Href);
+  }, [response, isNavigationReady]);
+
+  return null;
 }
