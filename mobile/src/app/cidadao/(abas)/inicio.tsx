@@ -50,7 +50,17 @@ export default function CitizenHome() {
           {error && <Banner tone="danger" title="Não foi possível atualizar" message={error} />}
 
           {card.vaccines.length === 0 ? (
-            <StateMessage variant="empty" icon="book-outline" title="Caderneta vazia" message={EMPTY_CARD_MESSAGE} />
+            <StateMessage
+              variant="empty"
+              icon="book-outline"
+              title="Caderneta vazia"
+              message={EMPTY_CARD_MESSAGE}
+              action={{
+                label: 'Cadastrar vacina',
+                icon: 'add-circle-outline',
+                onPress: () => router.push('/cidadao/registro-vacina'),
+              }}
+            />
           ) : (
             <>
               <SummaryCard summary={card.summary} />

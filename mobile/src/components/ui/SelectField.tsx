@@ -9,6 +9,8 @@ export interface SelectOption<T extends string> {
   value: T;
   label: string;
   description?: string;
+  // Opção visível, mas não selecionável (ex.: dose já registrada)
+  disabled?: boolean;
 }
 
 interface Props<T extends string> {
@@ -95,12 +97,17 @@ export function SelectField<T extends string>({
                 return (
                   <Pressable
                     accessibilityRole="radio"
-                    accessibilityState={{ checked: isSelected }}
+                    accessibilityState={{ checked: isSelected, disabled: item.disabled }}
+                    disabled={item.disabled}
                     onPress={() => {
                       onChange(item.value);
                       setOpen(false);
                     }}
-                    style={({ pressed }) => [styles.option, (pressed || isSelected) && styles.optionActive]}
+                    style={({ pressed }) => [
+                      styles.option,
+                      (pressed || isSelected) && styles.optionActive,
+                      item.disabled && styles.optionDisabled,
+                    ]}
                   >
                     <View style={styles.optionBody}>
                       <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>{item.label}</Text>
@@ -201,6 +208,9 @@ const styles = StyleSheet.create({
   },
   optionActive: {
     backgroundColor: colors.surface,
+  },
+  optionDisabled: {
+    opacity: 0.5,
   },
   optionBody: {
     flex: 1,

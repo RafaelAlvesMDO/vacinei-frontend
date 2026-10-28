@@ -2,9 +2,9 @@ import type { BadgeTone, IconName } from '@/components/ui';
 import type { CardRecord, CardVaccine, VaccineScheduleStatus } from '@/types/vaccination';
 import { normalizeSearch } from './format';
 
-// Caderneta sem vacinas. Digitalização (etapa 8) e cadastro manual (etapa 5) ainda não existem
+// Caderneta sem vacinas. O cadastro manual já existe; a digitalização (etapa 8) ainda não
 export const EMPTY_CARD_MESSAGE =
-  'Você ainda não tem vacinas registradas. Em breve você poderá digitalizar sua caderneta ou cadastrar manualmente.';
+  'Você ainda não tem vacinas registradas. Cadastre as doses que já tomou. Em breve você também poderá digitalizar sua caderneta.';
 
 // O status vem sempre da API; o app só escolhe rótulo, cor e ícone
 export const SCHEDULE_STATUS: Record<VaccineScheduleStatus, { label: string; tone: BadgeTone; icon: IconName }> = {
@@ -67,7 +67,7 @@ export function formatOverdue(days: number | null): string {
 /**
  * Registro conferido por profissional ou ainda pendente de confirmação (D06)
  */
-export function getRecordBadge(record: CardRecord): { label: string; tone: BadgeTone; icon: IconName } {
+export function getRecordBadge(record: Pick<CardRecord, 'status'>): { label: string; tone: BadgeTone; icon: IconName } {
   if (record.status === 'CONFIRMADO') return { label: 'Confirmado', tone: 'primary', icon: 'checkmark-circle-outline' };
   return { label: 'Aguardando confirmação', tone: 'warning', icon: 'time-outline' };
 }

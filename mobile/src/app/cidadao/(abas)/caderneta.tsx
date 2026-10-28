@@ -1,6 +1,7 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Banner, FilterChips, Icon, Screen, StateMessage, TextField, type FilterOption } from '@/components/ui';
+import { Banner, Button, FilterChips, Icon, Screen, StateMessage, TextField, type FilterOption } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { VaccineListItem } from '@/components/vaccination/VaccineListItem';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
@@ -28,14 +29,26 @@ export default function VaccinationCardScreen() {
     { value: 'ATRASADA', label: 'Atrasadas', count: countOf('ATRASADA') },
     { value: 'COMPLETA', label: 'Completas', count: countOf('COMPLETA') },
   ];
+  const openRegistration = () => router.push('/cidadao/registro-vacina');
 
   return (
     <Screen edges={['top']} refreshing={isRefreshing} onRefresh={() => reload({ refreshing: true })}>
-      <View style={styles.heading}>
-        <Text style={typography.title} accessibilityRole="header">
-          Caderneta
-        </Text>
-        {card && <Text style={typography.muted}>{card.citizen.name}</Text>}
+      <View style={styles.headingRow}>
+        <View style={styles.heading}>
+          <Text style={typography.title} accessibilityRole="header">
+            Caderneta
+          </Text>
+          {card && <Text style={typography.muted}>{card.citizen.name}</Text>}
+        </View>
+        {card && card.vaccines.length > 0 && (
+          <Button
+            label="Cadastrar vacina"
+            icon="add-circle-outline"
+            variant="secondary"
+            accessibilityHint="Abre o cadastro manual de uma dose"
+            onPress={openRegistration}
+          />
+        )}
       </View>
 
       {!card ? (
@@ -43,7 +56,13 @@ export default function VaccinationCardScreen() {
       ) : card.vaccines.length === 0 ? (
         <>
           {error && <Banner tone="danger" title="Não foi possível atualizar" message={error} />}
-          <StateMessage variant="empty" icon="book-outline" title="Caderneta vazia" message={EMPTY_CARD_MESSAGE} />
+          <StateMessage
+            variant="empty"
+            icon="book-outline"
+            title="Caderneta vazia"
+            message={EMPTY_CARD_MESSAGE}
+            action={{ label: 'Cadastrar vacina', icon: 'add-circle-outline', onPress: openRegistration }}
+          />
         </>
       ) : (
         <>
@@ -100,7 +119,16 @@ export default function VaccinationCardScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Título e botão lado a lado; com a fonte ampliada, o botão desce
+  headingRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
   heading: {
+    flexShrink: 1,
     gap: 2,
   },
   clear: {

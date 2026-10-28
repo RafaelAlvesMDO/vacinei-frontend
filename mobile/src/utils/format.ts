@@ -64,6 +64,21 @@ export function parseDateInput(value: string): string | null {
 }
 
 /**
+ * "2010-03-15" (ou ISO completo) → "15/03/2010", para preencher um campo de data
+ */
+export function toDateInput(iso: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
+/**
+ * Hoje no fuso de Maceió, no formato da API: "2026-10-28"
+ */
+export function getTodayIso(now = new Date()): string {
+  return now.toLocaleDateString('en-CA', { timeZone: 'America/Maceio' });
+}
+
+/**
  * Contagem regressiva: 876 → "14:36"
  */
 export function formatCountdown(totalSeconds: number): string {
