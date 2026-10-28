@@ -79,6 +79,17 @@ export function getLastRecord(item: CardVaccine): CardRecord | null {
   return item.records.find((record) => record.dose.id === lastDoseId) ?? null;
 }
 
+/**
+ * "Difteria, tétano e coqueluche" → ["Difteria", "Tétano", "Coqueluche"], para exibir uma doença por chip
+ */
+export function splitDiseases(targetDisease: string): string[] {
+  return targetDisease
+    .split(/\s*,\s*|\s+e\s+/)
+    .map((disease) => disease.trim())
+    .filter(Boolean)
+    .map((disease) => disease.charAt(0).toLocaleUpperCase('pt-BR') + disease.slice(1));
+}
+
 // Registros da dose mais recente para a mais antiga
 export function sortRecords(records: CardRecord[]): CardRecord[] {
   return [...records].sort((a, b) => b.dose.doseNumber - a.dose.doseNumber);

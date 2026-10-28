@@ -120,15 +120,16 @@ function VaccineContent({ item, citizenName, onDelete }: VaccineContentProps) {
   return (
     <>
       <View style={styles.hero}>
-        <View style={styles.heroHeader}>
-          <Text style={[typography.title, styles.heroTitle]} accessibilityRole="header">
-            {item.vaccine.name}
-          </Text>
-          <Badge label={status.label} tone={status.tone} icon={status.icon} />
-        </View>
+        <Text style={typography.title} accessibilityRole="header">
+          {item.vaccine.name}
+        </Text>
         <Text style={typography.muted}>
           {item.vaccine.targetDisease} · {citizenName}
         </Text>
+        {/* Badge em linha própria, para o nome usar a largura inteira */}
+        <View style={styles.heroBadge}>
+          <Badge label={status.label} tone={status.tone} icon={status.icon} />
+        </View>
       </View>
 
       {isOverdue && (
@@ -264,15 +265,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.xs,
   },
-  heroHeader: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  heroTitle: {
-    flexShrink: 1,
+  heroBadge: {
+    marginTop: spacing.xs,
   },
   info: {
     gap: spacing.md,

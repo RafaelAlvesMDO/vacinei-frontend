@@ -21,6 +21,7 @@ import {
   type RecordFormValues,
   type RecordInitialValues,
 } from '@/utils/vaccineRecord';
+import { DiseaseChips } from './DiseaseChips';
 import { VaccineRecordForm } from './VaccineRecordForm';
 
 type Step = 'form' | 'summary' | 'saved';
@@ -193,7 +194,7 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
         <Card style={styles.rows}>
           <SummaryRow label="Data de aplicação" value={values.applicationDate} />
           <SummaryRow label="Lote" value={values.lote || 'Não informado'} />
-          <SummaryRow label="Doença" value={vaccine.targetDisease} />
+          <DiseaseChips targetDisease={vaccine.targetDisease} />
           <View style={styles.summaryRow}>
             <Text style={typography.muted}>Origem do registro</Text>
             <Badge label="Informado por você" tone="neutral" icon="person-outline" />
@@ -414,17 +415,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Badge em linha própria: dividindo a linha, o nome quebrava no meio da palavra ("Pentavale / nte")
   savedCard: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   savedTitle: {
-    flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 0,
     gap: 2,
   },
   savedName: {
