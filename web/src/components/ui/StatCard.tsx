@@ -67,7 +67,9 @@ export const StatCard: React.FC<StatCardProps> = ({
           >
             {value ?? '—'}
           </p>
-          {description && <p className="text-xs text-muted mt-1 break-words">{description}</p>}
+          {description && (
+            <p className={`text-xs mt-1 break-words ${isDanger ? 'text-danger' : 'text-muted'}`}>{description}</p>
+          )}
         </div>
       )}
 

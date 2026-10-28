@@ -73,6 +73,12 @@ export const Dashboard: React.FC = () => {
           icon={AlertTriangle}
           variant="danger"
           value={summary.data ? formatNumber(summary.data.totalDosesAtrasadas) : null}
+          // Só doses sem nenhum registro; as informadas pelo cidadão ficam à parte (D32)
+          description={
+            summary.data
+              ? `+ ${formatNumber(summary.data.totalDosesAguardandoConferencia)} aguardando conferência`
+              : undefined
+          }
           isLoading={summary.isLoading}
           error={summaryError}
           onRetry={summary.reload}

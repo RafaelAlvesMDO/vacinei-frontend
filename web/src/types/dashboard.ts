@@ -4,7 +4,10 @@ import type { PaginatedList, PaginationParams } from './pagination';
 export interface DashboardSummary {
   totalCadernetas: number;
   totalVacinasRegistradas: number;
+  // Vacinas com dose vencida sem nenhum registro (D32)
   totalDosesAtrasadas: number;
+  // Doses informadas pelo cidadão e ainda não confirmadas
+  totalDosesAguardandoConferencia: number;
 }
 
 // GET /dashboard/monthly: um item por mês ("YYYY-MM"), últimos 12 meses
@@ -27,30 +30,43 @@ export interface RecentDose {
   status: VaccineStatus | (string & {});
 }
 
-// GET /dashboard/overdue (busca ativa, D21): vacina com a próxima dose atrasada
+// Grupos da busca ativa (D32): dose vencida sem registro ou informada pelo cidadão sem confirmação
+export type OverdueGroup = 'ATRASADA' | 'AGUARDANDO_CONFERENCIA';
+
+// Dose informada pelo cidadão (MANUAL/OCR) e ainda não confirmada por um profissional
+export interface PendingDose {
+  id: string;
+  doseName: string;
+  applicationDate: string | null;
+}
+
+// GET /dashboard/overdue (busca ativa, D21). No grupo ATRASADA, `nextDose`, `nextDoseDate` e `daysOverdue`
+// descrevem a dose atrasada; no AGUARDANDO_CONFERENCIA vêm null e as doses ficam em `pendingDoses`
 export interface OverdueVaccine {
   vaccineId: string;
   vaccineName: string;
-  nextDose: { id: string; doseName: string };
-  nextDoseDate: string;
-  daysOverdue: number;
+  nextDose: { id: string; doseName: string } | null;
+  nextDoseDate: string | null;
+  daysOverdue: number | null;
+  pendingDoses: PendingDose[];
 }
 
-// Pessoa com ao menos uma vacina ATRASADA. O CPF já vem mascarado e não há `role`
+// O CPF já vem mascarado e não há `role`. `maxDaysOverdue` é null no grupo AGUARDANDO_CONFERENCIA
 export interface OverduePerson {
   id: string;
   name: string;
   cpf: string | null;
-  maxDaysOverdue: number;
-  overdueVaccines: OverdueVaccine[];
+  maxDaysOverdue: number | null;
+  vaccines: OverdueVaccine[];
 }
 
-// Paginado (D22). Os totais consideram todos os resultados do filtro, não só a página (`totalPessoas` = `total`)
+// Paginado (D22). `counts` (pessoas) e `doseCounts` trazem os dois grupos com a busca aplicada
 export interface OverdueList extends PaginatedList<OverduePerson> {
-  totalPessoas: number;
-  totalDosesAtrasadas: number;
+  counts: Record<OverdueGroup, number>;
+  doseCounts: Record<OverdueGroup, number>;
 }
 
 export interface OverdueParams extends PaginationParams {
   search?: string;
+  status?: OverdueGroup;
 }
