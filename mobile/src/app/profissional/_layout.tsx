@@ -1,15 +1,13 @@
-import { Tabs } from 'expo-router';
-import { tabIcon, tabScreenOptions } from '@/components/navigation/tabScreenOptions';
+import { Stack } from 'expo-router';
+import { colors } from '@/theme';
 
-// Ala Profissional (D23). Abas provisórias: a etapa 6 traz busca, confirmação de doses e busca ativa
+// Ala Profissional (D23): as abas e, por cima delas, a caderneta do cidadão e a confirmação de dose
 export default function ProfessionalLayout() {
   return (
-    <Tabs screenOptions={tabScreenOptions}>
-      <Tabs.Screen name="painel" options={{ title: 'Painel', tabBarIcon: tabIcon('grid-outline', 'grid') }} />
-      <Tabs.Screen
-        name="perfil"
-        options={{ title: 'Perfil', tabBarIcon: tabIcon('person-circle-outline', 'person-circle') }}
-      />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+      <Stack.Screen name="(abas)" />
+      <Stack.Screen name="cidadao/[citizenId]" />
+      <Stack.Screen name="confirmar-dose" />
+    </Stack>
   );
 }

@@ -34,7 +34,7 @@ export function sortVaccines(vaccines: CardVaccine[]): CardVaccine[] {
 }
 
 // "1ª Dose" ou "1ª Dose e 2ª Dose"
-export function formatPendingDoses(doses: PendingDose[]): string {
+export function formatPendingDoses(doses: Pick<PendingDose, 'doseName'>[]): string {
   const names = doses.map((dose) => dose.doseName);
   if (names.length <= 1) return names.join('');
   return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`;

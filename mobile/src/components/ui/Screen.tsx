@@ -1,5 +1,14 @@
-import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import type { ReactNode, Ref } from 'react';
+import {
+  KeyboardAvoidingView,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ScrollViewInstance,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors, spacing } from '@/theme';
 
@@ -15,6 +24,8 @@ interface Props {
   // Puxar para atualizar (só quando onRefresh é informado)
   refreshing?: boolean;
   onRefresh?: () => void;
+  // Rolagem (ex.: voltar ao topo ao trocar de página)
+  scrollRef?: Ref<ScrollViewInstance>;
 }
 
 /**
@@ -28,6 +39,7 @@ export function Screen({
   contentStyle,
   refreshing = false,
   onRefresh,
+  scrollRef,
 }: Props) {
   return (
     // Com cabeçalho, a área da barra de status fica branca como ele
@@ -35,6 +47,7 @@ export function Screen({
       <KeyboardAvoidingView style={styles.flex} behavior="padding">
         {header}
         <ScrollView
+          ref={scrollRef}
           style={styles.scroll}
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"

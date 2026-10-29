@@ -83,3 +83,27 @@ export interface SavedRecord {
   lotNumber: string | null;
   dose: DoseSummary & { vaccine: { id: string; name: string } };
 }
+
+// POST /vaccination-records/confirm (RF010). O profissional responsável vem da sessão (RS006)
+export interface ConfirmDosePayload {
+  citizenId: string;
+  vaccineId: string;
+  doseId: string;
+  lote: string;
+}
+
+// 201 → dose nova (CREATED); 200 → registro do cidadão promovido a confirmado (CONFIRMED_EXISTING)
+export type ConfirmAction = 'CREATED' | 'CONFIRMED_EXISTING';
+
+export interface ConfirmDoseResult {
+  action: ConfirmAction;
+  record: {
+    id: string;
+    status: RecordStatus;
+    applicationDate: string | null;
+    confirmedAt: string | null;
+    lotNumber: string | null;
+    dose: DoseSummary & { vaccine: { id: string; name: string } };
+    appliedBy: { id: string; name: string } | null;
+  };
+}
