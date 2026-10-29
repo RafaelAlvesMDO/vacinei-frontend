@@ -15,7 +15,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - **Sessão:** `expo-secure-store` para o access token, o refresh token e o usuário mínimo (`id`, `name`, `email`, `role`, `professionalRegistry`; sem CPF, como no web). Sem "Lembrar de mim": o app mantém a sessão até sair ou expirar.
 - **URL da API:** `EXPO_PUBLIC_API_URL` em `mobile/.env` (ex.: `http://192.168.0.10:3333`, IP do computador na rede local), com `mobile/.env.example` versionado. O backend precisa escutar em `0.0.0.0`.
 - **Tema:** `src/theme/` com os tokens do `DESIGN.md` (`colors`, `spacing`, `radius`, `typography`) e a fonte Inter (`@expo-google-fonts/inter`). Estilos com `StyleSheet` lendo o tema; nada de cores soltas.
-- **Componentes:** `src/components/ui/` (Button, TextField, PasswordField, SelectField, CodeInput, Checkbox, RadioCard, Card, Badge, Banner, PasswordChecklist, StepHeader, Screen) com acessibilidade nativa (`accessibilityLabel`, `accessibilityRole`, alvos de toque de 48 px). Ícones: `@expo/vector-icons` (Ionicons).
+- **Componentes:** `src/components/ui/` (Button, TextField, SearchField, PasswordField, SelectField, CodeInput, Checkbox, RadioCard, Card, Badge, Banner, PasswordChecklist, StepHeader, Pagination, Screen) com acessibilidade nativa (`accessibilityLabel`, `accessibilityRole`, alvos de toque de 48 px). Ícones: `@expo/vector-icons` (Ionicons).
 - **Reaproveitamento do web:** portar as funções puras de `web/src/utils/` (`password`, `cpf`, `name`, `format`, `councils`) e os tipos de `web/src/types/`.
 - **Bibliotecas por etapa:** `expo-location` + `react-native-webview` com Leaflet (mapa), `expo-image-picker`/`expo-camera` (OCR), `expo-notifications` (notificações do sistema, etapa final; retirada por agora).
 
@@ -113,13 +113,23 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - Requisitos: RF005, RS003 (vacina do calendário e data de aplicação não futura).
 - **Backend novo (D30):** `POST /vaccination-records` (titular, `origin: MANUAL`), e `PUT`/`DELETE /vaccination-records/:id` só para registros próprios não confirmados.
 
-## [ ] Etapa 6: Ala profissional
+## [x] Etapa 6: Ala profissional
 
 - **Design:** `design-mobile/profissional/`.
-- Disponível só para `PROFISSIONAL_SAUDE` verificado; senão, aviso de verificação pendente/recusada (RS001).
-- Busca de cidadão por nome ou CPF (`GET /citizens`), caderneta do cidadão e confirmação de dose com lote (`POST /vaccination-records/confirm`), com o mesmo tratamento de `201`/`200`/`409` do web.
-- Busca ativa de doses atrasadas (`GET /dashboard/overdue`, D21) e indicadores (`/dashboard/summary`).
-- Na própria caderneta, sem ação de confirmar (RS006, D11).
+- [x] **Rotas:** `profissional/_layout` virou um Stack com o grupo `(abas)` (Painel, Busca ativa, Cidadãos e Perfil; as URLs não mudaram) e, por cima, a caderneta `profissional/cidadao/[citizenId]` e a confirmação `profissional/confirmar-dose` (`?citizenId=&vaccineId=&recordId=`). Busca ativa e Cidadãos ficam ocultas (`href: null`) para quem não é verificado.
+- [x] **Acesso (RS001):** o Painel mostra o `RestrictedAccess` (pendente ou recusado); as outras telas usam `components/professional/VerifiedOnly`. Um `403` numa rota de profissional chama `refreshProfile` (`hooks/useForbiddenSync`): se a verificação foi revogada, a tela passa ao acesso restrito.
+- [x] **Dados:** `services/dashboard.ts` (`getDashboardSummary`, `getRecentDoses`, `getOverdue`), `searchCitizens` (`services/citizens.ts`) e `confirmDose` (`services/vaccinationRecords.ts`). Tipos em `types/dashboard.ts`, `types/citizen.ts` e `ConfirmDose*` em `types/vaccination.ts`. `hooks/useRequest` (cancela a requisição anterior e mantém os dados na tela), `useCitizenCard`, `useDebounce` e `useReloadOnFocus` (recarrega ao voltar para a tela, ex.: depois de confirmar). Regras puras em `utils/confirmDose.ts`.
+- [x] **Painel (RF009):** atalhos "Registrar vacinação" e "Busca ativa"; indicadores do `/summary` (`StatTile`): cadernetas, vacinas registradas, doses atrasadas e aguardando conferência (os dois últimos abrem a Busca ativa no grupo, `?grupo=aguardando`); "Registros recentes" (`/recent-doses`, 5 itens, badge "Confirmado" ou "Aguardando confirmação"), que abrem a caderneta do cidadão.
+- [x] **Busca ativa (D21, D32):** Atrasadas e Aguardando conferência (`SegmentedControl` com os `counts`), quadros com os totais de doses e pessoas (`doseCounts`/`counts`), busca por nome (400 ms, mín. 2 letras) e 10 por página (`components/ui/Pagination`, volta ao topo com o `scrollRef` novo do `Screen`). Cartão (`OverduePersonCard`): iniciais, nome, CPF mascarado, "Atrasado há X dias" ("mais de 1 ano" acima de 365), vacinas com a dose e a data prevista ou as doses informadas com a data, e "Abrir caderneta".
+- [x] **Cidadãos (etapa 1 do design):** busca por nome ou CPF como no web (CPF só com os números, exigindo os 11 dígitos válidos), resultados com nascimento, CPF mascarado e os badges "Profissional" ou "Você", "Selecionar"; sem resultado, "Nenhum cidadão encontrado" com "Limpar busca" e dicas. `components/ui/SearchField` novo.
+- [x] **Caderneta do cidadão:** nome, nascimento e idade, `SummaryCard`, "Registrar outra vacina" e as vacinas (`CitizenVaccineItem`) com a situação (D32), os registros (lote, data e "Informada pelo cidadão · aguardando confirmação"), "Confirmar dose" (enquanto houver dose sem registro) e "Confirmar registro" nos registros não conferidos. Na própria caderneta (D11): aviso RS006 e nenhuma ação.
+- [x] **Confirmar dose (RF010, `ConfirmDoseFlow`):** dados da vacinação → revisão → confirmada (etapas 2 e 3 de 3 no `StepHeader`).
+  - Vacina com as pendentes da caderneta primeiro e a dose sugerida (`nextDose` ou a primeira não confirmada), com as anotações "Sugerida pela caderneta", "Já confirmada" (bloqueada) e "Registrada pelo cidadão". Aviso de dose antes da data prevista e de vacina desativada (bloqueia).
+  - "Confirmar registro": vacina e dose fixas e a data informada pelo cidadão, que é mantida.
+  - Data (hoje) e profissional (sessão) só leitura; lote obrigatório, em maiúsculas, `^[A-Z0-9]{1,20}$`.
+  - Revisão com "Confirmação definitiva" e "O que acontecerá". Sucesso: "Vacinação confirmada!" (`201`) ou "Registro do cidadão confirmado!" (`200 CONFIRMED_EXISTING`), com "Voltar à caderneta", "Registrar outra" e "Voltar ao painel".
+  - Erros: `409` volta ao formulário com "Esta dose já foi confirmada." e recarrega a caderneta; `400` por campo; `404` recarrega o catálogo e a caderneta; `403` mostra a mensagem da API; falha de conexão continua na revisão. A própria caderneta é bloqueada também na rota (RS006).
+- **Diferenças intencionais do design:** sem o gráfico mensal (fica no web), "Tempo médio", "Doses descartadas", "Sala aberta" e o contexto do atendimento (unidade, sala, início); sem CNS e vínculo de dependente (etapa 7); sem prioridade, "Contatados hoje", "Exportar lista" e "Iniciar busca ativa"; sem validade do lote e leitor de código de barras; sem protocolo e central de ajuda; registros recentes sem filtros e sem paginação (5 itens). A busca de cidadão virou uma aba ("Cidadãos"), e a aba "Vacinação" do design é o atalho do Painel.
 - Requisitos: RF009, RF010, RS001, RS005, RS006.
 - **Backend:** nenhum.
 
