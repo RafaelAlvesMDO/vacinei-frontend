@@ -9,6 +9,10 @@ interface Props {
   onPress: () => void;
   variant?: Variant;
   icon?: IconName;
+  // Ícone depois do texto (ex.: "Próxima ›")
+  iconPosition?: 'start' | 'end';
+  // Só o ícone na tela; o rótulo continua para o leitor de tela
+  iconOnly?: boolean;
   loading?: boolean;
   // Texto anunciado durante o carregamento (ex.: "Entrando...")
   loadingLabel?: string;
@@ -27,6 +31,8 @@ export function Button({
   onPress,
   variant = 'primary',
   icon,
+  iconPosition = 'start',
+  iconOnly = false,
   loading = false,
   loadingLabel,
   disabled = false,
@@ -58,17 +64,20 @@ export function Button({
         variant === 'secondary' && pressed && styles.secondaryPressed,
         variant === 'link' && styles.link,
         variant === 'link' && pressed && styles.linkPressed,
+        iconOnly && styles.iconOnly,
         isDisabled && styles.disabled,
         style,
       ]}
     >
-      <View style={styles.content}>
+      <View style={[styles.content, iconPosition === 'end' && styles.contentReversed]}>
         {loading ? (
           <ActivityIndicator color={textColor} size="small" />
         ) : (
           icon && <Icon name={icon} size={variant === 'link' ? 18 : 20} color={textColor} />
         )}
-        <Text style={[variant === 'link' ? styles.linkText : typography.button, { color: textColor }]}>{text}</Text>
+        {!iconOnly && (
+          <Text style={[variant === 'link' ? styles.linkText : typography.button, { color: textColor }]}>{text}</Text>
+        )}
       </View>
     </Pressable>
   );
@@ -87,6 +96,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+  },
+  contentReversed: {
+    flexDirection: 'row-reverse',
+  },
+  // Quadrado com o alvo de toque mínimo (RNF04)
+  iconOnly: {
+    minWidth: touchTarget,
+    paddingHorizontal: spacing.sm,
   },
   primary: {
     backgroundColor: colors.primary,
