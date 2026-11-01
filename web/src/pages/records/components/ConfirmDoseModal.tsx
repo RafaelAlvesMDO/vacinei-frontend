@@ -150,6 +150,10 @@ export const ConfirmDoseModal: React.FC<ConfirmDoseModalProps> = ({
       if (parsed.status === 409) {
         setSubmitError('Esta dose já foi confirmada.');
         onConflict();
+      } else if (parsed.status === 403) {
+        // RS006: própria vacinação, vacinação dos próprios dependentes (D33) ou verificação revogada.
+        // A mensagem da API diz o motivo ("Não é permitido confirmar a vacinação dos próprios dependentes")
+        setSubmitError(parsed.message);
       } else {
         if (parsed.fieldErrors.lote) setLotError(parsed.fieldErrors.lote);
         setSubmitError(parsed.message);

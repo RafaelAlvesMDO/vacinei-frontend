@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { isCancel } from 'axios';
 import { AlertTriangle, ChevronRight, Clock, Loader2, Search, UserRound } from 'lucide-react';
+import { DependentOf } from '../../../components/citizens/DependentOf';
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../../components/ui/CardState';
@@ -198,6 +199,7 @@ export const OverdueCard: React.FC = () => {
                         {person.name}
                       </p>
                       <p className="text-xs text-muted tabular-nums">CPF {person.cpf ?? '—'}</p>
+                      <DependentOf responsible={person.responsible} className="mt-0.5" />
                     </div>
                     {person.maxDaysOverdue !== null && !isAwaiting && (
                       <Badge variant="danger" className="gap-1">

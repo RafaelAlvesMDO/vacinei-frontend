@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Syringe } from 'lucide-react';
+import { DependentOf } from '../../../components/citizens/DependentOf';
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../../components/ui/CardState';
@@ -50,6 +51,7 @@ export const RecentDosesCard: React.FC = () => {
                 >
                   {dose.citizen.name}
                 </Link>
+                <DependentOf responsible={dose.citizen.responsible} className="mt-0.5" />
                 <p className="text-sm text-muted break-words">
                   {dose.vaccine.name} · {dose.dose.doseName}
                 </p>

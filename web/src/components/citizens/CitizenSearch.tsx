@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { isCancel } from 'axios';
 import { AlertCircle, Loader2, Search, UserRound } from 'lucide-react';
 import { Badge } from '../ui/Badge';
+import { DependentOf } from './DependentOf';
 import { useDebounce } from '../../hooks/useDebounce';
 import { parseApiError } from '../../services/auth';
 import { searchCitizens } from '../../services/citizens';
@@ -12,6 +13,8 @@ import { formatCalendarDate, onlyDigits } from '../../utils/format';
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_LENGTH = 100;
+// D33: o dependente pode não ter CPF; a busca pelo CPF do responsável também o lista
+const DEPENDENTS_HINT = 'Buscar pelo CPF do responsável lista também os dependentes.';
 
 interface SearchState {
   term: string;
@@ -115,7 +118,11 @@ export const CitizenSearch: React.FC = () => {
       return <p className="px-4 py-3 text-sm text-muted">{cpfHint}</p>;
     }
     if (trimmedQuery.length < MIN_SEARCH_LENGTH) {
-      return <p className="px-4 py-3 text-sm text-muted">Digite ao menos 2 caracteres para buscar.</p>;
+      return (
+        <p className="px-4 py-3 text-sm text-muted">
+          Digite ao menos 2 caracteres para buscar. {DEPENDENTS_HINT}
+        </p>
+      );
     }
     if (isSearching) {
       return (
@@ -167,6 +174,7 @@ export const CitizenSearch: React.FC = () => {
               <span className="block text-xs text-muted">
                 CPF {citizen.cpf ?? '—'} · Nasc. {formatCalendarDate(citizen.birthDate)}
               </span>
+              <DependentOf responsible={citizen.responsible} className="mt-0.5" />
             </span>
           </li>
         ))}

@@ -1,3 +1,5 @@
+import type { CitizenResponsible } from './citizen';
+
 // Status de uma vacina na caderneta (calculado pela API)
 export type VaccineScheduleStatus = 'EM_DIA' | 'ATRASADA' | 'COMPLETA';
 
@@ -78,7 +80,8 @@ export interface CardVaccine {
 
 // GET /citizens/:id/vaccination-records
 export interface VaccinationCard {
-  citizen: { id: string; name: string; birthDate: string | null };
+  // `responsible` preenchido quando o cidadão é dependente (D33)
+  citizen: { id: string; name: string; birthDate: string | null; responsible: CitizenResponsible | null };
   summary: { totalVaccines: number; emDia: number; atrasadas: number; completas: number };
   vaccines: CardVaccine[];
 }
