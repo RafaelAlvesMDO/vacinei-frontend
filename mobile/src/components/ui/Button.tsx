@@ -76,7 +76,9 @@ export function Button({
           icon && <Icon name={icon} size={variant === 'link' ? 18 : 20} color={textColor} />
         )}
         {!iconOnly && (
-          <Text style={[variant === 'link' ? styles.linkText : typography.button, { color: textColor }]}>{text}</Text>
+          <Text style={[variant === 'link' ? styles.linkText : typography.button, styles.label, { color: textColor }]}>
+            {text}
+          </Text>
         )}
       </View>
     </Pressable>
@@ -91,11 +93,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
+  // O conteúdo não passa da largura do botão: o texto quebra em linhas e o ícone fica ao lado (inclusive com
+  // a fonte ampliada ou com botões lado a lado)
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    maxWidth: '100%',
+    paddingVertical: spacing.xs,
+  },
+  label: {
+    flexShrink: 1,
+    textAlign: 'center',
   },
   contentReversed: {
     flexDirection: 'row-reverse',

@@ -61,18 +61,16 @@ export function CardScreen({ onBack }: Props) {
     />
   );
 
-  const registerButtons = card && card.vaccines.length > 0 && (
-    <View style={styles.actions}>
-      {scanButton}
-      <Button
-        label="Cadastrar vacina"
-        icon="add-circle-outline"
-        variant="secondary"
-        accessibilityHint={`Abre o cadastro manual de uma dose ${texts.inCard}`}
-        onPress={openRegistration}
-        style={styles.action}
-      />
-    </View>
+  const hasVaccines = !!card && card.vaccines.length > 0;
+  const registerButton = (
+    <Button
+      label="Cadastrar vacina"
+      icon="add-circle-outline"
+      variant="secondary"
+      accessibilityHint={`Abre o cadastro manual de uma dose ${texts.inCard}`}
+      onPress={openRegistration}
+      style={styles.action}
+    />
   );
 
   return (
@@ -86,15 +84,26 @@ export function CardScreen({ onBack }: Props) {
       refreshing={isRefreshing}
       onRefresh={() => reload({ refreshing: true })}
     >
-      {isSelf && (
-        <View style={styles.heading}>
-          <Text style={typography.title} accessibilityRole="header">
-            Caderneta
-          </Text>
-          {card && <Text style={typography.muted}>{card.citizen.name}</Text>}
+      {/* Titular: só "Cadastrar vacina" (o Digitalizar é a aba central, como no design). Dependente: os dois,
+          com o dependente já como dono da caderneta digitalizada */}
+      {isSelf ? (
+        <View style={styles.actions}>
+          <View style={styles.heading}>
+            <Text style={typography.title} accessibilityRole="header">
+              Caderneta
+            </Text>
+            {card && <Text style={typography.muted}>{card.citizen.name}</Text>}
+          </View>
+          {hasVaccines && registerButton}
         </View>
+      ) : (
+        hasVaccines && (
+          <View style={styles.actions}>
+            {scanButton}
+            {registerButton}
+          </View>
+        )
       )}
-      {registerButtons}
 
       {!card ? (
         <CardLoadState error={error} onRetry={() => reload()} loadingTitle={texts.loadingTitle} />
@@ -108,7 +117,7 @@ export function CardScreen({ onBack }: Props) {
             message={texts.emptyMessage}
             action={{ label: 'Cadastrar vacina', icon: 'add-circle-outline', onPress: openRegistration }}
           />
-          <View style={styles.actions}>{scanButton}</View>
+          {!isSelf && <View style={styles.actions}>{scanButton}</View>}
         </>
       ) : (
         <>
@@ -166,9 +175,12 @@ export function CardScreen({ onBack }: Props) {
 
 const styles = StyleSheet.create({
   heading: {
+    flexGrow: 1,
+    flexBasis: 160,
     gap: 2,
   },
-  // Digitalizar e cadastrar lado a lado; em telas estreitas ou com a fonte ampliada, um embaixo do outro
+  // Título e botão (titular) ou Digitalizar e Cadastrar (dependente) lado a lado; em telas estreitas ou com a
+  // fonte ampliada, um embaixo do outro
   actions: {
     flexDirection: 'row',
     flexWrap: 'wrap',

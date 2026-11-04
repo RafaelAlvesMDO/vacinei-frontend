@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Linking } from 'react-native';
 import { ConfirmDialog, Screen, StateMessage, StepHeader } from '@/components/ui';
+import { useDependents } from '@/hooks/useDependents';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { useVaccineCatalog } from '@/hooks/useVaccineCatalog';
 import { parseApiError } from '@/services/auth';
@@ -52,6 +53,8 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
 interface Props {
   card: VaccinationCard;
   onExit: () => void;
+  // Voltar da orientação: à pergunta "De quem é esta caderneta?", quando ela existiu; senão, sai do fluxo
+  onGuideBack?: () => void;
 }
 
 /**
@@ -59,8 +62,9 @@ interface Props {
  * Cada dose conferida vira um registro pelas rotas do cadastro manual do dono da caderneta (titular ou
  * dependente), com origem OCR_ICR e aguardando conferência (D30). A foto não fica no aparelho depois do envio
  */
-export function ScanFlow({ card, onExit }: Props) {
+export function ScanFlow({ card, onExit, onGuideBack }: Props) {
   const { owner, paths, reload: reloadCard } = useVaccinationCard();
+  const { reload: reloadDependents } = useDependents();
   const isSelf = owner.kind === 'self';
   const texts = getCardTexts(isSelf, card.citizen.name);
   const subtitle = isSelf ? 'Sua caderneta' : `Caderneta de ${card.citizen.name}`;
@@ -246,6 +250,8 @@ export function ScanFlow({ card, onExit }: Props) {
     setOutcomes(done);
     setStep({ name: 'results' });
     reloadCard();
+    // Resumo da situação dos dependentes (Início e lista), que vem das cadernetas deles
+    if (owner.kind === 'dependent') reloadDependents({ silent: true });
   };
 
   // Volta à revisão só com as doses que não foram salvas, com os dados que o cidadão já conferiu
@@ -265,6 +271,10 @@ export function ScanFlow({ card, onExit }: Props) {
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       switch (step.name) {
+        case 'guide':
+          if (!onGuideBack || busy) return false;
+          onGuideBack();
+          return true;
         case 'preview':
           backToGuide();
           return true;
@@ -400,7 +410,7 @@ export function ScanFlow({ card, onExit }: Props) {
           onOpenSettings={() => {
             Linking.openSettings().catch(() => undefined);
           }}
-          onBack={onExit}
+          onBack={onGuideBack ?? onExit}
         />
       );
   }
