@@ -13,6 +13,7 @@ export default function CitizenLayout() {
           <Stack.Screen name="(abas)" />
           <Stack.Screen name="vacina/[vaccineId]" />
           <Stack.Screen name="registro-vacina" />
+          <Stack.Screen name="digitalizar" options={{ gestureEnabled: false }} />
           <Stack.Screen name="ubs/[ubsId]" />
           <Stack.Screen name="notificacoes" />
           <Stack.Screen name="dependentes/index" />

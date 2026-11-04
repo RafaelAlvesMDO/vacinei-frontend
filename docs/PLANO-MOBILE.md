@@ -17,7 +17,7 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - **Tema:** `src/theme/` com os tokens do `DESIGN.md` (`colors`, `spacing`, `radius`, `typography`) e a fonte Inter (`@expo-google-fonts/inter`). Estilos com `StyleSheet` lendo o tema; nada de cores soltas.
 - **Componentes:** `src/components/ui/` (Button, TextField, SearchField, PasswordField, SelectField, CodeInput, Checkbox, RadioCard, Card, Badge, Banner, PasswordChecklist, StepHeader, Pagination, Screen) com acessibilidade nativa (`accessibilityLabel`, `accessibilityRole`, alvos de toque de 48 px). Ícones: `@expo/vector-icons` (Ionicons).
 - **Reaproveitamento do web:** portar as funções puras de `web/src/utils/` (`password`, `cpf`, `name`, `format`, `councils`) e os tipos de `web/src/types/`.
-- **Bibliotecas por etapa:** `expo-location` + `react-native-webview` com Leaflet (mapa), `expo-image-picker`/`expo-camera` (OCR), `expo-notifications` (notificações do sistema, etapa final; retirada por agora).
+- **Bibliotecas por etapa:** `expo-location` + `react-native-webview` com Leaflet (mapa), `expo-image-picker` + `expo-image-manipulator` + `expo-file-system` (OCR), `expo-notifications` (notificações do sistema, etapa final; retirada por agora).
 
 ---
 
@@ -157,13 +157,45 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - Requisitos: RF012, RS004, RS006, RS008. Decisões D30, D32 e D33 (o D09 foi resolvido).
 - **Backend:** módulo `dependents` (D33) e `responsible` na busca, na caderneta, no `/overdue` e no `/recent-doses`.
 
-## [ ] Etapa 8: OCR da caderneta física
+## [x] Etapa 8: OCR da caderneta física
 
 - **Design:** `design-mobile/ocr/`.
-- Foto da caderneta (`expo-image-picker`/`expo-camera`), envio, revisão das doses reconhecidas (cada uma editável e descartável) e gravação como `OCR_ICR`, pendente de confirmação (D06).
-- Baixa confiança ou falha: aviso amigável e oferta do cadastro manual, sem perder o que já foi lido (RNF12).
-- Requisitos: RF004, RS003, RNF05, RNF12. Pede a permissão da câmera (e da galeria) com a finalidade explicada. LGPD: a imagem não fica salva depois do processamento.
-- **Backend novo:** microsserviço em Python (D25) (OpenCV no pré-processamento + `pytesseract`) chamado pelo backend. Rotas `POST /vaccination-records/ocr` (multipart, devolve sugestões, sem gravar) e gravação em lote (`POST /vaccination-records` com `origin: OCR_ICR`).
+- [x] **Dados:** `readCardPhoto` (`services/vaccinationRecords.ts`, `POST /vaccination-records/ocr` em `multipart/form-data`, campo `image`, timeout próprio de 35 s e cancelamento por `AbortController`) e tipos em `types/ocr.ts`. O `ManualRecordPayload` ganhou `origin` e `ocrConfidence`. O `parseApiError` passou a devolver o `code` da API (e `TIMEOUT` quando a requisição estoura o tempo no app). Regras puras em `utils/ocr.ts`: itens da revisão (`toScanItems`), validação dos itens marcados (`validateScanItems`), corpo `OCR_ICR` (`toOcrPayload`) e mensagens por `code` e por `fallbackReason`.
+- [x] **Foto (`services/cardPhoto.ts`):** `expo-image-picker` (câmera do sistema e seletor de fotos, ambos no Expo Go) e `expo-image-manipulator` (lado maior de até 2000 px, JPEG 0,8). LGPD: a foto original e a reduzida ficam só no cache do app e são apagadas com `expo-file-system` depois do envio, ao refazer, ao falhar e ao sair do fluxo. A exclusão só atua em arquivos do cache do app, nunca na foto original da galeria. Os recortes da API ficam só na memória.
+- [x] **Rotas:** `cidadao/digitalizar` (titular) e `cidadao/dependentes/[dependentId]/digitalizar`, as duas com a `ScanScreen` (`components/vaccination/screens/`) e o dono vindo do `VaccinationCardProvider` (`paths.scan`). Gesto de voltar do iOS desligado nessas rotas, para não perder a leitura sem querer.
+- [x] **Entrada:**
+  - **Aba central "Digitalizar"** na barra da ala Cidadão, entre Caderneta e UBS, como no design (`cidadao/inicio-caderneta-de-vacinacao.png`): círculo `primary` elevado com o ícone branco (`scanTabIcon`) e o rótulo em `primary`. O toque abre `cidadao/digitalizar` por cima das abas (a rota `(abas)/escanear` só redireciona). Na Caderneta do titular ficou só o "Cadastrar vacina".
+  - **"De quem é esta caderneta?" (`OwnerPicker`):** pela aba, quem tem dependentes escolhe primeiro (Você ou cada dependente); sem dependentes, a pergunta é pulada. O dependente escolhido ganha um `VaccinationCardProvider` próprio, então a caderneta conferida, o salvamento, o cadastro manual e o "Ver caderneta" usam as rotas dele. Voltar da orientação (também o voltar do Android) retorna à pergunta. Depois de salvar na caderneta de um dependente, o resumo dos dependentes é recarregado.
+  - **Caderneta do dependente:** botões "Digitalizar caderneta" e "Cadastrar vacina" (também no estado vazio), já com o dependente como dono, sem a pergunta.
+  - O estado vazio da caderneta deixou de dizer "em breve".
+  - **`Button`:** o texto passou a encolher e quebrar linha dentro do botão (o ícone ficava para fora em botões lado a lado ou com a fonte ampliada).
+- [x] **Fluxo (`components/ocr/ScanFlow`), etapas X de 4 no `StepHeader`:**
+  1. **Orientação (`ScanGuide`):** modelos suportados (Caderneta da Criança do MS e Caderneta de Jovens e Adultos de Maceió), dicas (página inteira ou as duas abertas, plana, iluminada, sem sombra ou reflexo) e o aviso de que a foto não fica salva. A permissão da câmera só é pedida ao tocar em "Tirar foto". Negada: aviso com a galeria e o cadastro manual e, se o sistema não deixar perguntar de novo, "Abrir configurações". A galeria usa o seletor do sistema, que não pede permissão.
+  2. **Conferir foto (`PhotoPreview`):** "Refazer" (abre a mesma origem) e "Usar esta foto".
+  3. **Leitura (`ReadingStep`):** indicador indeterminado, anúncio ao leitor de tela e "Cancelar" (volta à foto).
+  4. **Revisão (`ReviewStep` + `ScanItemCard`):** "Encontramos N doses", aviso fixo "Confira os dados com a caderneta; a leitura automática pode errar" e, com alinhamento `BAIXA`, a sugestão de outra foto. Cada item: vacina e dose (ou o impresso na caderneta), checkbox "Salvar esta dose", recorte da célula, recorte da vacina escrita (blocos livres) e **data e lote editáveis ao lado dos recortes**, vazios quando a leitura teve baixa confiança. Dose que já está na caderneta começa desmarcada, com o badge "Já está na caderneta".
+  - **Editor completo (`ItemEditor`):** o `VaccineRecordForm` com os valores do item e o recorte acima de cada campo (prop nova `fieldAddons`). É o caminho para escolher vacina e dose quando vêm `null` ("Escolher vacina e dose") ou para editar tudo. "Concluir" valida e marca o item.
+  - **Validação:** item marcado sem vacina, dose ou data válida (ou com a dose repetida em outro item, ou já na caderneta) não é enviado. O erro aparece no próprio item (borda e número em vermelho) e o botão vira "Salvar N doses: K precisam de atenção", que rola até o primeiro item com problema e anuncia a quantidade.
+  - **Falha (`ScanFailure`):** `manualFallback` (modelo não reconhecido ou nenhuma dose) e erros por `code` (`OCR_INDISPONIVEL`/`OCR_ERRO`, `OCR_TIMEOUT`, `IMAGEM_GRANDE`, `FORMATO_INVALIDO`/`IMAGEM_INVALIDA`/`IMAGEM_AUSENTE`/`UPLOAD_INVALIDO`, sem conexão) com mensagem própria, "Tentar outra foto" e "Cadastrar manualmente" (RNF12).
+- [x] **Salvar:** um `POST` por dose marcada, em sequência, pela rota do dono (`/vaccination-records` ou `/dependents/:id/vaccination-records`) com `origin: "OCR_ICR"` e o `ocrConfidence` da sugestão; aguardando conferência (D30). Botão com "Salvando X de N...". **Resultado (`SaveResults`):** cada dose como "Salva · aguardando conferência", "Já estava na caderneta" (`409`) ou "Não foi salva" com a mensagem da API; "Revisar as doses que falharam" volta à revisão só com elas; "Ver minha caderneta" recarrega e volta à caderneta.
+- [x] **Voltar:** o voltar do Android segue a etapa (foto → orientação, leitura → cancelar, editor → lista, resultado → caderneta). Sair da revisão pede confirmação ("Sair sem salvar?").
+- **Diferenças intencionais do design:**
+  - Câmera do sistema (`expo-image-picker`) no lugar da tela de captura com moldura, flash e "Documento detectado", que exigiriam o `expo-camera` com detecção de bordas. A prévia ("Conferir foto") foi mantida.
+  - A leitura não mostra porcentagem (a API não informa o progresso) e diz "até 20 segundos", o limite do backend.
+  - Na revisão, sem "Próxima dose", "Profissional responsável" e "Adicionar outra vacina" (a API não aceita esses campos e o cadastro manual cobre o último); "Remover linha" virou o checkbox "Salvar esta dose"; o menu "…" virou o botão do editor completo.
+  - O modal "Não conseguimos ler tudo" virou a tela de falha. Leitura parcial vai direto à revisão, com os campos vazios para preencher olhando o recorte.
+  - O lote é opcional (como no cadastro manual e na API), e não obrigatório como no design.
+- **Pendente para os testes com fotos reais (no celular, com o backend e o serviço de OCR rodando):**
+  - Os dois modelos: Caderneta da Criança (tabelas "até 12 meses" e "a partir de 12 meses") e a de Maceió (blocos impressos e livres), com página única e com as duas páginas abertas.
+  - Fotos inclinadas, com sombra, reflexo, pouca luz e bordas cortadas: conferir o `fallbackReason` e o aviso de alinhamento `BAIXA`.
+  - Tempo de leitura na rede local e o tamanho do upload depois da redução (bem abaixo dos 8 MB); confirmar que o timeout de 35 s do app basta.
+  - Envio do `multipart` pelo Axios no Android e no iOS (Expo Go).
+  - Limpeza do cache: conferir que as fotos somem depois do envio, ao cancelar e ao sair.
+  - Permissão da câmera negada uma vez e negada de vez (Android), e o "Abrir configurações".
+  - Doses com `doseId: null` (Hepatite B do adulto, HPV 2ª dose) e blocos livres sem match no catálogo, escolhidos pelo editor.
+  - Leitor de tela (TalkBack) e fonte ampliada nos recortes, nos campos ao lado e no botão de salvar.
+- Requisitos: RF004, RS003, RNF05, RNF12. Decisões D25, D30, D34 e D35.
+- **Backend:** `POST /vaccination-records/ocr` (D34) e `origin`/`ocrConfidence` nas rotas de cadastro manual. O backend usa o microsserviço Python (D25).
 
 ## [~] Etapa 9: Alertas de vacinação (concluída parcialmente: alertas dentro do app)
 
@@ -224,6 +256,6 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
 | Logout (`POST /auth/logout`) | Pronto |
 | Registro manual de vacina (`POST/PUT/DELETE /vaccination-records`) | Pronto |
 | Dependentes (CRUD, caderneta, confirmação, busca) | Pronto |
-| OCR (serviço Python + `POST /vaccination-records/ocr`) | **Novo** |
+| OCR (serviço Python + `POST /vaccination-records/ocr`) | Pronto (falta testar com fotos reais) |
 | Situação do alerta na caderneta (`alert`, D32) | Pronto |
 | Push (`/devices` + Expo Push) | **Novo** (complemento, melhoria futura) |

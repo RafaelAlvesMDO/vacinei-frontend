@@ -39,6 +39,14 @@
         {
           "locationWhenInUsePermission": "O Vacinei!? usa a sua localização apenas para ordenar as UBS por distância. Ela não é salva nem compartilhada."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "O Vacinei!? usa a câmera para fotografar a sua caderneta de vacinação e ler as doses. A foto não fica salva no aparelho nem no servidor.",
+          "photosPermission": "O Vacinei!? usa a foto escolhida da caderneta de vacinação para ler as doses. A foto não fica salva no aparelho nem no servidor.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

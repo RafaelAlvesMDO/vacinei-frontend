@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Banner, FilterChips, Icon, SelectField, TextField, type FilterOption, type SelectOption } from '@/components/ui';
 import { colors, spacing, touchTarget, typography } from '@/theme';
@@ -27,6 +27,8 @@ interface Props {
   // Registro em edição: a dose dele não conta como já registrada
   editingRecordId: string | null;
   editable?: boolean;
+  // Conteúdo exibido logo acima de um campo (ex.: o recorte da foto da caderneta na conferência do OCR)
+  fieldAddons?: Partial<Record<'vaccineId' | 'applicationDate' | 'lote', ReactNode>>;
 }
 
 /**
@@ -41,6 +43,7 @@ export function VaccineRecordForm({
   cardVaccines,
   editingRecordId,
   editable = true,
+  fieldAddons = {},
 }: Props) {
   const selected = catalog.find((vaccine) => vaccine.id === values.vaccineId);
   const [query, setQuery] = useState(selected?.name ?? '');
@@ -79,6 +82,7 @@ export function VaccineRecordForm({
   return (
     <View style={styles.container}>
       <View style={styles.group}>
+        {fieldAddons.vaccineId}
         <TextField
           label="Nome da vacina"
           required
@@ -127,6 +131,7 @@ export function VaccineRecordForm({
           ))}
       </View>
 
+      {fieldAddons.applicationDate}
       <View style={styles.row}>
         <View style={styles.rowItem}>
           <SelectField
@@ -157,6 +162,7 @@ export function VaccineRecordForm({
         </View>
       </View>
 
+      {fieldAddons.lote}
       <TextField
         label="Lote (opcional)"
         placeholder="Ex.: TV88321"

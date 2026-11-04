@@ -144,6 +144,19 @@ Consulte este arquivo antes de alterar qualquer regra de negócio.
 - **Implementação:** a regra fica no backend (D01), em `calculateAlertStatus` (`CalculateVaccineStatusService`), usada pela caderneta (campo `alert`), pelo `/overdue` e pelo `/summary`. O `status` da caderneta continua o do esquema (todo registro conta como aplicado), porque é a base da próxima dose e da data prevista.
 - **Motivo:** o registro do cidadão não pode encerrar o alerta (nota 7), mas tratá-lo como atraso inflaria os números: no seed, 78 doses aguardam conferência e só 18 vacinas estão de fato atrasadas, e as vacinas só com registros pendentes passariam a contar o atraso desde o nascimento. Separar os grupos dá ao profissional duas ações distintas: procurar quem não tomou a dose e conferir quem já informou.
 - **Requisito:** RF007 (nota 7), RF009, RF010; D06, D21.
+- **Ajuste (2026-11-04, D35):** as três situações valem só para vacinas com pelo menos um registro na caderneta (esquema iniciado). Vacina nunca iniciada não gera alerta nem aparece na caderneta.
+
+### D35 — Alerta de atraso só para esquemas iniciados
+- **Decisão:** o alerta de atraso (`ATRASADA`, D32) vale para **esquemas iniciados**, ou seja, para as doses seguintes de uma vacina que já tem registro na caderneta (confirmado ou aguardando conferência). Vacina **nunca iniciada** não gera alerta e não aparece na caderneta.
+  - **Pontos que seguem a regra:** caderneta (`GET /citizens/:id/vaccination-records` e `/dependents/:id/vaccination-records`), `/dashboard/summary`, `/dashboard/overdue` e alertas do app. Todos já calculam a situação a partir dos registros (`calculateAlertStatus`), então continuam mostrando a mesma coisa.
+  - **Vacinas novas do catálogo (D34):** Varicela, Hepatite A, Dupla Adulto, DTP, Tetra Viral, Meningocócica ACWY, COVID-19 e Pneumocócica 23V só aparecem para quem tem registro delas. Exemplo: no seed, a cidadã `cidadao03` (bebê de 9 meses) continua com as mesmas 6 vacinas na caderneta.
+- **Alternativa avaliada e descartada:** avaliar também as vacinas nunca iniciadas contra uma janela de idade simplificada para iniciar o esquema.
+  - **Impacto no seed:** +34 vacinas atrasadas em 14 pessoas. A D32 ao pé da letra, sem janela, daria +359.
+  - **Por que não:** as janelas simplificadas não valem para adultos (ex.: Tríplice Viral e Febre Amarela até 59 anos, Hepatite B em qualquer idade). Além disso, a mudança mexeria na caderneta, no dashboard e na busca ativa do back, do web e do app às vésperas do congelamento.
+- **Limitação:** a criança que nunca tomou uma vacina do calendário (ex.: Meningocócica C aos 3 meses) não recebe alerta dela; só das doses seguintes das vacinas que já começou.
+- **Melhoria futura:** avaliar as vacinas nunca iniciadas contra o calendário do PNI, com janelas de idade por vacina e por público (criança, adolescente, adulto, gestante, idoso), conferidas com a nota técnica vigente.
+- **Motivo:** sem janelas de idade confiáveis, alertar vacinas nunca iniciadas geraria falsos atrasos em massa, principalmente para adultos, e inflaria o dashboard e a busca ativa. Limitar o alerta aos esquemas iniciados mantém a regra previsível e coerente nos três clientes.
+- **Requisito:** RF006, RF007, RF009; D32, D34.
 
 ## Catálogo
 
@@ -204,6 +217,42 @@ Consulte este arquivo antes de alterar qualquer regra de negócio.
 - **Decisão:** o OCR da caderneta física roda em um microsserviço Python separado (OpenCV no pré-processamento + `pytesseract`). O app envia a foto ao backend, que chama o serviço e devolve as doses reconhecidas para revisão. Os registros são gravados com origem `OCR_ICR` e ficam pendentes de confirmação (D06). Se o OCR falhar, o app oferece o cadastro manual.
 - **Motivo:** isola as dependências de visão computacional da API Node e mantém o app como cliente simples (D01).
 - **Requisito:** RF004, RS003, RNF05, RNF12.
+- **Atualização (2026-11-04):** o escopo da leitura passou a ser por modelos de caderneta (D34).
+
+### D34 — OCR por modelos de caderneta: o OCR sugere, o cidadão confere
+- **Contexto (PoC, D25):** lendo a página inteira, o OCR acertou 0 de 2 campos; recortando por âncoras, 1 de 2. O gargalo é o Tesseract não reconhecer dígitos manuscritos, e as cadernetas reais variam muito de layout.
+- **Decisão (escopo):** o sistema suporta um **conjunto fechado de modelos de caderneta** (templates em `ocr-service/templates/<modelo>/`, com `reference*.png` e `cells.json`). Foto de outro modelo, ou leitura sem confiança, cai no cadastro manual (RNF12). Modelos atuais:
+  - **`caderneta-crianca-ms`:** Caderneta da Criança (MS), tabelas "até 12 meses" e "a partir de 12 meses".
+  - **`caderneta-maceio-jovens-adultos`:** Caderneta de Vacinação de Jovens e Adultos da Prefeitura de Maceió, com 16 blocos impressos e 16 livres.
+- **Decisão (pipeline):** a entrada é a foto da página inteira (ou das duas páginas abertas).
+  1. **Identificação:** SIFT + RANSAC contra a referência de cada página, com mínimo de 40 inliers; páginas sobrepostas do mesmo modelo são descartadas.
+  2. **Alinhamento:** homografia, com verificação da impressão reencontrada na foto.
+  3. **Células:** recorte das células mapeadas, com ajuste local por correlação.
+  4. **Células vazias:** descartadas pela densidade de tinta à mão (tinta escura fora da impressão da referência, ignorando manchas amareladas).
+  5. **Leitura:** só das células preenchidas.
+- **Decisão (o que vem de onde):**
+  - **Vacina e dose impressas no modelo:** vêm da **posição** da célula. O OCR sugere data e lote.
+  - **Blocos livres:** a vacina vem do OCR, com match aproximado no catálogo pelo nome ou pelos aliases (campo novo `Vaccine.aliases`, migration `vacinas_aliases`); se não casar, fica vazia. A leitura reaproveita o método da rodada 2 da PoC (âncoras dos rótulos, limpeza, Otsu e adaptativa, psm 7 e 8) no bloco alinhado, testando algumas alturas do bloco.
+  - **Lote no modelo de Maceió:** a faixa do lote começa acima da linha do FAB, porque na prática o lote é escrito sobre ela.
+  - **Cada campo vem com o recorte da imagem.** Com baixa confiança (< 0,45), o valor vai vazio e o cidadão preenche olhando o recorte (RF004).
+- **Decisão (catálogo):**
+  - **Vacinas novas no seed:** Meningocócica ACWY (aliases ACWY, MenACWY, MENINGO ACWY), COVID-19, Dupla Adulto (dT), DTP (Tríplice Bacteriana), Tetra Viral (SCRV), Varicela, Hepatite A e Pneumocócica 23-Valente.
+  - **Fora do cálculo de atraso (D32):** COVID-19 (esquema variável) e Pneumocócica 23V (público específico) ficam sem idade recomendada e sem intervalo, como a dTpa, então nunca vencem sozinhas. A 1ª dose da dT depende do histórico (sem idade); as seguintes contam a partir da anterior.
+  - **Atraso só com registro (D35):** a situação de atraso é calculada só para vacinas com registro na caderneta, então as vacinas novas não inflam o dashboard nem a busca ativa. Conferido no seed (referência 04/11/2026): 23 vacinas atrasadas (11 pessoas) e 77 doses aguardando conferência (30 pessoas), antes e depois.
+  - **Doses impressas sem correspondente:** não foram criadas doses novas. Hepatite B 1ª/2ª/3ª do adulto e a 2ª dose do HPV voltam com `doseId: null` e o cidadão escolhe a dose na revisão. Febre Amarela "Dose única"/"Dose" → 1ª Dose; VOP 1º/2º Reforço → doses 4 e 5 da VIP ("1º/2º Reforço (VOP/VIP)").
+- **Decisão (API):**
+  - **`POST /vaccination-records/ocr`:** autenticado, `CIDADAO`/`PROFISSIONAL_SAUDE`. Recebe multipart com uma imagem JPEG/PNG de até 8 MB, encaminha ao serviço com timeout de 20 s e devolve só sugestões com `vaccineId`/`doseId` do catálogo. **Não cria registros.** Serve para o titular e para os dependentes.
+  - **Imagem (LGPD):** processada em memória (multer `memoryStorage`) e descartada, nunca salva nem logada.
+  - **Falhas:** erros com `code` (`OCR_INDISPONIVEL`, `OCR_TIMEOUT` etc.) e `manualFallback: true` quando nada foi reconhecido, para o app cair no cadastro manual.
+  - **Salvamento:** pelas rotas de cadastro manual (D30), que passaram a aceitar `origin: "OCR_ICR"` e `ocrConfidence` (0–1), opcionais. O registro continua aguardando confirmação (D06).
+- **Situação medida (2026-11-04):** na foto do cartão de Maceió, o modelo é identificado (2494 inliers, alinhamento "boa") e só o bloco preenchido (ACWY) é encontrado, sem falsos positivos nos blocos manchados. Data e lote manuscritos voltam vazios: o Tesseract não os reconhece em nenhuma variação testada (altura, espessura, `por`/`eng`, caractere a caractere). A vacina do bloco livre (ACWY) só casou com o catálogo porque a leitura testa várias alturas do bloco (600, 700, 500 e 800 px). Aplicado sem mudanças ao bloco alinhado (cerca de 340 px de altura), o método da rodada 2 leu "PCcwy"/"PreWy". O acerto veio em 600 px ("Acwy", exato) e em 700 px ("Pcwy", com uma letra de diferença), e falhou em 550, 650, 750, 800 e 850 px. É um **acerto pontual e frágil**: não demonstra que a vacina manuscrita é lida de forma confiável. A medição com fotos reais usa `avaliar_templates.py` (gabarito `X.txt` com várias doses por imagem).
+- **Melhorias futuras:**
+  - Modelo de reconhecimento de escrita à mão (ex.: TrOCR) no lugar do Tesseract, sem mudar o contrato.
+  - Mais modelos de caderneta.
+  - Leitura de carimbos e etiquetas de lote.
+  - Esquemas por faixa etária no catálogo (Hepatite B do adulto em 3 doses, HPV em 2 doses), para que essas células tenham `doseId`.
+- **Motivo:** com o layout conhecido, a posição resolve vacina e dose sem depender do OCR, e o reconhecimento do modelo e das células preenchidas já poupa o cidadão de procurar as doses na caderneta. Limitar a modelos conhecidos troca abrangência por confiabilidade, e o cadastro manual cobre o resto.
+- **Requisito:** RF004, RF005, RNF05, RNF12, RS003; D06, D25, D30, D32.
 
 ### D29 — "Ver no mapa" do detalhe da vacina abre a localização de UBS
 - **Decisão:** o atalho "Ver UBS no mapa" do detalhe da vacina redireciona para a localização de UBS (aba UBS, já no Mapa). Exibir a UBS onde a dose foi aplicada fica como melhoria futura.

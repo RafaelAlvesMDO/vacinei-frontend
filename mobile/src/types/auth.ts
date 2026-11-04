@@ -107,10 +107,14 @@ export interface ApiErrorResponse {
   status: 'error';
   message: string;
   issues?: ValidationIssues;
+  // Código estável de algumas rotas, para tratar o erro sem depender do texto (ex.: OCR_TIMEOUT)
+  code?: string;
 }
 
 export interface ParsedApiError {
   status: number | null;
   message: string;
   fieldErrors: Record<string, string>;
+  // `code` da API; `TIMEOUT` quando a requisição passou do tempo limite no próprio app
+  code: string | null;
 }
