@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { CitizenVaccineItem } from '@/components/professional/CitizenVaccineItem';
+import { DependentOf } from '@/components/professional/DependentOf';
 import { openConfirmDose } from '@/components/professional/navigation';
 import { VerifiedOnly } from '@/components/professional/VerifiedOnly';
 import { Banner, Button, Card, Screen, StateMessage, StepHeader } from '@/components/ui';
@@ -18,7 +19,7 @@ import { sortVaccines } from '@/utils/vaccination';
 
 /**
  * Caderneta do cidadão na ala Profissional (RF010): situação das vacinas e confirmação de doses.
- * Na própria caderneta, só leitura (RS006, D11)
+ * Na própria caderneta e na dos próprios dependentes, só leitura (RS006, D11, D33)
  */
 export default function CitizenCardScreen() {
   return (
@@ -49,15 +50,24 @@ function CitizenCardContent() {
       ) : (
         <>
           {errorMessage && <Banner tone="danger" title="Não foi possível atualizar" message={errorMessage} />}
-          <CardContent card={card} isOwnCard={isOwnCard} />
+          <CardContent card={card} isOwnCard={isOwnCard} userId={user?.id} />
         </>
       )}
     </Screen>
   );
 }
 
-function CardContent({ card, isOwnCard }: { card: VaccinationCard; isOwnCard: boolean }) {
+interface CardContentProps {
+  card: VaccinationCard;
+  isOwnCard: boolean;
+  userId: string | undefined;
+}
+
+function CardContent({ card, isOwnCard, userId }: CardContentProps) {
   const { citizen } = card;
+  // RS006 (D33): o profissional também não confirma as doses dos próprios dependentes
+  const isOwnDependent = !!userId && citizen.responsible?.id === userId;
+  const readOnly = isOwnCard || isOwnDependent;
   const age = getAge(citizen.birthDate);
   const vaccines = sortVaccines(card.vaccines);
   const registerOther = () => openConfirmDose({ citizenId: citizen.id });
@@ -76,6 +86,7 @@ function CardContent({ card, isOwnCard }: { card: VaccinationCard; isOwnCard: bo
             Nasc. {formatCalendarDate(citizen.birthDate)}
             {age !== null && ` · ${age} ${age === 1 ? 'ano' : 'anos'}`}
           </Text>
+          <DependentOf responsible={citizen.responsible} isOwn={isOwnDependent} />
         </View>
       </Card>
 
@@ -88,6 +99,15 @@ function CardContent({ card, isOwnCard }: { card: VaccinationCard; isOwnCard: bo
         />
       )}
 
+      {isOwnDependent && (
+        <Banner
+          tone="warning"
+          icon="shield-outline"
+          title="Este é o seu dependente"
+          message="Você não pode confirmar a vacinação dos próprios dependentes (RS006). Outro profissional de saúde deve conferir as doses."
+        />
+      )}
+
       {vaccines.length === 0 ? (
         <StateMessage
           variant="empty"
@@ -96,14 +116,16 @@ function CardContent({ card, isOwnCard }: { card: VaccinationCard; isOwnCard: bo
           message={
             isOwnCard
               ? 'Nenhuma vacina registrada na sua caderneta.'
-              : 'Nenhuma vacina registrada. Use "Registrar vacina" para lançar a primeira dose.'
+              : readOnly
+                ? 'Nenhuma vacina registrada na caderneta do seu dependente.'
+                : 'Nenhuma vacina registrada. Use "Registrar vacina" para lançar a primeira dose.'
           }
-          action={isOwnCard ? undefined : { label: 'Registrar vacina', icon: 'needle', onPress: registerOther }}
+          action={readOnly ? undefined : { label: 'Registrar vacina', icon: 'needle', onPress: registerOther }}
         />
       ) : (
         <>
           <SummaryCard vaccines={card.vaccines} />
-          {!isOwnCard && (
+          {!readOnly && (
             <Button
               label="Registrar outra vacina"
               icon="add-circle-outline"
@@ -119,7 +141,7 @@ function CardContent({ card, isOwnCard }: { card: VaccinationCard; isOwnCard: bo
               <CitizenVaccineItem
                 key={item.vaccine.id}
                 item={item}
-                canConfirm={!isOwnCard}
+                canConfirm={!readOnly}
                 onConfirmDose={() => openConfirmDose({ citizenId: citizen.id, vaccineId: item.vaccine.id })}
                 onConfirmRecord={(record) =>
                   openConfirmDose({ citizenId: citizen.id, vaccineId: item.vaccine.id, recordId: record.id })

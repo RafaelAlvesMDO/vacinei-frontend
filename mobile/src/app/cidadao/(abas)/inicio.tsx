@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AlertRow } from '@/components/alerts/AlertRow';
+import { DependentsShortcut } from '@/components/dependents/DependentsShortcut';
 import { Banner, Button, Card, Icon, Screen, StateMessage } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { SummaryCard } from '@/components/vaccination/SummaryCard';
@@ -103,6 +104,8 @@ export default function CitizenHome() {
           )}
         </>
       )}
+
+      <DependentsShortcut />
     </Screen>
   );
 }

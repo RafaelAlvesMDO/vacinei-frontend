@@ -5,11 +5,12 @@ import { Badge, Banner, Button, Card, Icon, Screen, StateMessage, StepHeader } f
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { useVaccineCatalog } from '@/hooks/useVaccineCatalog';
 import { parseApiError } from '@/services/auth';
+import { createDependentRecord, updateDependentRecord } from '@/services/dependents';
 import { createRecord, updateRecord } from '@/services/vaccinationRecords';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { SavedRecord, VaccinationCard } from '@/types/vaccination';
 import { formatCalendarDate } from '@/utils/format';
-import { getRecordBadge } from '@/utils/vaccination';
+import { getCardTexts, getRecordBadge } from '@/utils/vaccination';
 import {
   getTakenDoseIds,
   suggestDose,
@@ -27,7 +28,6 @@ import { VaccineRecordForm } from './VaccineRecordForm';
 type Step = 'form' | 'summary' | 'saved';
 
 const RECORD_FIELDS: RecordField[] = ['vaccineId', 'doseId', 'applicationDate', 'lote'];
-const DUPLICATE_DOSE = 'Esta dose já está na sua caderneta.';
 
 interface Props {
   card: VaccinationCard;
@@ -42,11 +42,13 @@ interface Props {
 }
 
 /**
- * Cadastro manual na própria caderneta (RF005, D30): formulário → resumo para conferir → registro salvo.
- * O registro fica "Aguardando confirmação" até um profissional conferir presencialmente (D06)
+ * Cadastro manual na própria caderneta ou na de um dependente (RF005, D30, D33): formulário → resumo para
+ * conferir → registro salvo. O registro fica "Aguardando confirmação" até um profissional conferir
+ * presencialmente (D06)
  */
 export function VaccineRecordFlow({ card, initialValues, recordId = null, title, subtitle, onExit }: Props) {
-  const { reload: reloadCard } = useVaccinationCard();
+  const { owner, paths, reload: reloadCard } = useVaccinationCard();
+  const texts = getCardTexts(owner.kind === 'self', card.citizen.name);
   const { vaccines, error: catalogError, reload: reloadCatalog } = useVaccineCatalog();
   const [editingId, setEditingId] = useState(recordId);
   const [step, setStep] = useState<Step>('form');
@@ -103,7 +105,14 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
     setError(null);
     try {
       const payload = toRecordPayload(values);
-      const record = editingId ? await updateRecord(editingId, payload) : await createRecord(payload);
+      let record: SavedRecord;
+      if (owner.kind === 'self') {
+        record = editingId ? await updateRecord(editingId, payload) : await createRecord(payload);
+      } else {
+        record = editingId
+          ? await updateDependentRecord(owner.id, editingId, payload)
+          : await createDependentRecord(owner.id, payload);
+      }
       setSaved(record);
       setStep('saved');
       reloadCard();
@@ -116,7 +125,7 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
         }
         backToForm(Object.keys(fieldErrors).length > 0 ? 'Confira os campos destacados.' : parsed.message, fieldErrors);
       } else if (parsed.status === 409) {
-        backToForm(null, { doseId: DUPLICATE_DOSE });
+        backToForm(null, { doseId: `Esta dose já está ${texts.inCard}.` });
         reloadCard();
       } else if (parsed.status === 404) {
         backToForm(
@@ -150,7 +159,7 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
 
   const goToCard = () => {
     if (router.canDismiss()) router.dismissAll();
-    router.navigate('/cidadao/caderneta');
+    router.navigate(paths.card);
   };
 
   if (step === 'saved' && saved) {
@@ -158,6 +167,7 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
       <SavedStep
         record={saved}
         citizenName={card.citizen.name}
+        viewCardLabel={texts.viewCard}
         isEditing={isEditing}
         onGoToCard={goToCard}
         onAddAnother={addAnother}
@@ -252,13 +262,14 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
 interface SavedStepProps {
   record: SavedRecord;
   citizenName: string;
+  viewCardLabel: string;
   isEditing: boolean;
   onGoToCard: () => void;
   onAddAnother: () => void;
   onExit: () => void;
 }
 
-function SavedStep({ record, citizenName, isEditing, onGoToCard, onAddAnother, onExit }: SavedStepProps) {
+function SavedStep({ record, citizenName, viewCardLabel, isEditing, onGoToCard, onAddAnother, onExit }: SavedStepProps) {
   const badge = getRecordBadge(record);
   const vaccineName = record.dose.vaccine.name;
   const date = formatCalendarDate(record.applicationDate);
@@ -268,7 +279,7 @@ function SavedStep({ record, citizenName, isEditing, onGoToCard, onAddAnother, o
       header={<StepHeader title="Registro salvo" onBack={onExit} />}
       footer={
         <View style={styles.footerActions}>
-          <Button label="Ver minha caderneta" icon="book-outline" onPress={onGoToCard} />
+          <Button label={viewCardLabel} icon="book-outline" onPress={onGoToCard} />
           {isEditing ? (
             <Button label="Voltar para a vacina" icon="arrow-back" variant="secondary" onPress={onExit} />
           ) : (
@@ -303,7 +314,7 @@ function SavedStep({ record, citizenName, isEditing, onGoToCard, onAddAnother, o
 
       <Banner
         tone="warning"
-        message="Leve sua caderneta física à UBS: um profissional de saúde confere o registro presencialmente e ele passa a constar como confirmado."
+        message="Leve a caderneta física à UBS: um profissional de saúde confere o registro presencialmente e ele passa a constar como confirmado."
       />
     </Screen>
   );

@@ -1,17 +1,22 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Badge, Button, Card, ConfirmDialog, Screen } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, RadioCard, Screen } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { Ala } from '@/types/auth';
 import { ALA_LABELS, getInitials, ROLE_LABELS, VERIFICATION_LABELS } from '@/utils/roles';
 
+interface Props {
+  // Só na ala Cidadão, onde ficam as rotas dos dependentes (D33)
+  showDependents?: boolean;
+}
+
 /**
- * Perfil simples das duas alas: dados da conta, troca de ala (só profissional) e saída.
- * Edição do nome e troca de senha (RF003) ficam para uma próxima etapa
+ * Perfil simples das duas alas: dados da conta, dependentes (ala Cidadão), troca de ala (só profissional) e
+ * saída. Edição do nome e troca de senha (RF003) ficam para uma próxima etapa
  */
-export function ProfileScreen() {
+export function ProfileScreen({ showDependents = false }: Props) {
   const { user, ala, chooseAla, signOut } = useAuth();
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -58,6 +63,16 @@ export function ProfileScreen() {
           </View>
         </View>
       </Card>
+
+      {showDependents && (
+        <RadioCard
+          mode="button"
+          icon="people-outline"
+          title="Meus dependentes"
+          description="Cadernetas de quem depende de você"
+          onPress={() => router.push('/cidadao/dependentes')}
+        />
+      )}
 
       {isProfessional && ala && (
         <Card>

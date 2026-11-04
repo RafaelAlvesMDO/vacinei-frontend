@@ -4,6 +4,7 @@ import { colors, fonts, spacing, typography } from '@/theme';
 import type { RecentDose } from '@/types/dashboard';
 import { formatCalendarDate } from '@/utils/format';
 import { getRecordBadge } from '@/utils/vaccination';
+import { DependentOf } from './DependentOf';
 import { openCitizenCard } from './navigation';
 
 interface Props {
@@ -57,7 +58,15 @@ function RecentDoseRow({ dose, first }: { dose: RecentDose; first: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${dose.citizen.name}. ${dose.vaccine.name}, ${dose.dose.doseName}. ${date}. ${badge.label}`}
+      accessibilityLabel={[
+        dose.citizen.name,
+        dose.citizen.responsible && `Dependente de ${dose.citizen.responsible.name}`,
+        `${dose.vaccine.name}, ${dose.dose.doseName}`,
+        date,
+        badge.label,
+      ]
+        .filter(Boolean)
+        .join('. ')}
       accessibilityHint="Abre a caderneta do cidadão"
       onPress={() => openCitizenCard(dose.citizen.id)}
       style={({ pressed }) => [styles.row, !first && styles.rowBorder, pressed && styles.pressed]}
@@ -66,6 +75,7 @@ function RecentDoseRow({ dose, first }: { dose: RecentDose; first: boolean }) {
         <Text style={styles.name}>{dose.citizen.name}</Text>
         <Text style={typography.muted}>{date}</Text>
       </View>
+      <DependentOf responsible={dose.citizen.responsible} />
       <Text style={typography.muted}>
         {dose.vaccine.name} · {dose.dose.doseName}
       </Text>

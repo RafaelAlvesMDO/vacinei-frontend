@@ -78,6 +78,14 @@ function ConfirmDoseContent() {
     );
   }
 
+  // RS006 (D33): nem a dos próprios dependentes; a API também recusa com 403
+  if (user && card.citizen.responsible?.id === user.id) {
+    return blocked(
+      'Confirmação não permitida',
+      'Você não pode confirmar a vacinação dos próprios dependentes. Outro profissional de saúde deve conferir as doses.',
+    );
+  }
+
   return (
     <LoadedFlow
       card={card}

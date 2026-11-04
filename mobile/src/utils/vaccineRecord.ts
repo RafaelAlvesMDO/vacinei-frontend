@@ -92,7 +92,7 @@ export function validateRecordForm(values: RecordFormValues, { vaccine, taken, b
   if (vaccine) {
     if (!values.doseId) errors.doseId = 'Escolha a dose.';
     else if (!vaccine.doses.some((dose) => dose.id === values.doseId)) errors.doseId = 'Escolha uma dose desta vacina.';
-    else if (taken.has(values.doseId)) errors.doseId = 'Esta dose já está na sua caderneta.';
+    else if (taken.has(values.doseId)) errors.doseId = 'Esta dose já está na caderneta.';
   }
 
   const date = parseDateInput(values.applicationDate);
@@ -102,7 +102,7 @@ export function validateRecordForm(values: RecordFormValues, { vaccine, taken, b
     errors.applicationDate = 'Informe uma data válida no formato DD/MM/AAAA.';
   else if (date > getTodayIso()) errors.applicationDate = 'A data de aplicação não pode ser futura.';
   else if (birth && date < birth)
-    errors.applicationDate = `A data não pode ser anterior ao seu nascimento (${toDateInput(birth)}).`;
+    errors.applicationDate = `A data não pode ser anterior ao nascimento (${toDateInput(birth)}).`;
 
   if (values.lote && !LOTE_PATTERN.test(values.lote)) errors.lote = 'Use só letras e números, sem espaços ou traços.';
 

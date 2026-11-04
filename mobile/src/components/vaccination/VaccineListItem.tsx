@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Badge, Icon } from '@/components/ui';
+import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { CardVaccine } from '@/types/vaccination';
 import { formatCalendarDate } from '@/utils/format';
@@ -35,6 +36,8 @@ function getDoseLine(item: CardVaccine): string {
  * Cartão de uma vacina na caderneta: abre o detalhe ao tocar
  */
 export function VaccineListItem({ item }: Props) {
+  // Detalhe na caderneta do titular ou do dependente (D33)
+  const { paths } = useVaccinationCard();
   const status = SCHEDULE_STATUS[item.alert.status];
   const lastRecord = getLastRecord(item);
   const recordBadge = lastRecord ? getRecordBadge(lastRecord) : null;
@@ -54,7 +57,7 @@ export function VaccineListItem({ item }: Props) {
         .filter(Boolean)
         .join('. ')}
       accessibilityHint="Abre o detalhe da vacina"
-      onPress={() => router.push({ pathname: '/cidadao/vacina/[vaccineId]', params: { vaccineId: item.vaccine.id } })}
+      onPress={() => router.push(paths.vaccine(item.vaccine.id))}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       <View style={styles.header}>
