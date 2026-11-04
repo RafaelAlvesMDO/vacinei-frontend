@@ -1,3 +1,4 @@
+import type { CitizenResponsible } from './citizen';
 import type { RecordStatus } from './vaccination';
 
 // Lista paginada (D22): `total` conta todos os resultados do filtro
@@ -22,7 +23,7 @@ export interface DashboardSummary {
 // GET /dashboard/recent-doses. Status diferente de CONFIRMADO = registro do cidadão aguardando confirmação
 export interface RecentDose {
   id: string;
-  citizen: { id: string; name: string };
+  citizen: { id: string; name: string; responsible: CitizenResponsible | null };
   vaccine: { id: string; name: string };
   dose: { id: string; doseNumber: number; doseName: string };
   applicationDate: string;
@@ -49,11 +50,13 @@ export interface OverdueVaccine {
   pendingDoses: OverduePendingDose[];
 }
 
-// O CPF já vem mascarado. `maxDaysOverdue` é null no grupo AGUARDANDO_CONFERENCIA
+// O CPF já vem mascarado. `maxDaysOverdue` é null no grupo AGUARDANDO_CONFERENCIA. Dependentes (D33)
+// vêm com o responsável
 export interface OverduePerson {
   id: string;
   name: string;
   cpf: string | null;
+  responsible: CitizenResponsible | null;
   maxDaysOverdue: number | null;
   vaccines: OverdueVaccine[];
 }

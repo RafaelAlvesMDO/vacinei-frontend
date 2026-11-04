@@ -133,13 +133,29 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - Requisitos: RF009, RF010, RS001, RS005, RS006.
 - **Backend:** nenhum.
 
-## [ ] Etapa 7: Dependentes
+## [x] Etapa 7: Dependentes
 
 - **Design:** `design-mobile/dependentes/`.
-- Listar, cadastrar e editar dependentes (nome, nascimento, CPF opcional, parentesco); caderneta de cada dependente; cadastro manual de vacina para o dependente; seletor "de quem é a caderneta" na tela inicial.
-- Ala profissional: o dependente aparece na busca e pode ter doses confirmadas (D09).
-- Requisitos: RF012, RS004 (só o responsável vê), RS008 (mesmo nome e nascimento não podem ter dois responsáveis).
-- **Backend novo:** módulo `dependents` (hoje vazio): `GET/POST /dependents`, `PUT/DELETE /dependents/:id`, `GET /dependents/:id/vaccination-records`, `dependentId` no registro manual e na confirmação, e dependentes na busca e nas métricas (D09).
+- [x] **Dados:** `services/dependents.ts` (CRUD, caderneta e registro manual do dependente) e tipos em `types/dependent.ts`. Regras puras em `utils/dependents.ts`: rótulos de sexo e parentesco, `formatAge` ("8 anos", "5 meses"), validação do formulário e resumo da situação (D32). O `contexts/DependentsContext` (+ `hooks/useDependents`) envolve a ala Cidadão: lista os dependentes e busca a caderneta de cada um em paralelo para o resumo, porque o `GET /dependents` não traz a situação. Isso é aceitável para poucos dependentes.
+- [x] **Caderneta reaproveitada:** o `VaccinationCardProvider` recebe o dono (`owner`: titular ou dependente) e expõe as rotas (`paths`). Caderneta, detalhe da vacina e cadastro manual foram para `components/vaccination/screens/` (`CardScreen`, `VaccineDetailScreen`, `RecordScreen`). As rotas do titular (`cidadao/caderneta`, `vacina/[vaccineId]`, `registro-vacina`) e as do dependente só renderizam essas telas. O `VaccineRecordFlow` e a exclusão escolhem o serviço pelo dono, e os textos mudam com `getCardTexts` ("na sua caderneta" ou "na caderneta de Lucas").
+- [x] **Rotas:** `cidadao/dependentes` (lista), `dependentes/novo` e `dependentes/[dependentId]/` (Stack com o provider da caderneta do dependente): `index` (perfil), `editar`, `caderneta`, `vacina/[vaccineId]` e `registro-vacina`.
+- [x] **Acesso:** "Meus dependentes" no Perfil da ala Cidadão (também para o profissional nesta ala, D11) e o cartão "Dependentes" na Início, só com dependentes cadastrados, com a situação de cada um.
+- [x] **Lista:** resumo "N dependentes vinculados" e um cartão por dependente com iniciais, nome, idade e parentesco, badges de situação ("N atrasadas", "N aguardando conferência", "Em dia" ou "Sem vacinas"), quantidade de vacinas e "Ver perfil". Estado vazio com o aviso de privacidade (RS004). Atualiza ao voltar para a tela.
+- [x] **Cadastro e edição** (`components/dependents/DependentForm`): nome (contador de 120 caracteres), nascimento (DD/MM/AAAA, não futura), sexo e parentesco (pílulas obrigatórias na tela), CPF opcional (máscara e dígitos verificadores). A regra de idade (menor de 18, exceto Curatelado) é conferida antes do envio, só se o nascimento ou o parentesco mudarem, como na API. Erros: `400` por campo (a mensagem de idade vai para o parentesco e a de "posterior a uma dose" para o nascimento), `409` de CPF no campo e `409` de nome e nascimento (RS008) no diálogo "Cadastro já existente" (`ConfirmDialog` ganhou `showCancel`).
+- [x] **Perfil do dependente:** iniciais, nome, idade e parentesco; nascimento, sexo, CPF completo (o responsável é o titular, D14), parentesco e data do cadastro; cartão "Caderneta de Lucas" com a quantidade de vacinas e a situação; "Editar dados" e "Remover dependente". Aviso de sucesso depois de cadastrar ou editar.
+- [x] **Remover:** `ConfirmDialog` danger avisando que os registros não confirmados são apagados; `409` (dose confirmada) mostra a mensagem da API; `404` trata como já removido.
+- [x] **Caderneta do dependente:** as mesmas telas do titular (busca, filtros, badges, as três situações do D32, detalhe e histórico), com "Caderneta do dependente" e o nome no cabeçalho. Registro manual, edição e exclusão só enquanto o registro aguarda conferência (D30), pelas rotas `/dependents/:id/vaccination-records`.
+- [x] **Ala profissional:** `components/professional/DependentOf` ("Dependente de <nome>") na busca de cidadãos, na busca ativa, nos registros recentes, na ficha do cidadão e na confirmação (com o responsável na revisão). Dependente sem CPF aparece como "Sem CPF". A busca ganhou a dica do CPF do responsável. Na ficha de um dependente do próprio profissional, as ações de confirmar ficam ocultas e aparece o aviso RS006; a rota `confirmar-dose` também bloqueia (a API responde `403`).
+- **Diferenças intencionais do design:**
+  - Sem "Solicitar verificação" no diálogo de duplicado (a API não tem esse fluxo) e sem "Salvar e adicionar outro".
+  - Sem o menu "…" e o "?" do cabeçalho; o lápis do cabeçalho do perfil virou só o botão "Editar dados".
+  - "Vinculado desde" virou "Cadastrado em" (`createdAt`). O perfil mostra também sexo e CPF.
+  - Parentesco no enum da API: Filho(a), Pai/Mãe, Cônjuge, Curatelado(a) e Outro (sem Neto(a) e Tutelado(a)). Campo sexo acrescentado (exigido pela API).
+  - O texto da remoção ("o histórico será mantido") contradiz a API: os registros não confirmados são apagados e quem tem dose confirmada não pode ser removido.
+  - Sem "receber lembretes" no estado vazio (notificações do sistema adiadas, D24).
+  - O seletor "de quem é a caderneta" virou o cartão "Dependentes" na Início.
+- Requisitos: RF012, RS004, RS006, RS008. Decisões D30, D32 e D33 (o D09 foi resolvido).
+- **Backend:** módulo `dependents` (D33) e `responsible` na busca, na caderneta, no `/overdue` e no `/recent-doses`.
 
 ## [ ] Etapa 8: OCR da caderneta física
 
@@ -190,6 +206,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
   - "Doses descartadas": o sistema não controla estoque nem descarte.
 - **Rodapé do login** (`auth/login.png`): links "Termos de uso" e "Ajuda". Ainda não há conteúdo para essas páginas; o app mostra só a "Política de privacidade".
 - **UBS da dose** (D29): registrar a UBS onde a dose foi aplicada na confirmação (backend e web) e exibi-la no histórico de doses.
+- **Resumo da situação no `GET /dependents`:** a API devolver, para cada dependente, a quantidade de vacinas e os totais de atrasadas e aguardando conferência (D32). Hoje o app busca a caderneta de cada dependente só para montar o resumo da lista e da Início.
 - **Doenças prevenidas em lista:** guardar as doenças prevenidas como lista no catálogo de vacinas (backend e Gerenciador Web), em vez de texto único, eliminando a heurística de separação dos chips no app.
 
 ---
@@ -205,8 +222,8 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
 | Ala profissional: busca, confirmação, busca ativa e indicadores | Pronto |
 | Alertas dentro do app | Pronto (usa a caderneta) |
 | Logout (`POST /auth/logout`) | Pronto |
-| Registro manual de vacina (`POST/PUT/DELETE /vaccination-records`) | **Novo** |
-| Dependentes (CRUD, caderneta, confirmação, busca) | **Novo** |
+| Registro manual de vacina (`POST/PUT/DELETE /vaccination-records`) | Pronto |
+| Dependentes (CRUD, caderneta, confirmação, busca) | Pronto |
 | OCR (serviço Python + `POST /vaccination-records/ocr`) | **Novo** |
 | Situação do alerta na caderneta (`alert`, D32) | Pronto |
 | Push (`/devices` + Expo Push) | **Novo** (complemento, melhoria futura) |

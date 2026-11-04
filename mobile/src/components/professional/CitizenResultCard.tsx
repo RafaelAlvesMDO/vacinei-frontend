@@ -4,18 +4,22 @@ import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { CitizenSearchResult } from '@/types/citizen';
 import { formatCalendarDate } from '@/utils/format';
 import { getInitials } from '@/utils/roles';
+import { DependentOf } from './DependentOf';
 import { openCitizenCard } from './navigation';
 
 interface Props {
   citizen: CitizenSearchResult;
   // O próprio profissional (D11): a caderneta abre, mas sem confirmar doses (RS006)
   isSelf: boolean;
+  // Dependente do próprio profissional (D33): também sem confirmar (RS006)
+  isOwnDependent: boolean;
 }
 
 /**
- * Resultado da busca de cidadãos: dados para conferir a identidade antes de abrir a caderneta
+ * Resultado da busca de cidadãos: dados para conferir a identidade antes de abrir a caderneta.
+ * Dependentes (D33) mostram o responsável
  */
-export function CitizenResultCard({ citizen, isSelf }: Props) {
+export function CitizenResultCard({ citizen, isSelf, isOwnDependent }: Props) {
   const birth = formatCalendarDate(citizen.birthDate);
 
   return (
@@ -26,6 +30,7 @@ export function CitizenResultCard({ citizen, isSelf }: Props) {
         </View>
         <View style={styles.title}>
           <Text style={styles.name}>{citizen.name}</Text>
+          <DependentOf responsible={citizen.responsible} isOwn={isOwnDependent} />
           {(isSelf || citizen.role === 'PROFISSIONAL_SAUDE') && (
             <Badge label={isSelf ? 'Você' : 'Profissional'} tone="neutral" icon="medkit-outline" />
           )}
@@ -34,7 +39,7 @@ export function CitizenResultCard({ citizen, isSelf }: Props) {
 
       <View style={styles.details}>
         <Detail label="Nascimento" value={birth} />
-        <Detail label="CPF" value={citizen.cpf ?? '—'} />
+        <Detail label="CPF" value={citizen.cpf ?? (citizen.responsible ? 'Sem CPF' : '—')} />
       </View>
 
       <Button

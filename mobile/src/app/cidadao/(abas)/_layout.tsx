@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { tabIcon, tabScreenOptions } from '@/components/navigation/tabScreenOptions';
 
-// Abas da ala Cidadão. Dependentes chegam nas próximas etapas
+// Abas da ala Cidadão. Os dependentes (D33) ficam no Perfil e no atalho da Início, sem aba própria
 export default function CitizenTabsLayout() {
   return (
     <Tabs screenOptions={tabScreenOptions}>

@@ -5,6 +5,7 @@ import type { OverdueGroup, OverduePerson, OverdueVaccine } from '@/types/dashbo
 import { formatCalendarDate } from '@/utils/format';
 import { getInitials } from '@/utils/roles';
 import { formatPendingDoses } from '@/utils/vaccination';
+import { DependentOf } from './DependentOf';
 import { openCitizenCard } from './navigation';
 
 const DAYS_PER_YEAR = 365;
@@ -36,7 +37,8 @@ export function OverduePersonCard({ person, group }: Props) {
         </View>
         <View style={styles.title}>
           <Text style={styles.name}>{person.name}</Text>
-          <Text style={typography.muted}>CPF {person.cpf ?? '—'}</Text>
+          <DependentOf responsible={person.responsible} />
+          <Text style={typography.muted}>{person.cpf ? `CPF ${person.cpf}` : person.responsible ? 'Sem CPF' : 'CPF —'}</Text>
         </View>
       </View>
 

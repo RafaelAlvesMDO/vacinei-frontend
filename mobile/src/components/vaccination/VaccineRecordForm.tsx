@@ -58,7 +58,7 @@ export function VaccineRecordForm({
   const doseOptions: SelectOption<string>[] = (selected?.doses ?? []).map((dose) => ({
     value: dose.id,
     label: dose.doseName,
-    description: taken.has(dose.id) ? 'Já está na sua caderneta' : undefined,
+    description: taken.has(dose.id) ? 'Já está na caderneta' : undefined,
     disabled: taken.has(dose.id),
   }));
 
@@ -171,7 +171,7 @@ export function VaccineRecordForm({
         error={errors.lote}
       />
 
-      <Banner tone="info" message="As doses disponíveis dependem da vacina escolhida. As que já estão na sua caderneta aparecem bloqueadas." />
+      <Banner tone="info" message="As doses disponíveis dependem da vacina escolhida. As que já estão na caderneta aparecem bloqueadas." />
     </View>
   );
 }

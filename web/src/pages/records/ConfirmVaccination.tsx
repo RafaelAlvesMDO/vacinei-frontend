@@ -47,7 +47,7 @@ export const ConfirmVaccination: React.FC = () => {
           <Card>
             <CardEmpty
               icon={Search}
-              message="Busque o cidadão pelo nome ou CPF para abrir a caderneta e confirmar as doses aplicadas."
+              message="Busque o cidadão pelo nome ou CPF para abrir a caderneta e confirmar as doses aplicadas. Buscar pelo CPF do responsável lista também os dependentes."
             />
           </Card>
           <OverdueCard />

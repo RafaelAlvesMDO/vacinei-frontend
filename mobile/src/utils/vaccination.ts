@@ -6,6 +6,40 @@ import { normalizeSearch } from './format';
 export const EMPTY_CARD_MESSAGE =
   'Você ainda não tem vacinas registradas. Cadastre as doses que já tomou. Em breve você também poderá digitalizar sua caderneta.';
 
+export interface CardTexts {
+  // "na sua caderneta" / "na caderneta de Lucas"
+  inCard: string;
+  // "da sua caderneta" / "da caderneta de Lucas"
+  fromCard: string;
+  viewCard: string;
+  emptyMessage: string;
+  loadingTitle: string;
+}
+
+/**
+ * Textos que mudam quando a caderneta é de um dependente (D33). `name` é o nome do dependente
+ */
+export function getCardTexts(isSelf: boolean, name?: string): CardTexts {
+  if (isSelf) {
+    return {
+      inCard: 'na sua caderneta',
+      fromCard: 'da sua caderneta',
+      viewCard: 'Ver minha caderneta',
+      emptyMessage: EMPTY_CARD_MESSAGE,
+      loadingTitle: 'Carregando sua caderneta...',
+    };
+  }
+  const first = name ? name.trim().split(/\s+/)[0] : 'do dependente';
+  const of = name ? `caderneta de ${first}` : 'caderneta do dependente';
+  return {
+    inCard: `na ${of}`,
+    fromCard: `da ${of}`,
+    viewCard: `Ver ${of}`,
+    emptyMessage: `Nenhuma vacina registrada ${name ? `na ${of}` : 'ainda'}. Cadastre as doses já aplicadas, conferindo a caderneta física.`,
+    loadingTitle: 'Carregando a caderneta...',
+  };
+}
+
 // Mensagem das doses informadas e não confirmadas (D32): não é atraso, falta a conferência presencial
 export const AWAITING_MESSAGE = 'Dose informada · leve sua caderneta à UBS para conferência';
 

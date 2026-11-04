@@ -15,6 +15,7 @@ import {
 import { Card } from '../../../components/ui/Card';
 import { CardEmpty, CardError, CardLoading } from '../../../components/ui/CardState';
 import { StatCard } from '../../../components/ui/StatCard';
+import { DependentOf } from '../../../components/citizens/DependentOf';
 import { useAsync } from '../../../hooks/useAsync';
 import { useAuth } from '../../../hooks/useAuth';
 import { getVaccinationCard } from '../../../services/citizens';
@@ -134,8 +135,11 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
 
   const { citizen, summary } = card.data;
   const age = calculateAge(citizen.birthDate);
-  // RS006: o profissional não confirma a própria vacinação (D11)
+  // RS006: o profissional não confirma a própria vacinação (D11) nem a dos próprios dependentes (D33).
+  // A API responde 403 nos dois casos; a mensagem dela aparece no modal se a tela estiver desatualizada
   const isOwnCard = user?.id === citizenId;
+  const isOwnDependent = !!user && citizen.responsible?.id === user.id;
+  const canConfirm = !isOwnCard && !isOwnDependent;
 
   return (
     <div className="flex flex-col gap-6">
@@ -172,6 +176,7 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
                 Nasc. {formatCalendarDate(citizen.birthDate)}
                 {age !== null && ` · ${age} ${age === 1 ? 'ano' : 'anos'}`}
               </p>
+              <DependentOf responsible={citizen.responsible} className="mt-1 text-sm" />
             </div>
           </div>
 
@@ -183,7 +188,7 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
               <ArrowLeftRight className="size-4" />
               Trocar cidadão
             </Link>
-            {!isOwnCard && (
+            {canConfirm && (
               <button
                 type="button"
                 onClick={() => setModal({ vaccineId: null })}
@@ -197,13 +202,17 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
         </div>
       </Card>
 
-      {isOwnCard && (
+      {!canConfirm && (
         <div
           role="note"
           className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-warning-soft p-4 text-sm font-medium text-warning"
         >
-          <ShieldAlert className="size-5 shrink-0" />
-          <p>Você não pode confirmar a própria vacinação (RS006).</p>
+          <ShieldAlert className="size-5 shrink-0" aria-hidden="true" />
+          <p>
+            {isOwnCard
+              ? 'Você não pode confirmar a própria vacinação (RS006).'
+              : 'Você não pode confirmar a vacinação dos próprios dependentes (RS006).'}
+          </p>
         </div>
       )}
 
@@ -236,6 +245,8 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
             message={
               isOwnCard
                 ? 'Nenhuma vacina registrada na sua caderneta.'
+                : isOwnDependent
+                  ? 'Nenhuma vacina registrada na caderneta do seu dependente.'
                 : 'Nenhuma vacina registrada na caderneta. Use “Registrar outra vacina” para lançar a primeira dose.'
             }
           />
@@ -246,7 +257,7 @@ export const CitizenVaccinationCard: React.FC<CitizenVaccinationCardProps> = ({ 
                 key={item.vaccine.id}
                 item={item}
                 isHighlighted={feedback?.vaccineId === item.vaccine.id}
-                canConfirm={!isOwnCard}
+                canConfirm={canConfirm}
                 onConfirm={openForVaccine}
                 onConfirmRecord={openForRecord}
               />

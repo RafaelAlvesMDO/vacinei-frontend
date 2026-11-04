@@ -25,6 +25,8 @@ interface Props {
   // Texto anunciado no botão de confirmar durante o carregamento (ex.: "Saindo...")
   loadingLabel?: string;
   cancelLabel?: string;
+  // false para avisos com uma ação só (ex.: "Voltar e revisar")
+  showCancel?: boolean;
   // "danger" para ações destrutivas: botão e ícone em vermelho
   variant?: 'default' | 'danger';
   loading?: boolean;
@@ -49,6 +51,7 @@ export function ConfirmDialog({
   confirmLabel,
   loadingLabel,
   cancelLabel = 'Cancelar',
+  showCancel = true,
   variant = 'default',
   loading = false,
   onConfirm,
@@ -59,7 +62,7 @@ export function ConfirmDialog({
   const titleRef = useRef<TextInstance>(null);
 
   const isDanger = variant === 'danger';
-  const sideBySide = width >= SIDE_BY_SIDE_MIN_WIDTH && fontScale <= SIDE_BY_SIDE_MAX_FONT_SCALE;
+  const sideBySide = showCancel && width >= SIDE_BY_SIDE_MIN_WIDTH && fontScale <= SIDE_BY_SIDE_MAX_FONT_SCALE;
   const dismiss = () => {
     if (!loading) onCancel();
   };
@@ -128,13 +131,15 @@ export function ConfirmDialog({
           <Text style={[typography.muted, styles.center, styles.message]}>{message}</Text>
 
           <View style={[styles.actions, sideBySide && styles.actionsRow]}>
-            <Button
-              label={cancelLabel}
-              variant="secondary"
-              onPress={dismiss}
-              disabled={loading}
-              style={sideBySide && styles.actionRowItem}
-            />
+            {showCancel && (
+              <Button
+                label={cancelLabel}
+                variant="secondary"
+                onPress={dismiss}
+                disabled={loading}
+                style={sideBySide && styles.actionRowItem}
+              />
+            )}
             <Button
               label={confirmLabel}
               loadingLabel={loadingLabel}

@@ -14,6 +14,7 @@ import {
   type SelectOption,
 } from '@/components/ui';
 import { useForbiddenSync } from '@/hooks/useForbiddenSync';
+import { DependentOf } from './DependentOf';
 import { parseApiError } from '@/services/auth';
 import { confirmDose } from '@/services/vaccinationRecords';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
@@ -236,6 +237,7 @@ export function ConfirmDoseFlow({
             rows={[
               ['Nome', citizen.name],
               ['Nascimento', formatCalendarDate(citizen.birthDate)],
+              ...(citizen.responsible ? [['Responsável', citizen.responsible.name] as [string, string]] : []),
             ]}
           />
           <ReviewSection
@@ -382,6 +384,7 @@ export function ConfirmDoseFlow({
       <View style={styles.citizen} accessible>
         <Text style={styles.citizenName}>{citizen.name}</Text>
         <Text style={typography.muted}>Nasc. {formatCalendarDate(citizen.birthDate)}</Text>
+        <DependentOf responsible={citizen.responsible} />
         <Badge label="Selecionado" icon="checkmark" />
       </View>
 

@@ -1,3 +1,4 @@
+import type { CitizenResponsible } from './citizen';
 import type { PaginatedList, PaginationParams } from './pagination';
 
 // GET /dashboard/summary
@@ -22,7 +23,8 @@ export type VaccineStatus = 'EM_DIA' | 'ATRASADA' | 'COMPLETA' | 'CONFIRMADO';
 // GET /dashboard/recent-doses
 export interface RecentDose {
   id: string;
-  citizen: { id: string; name: string };
+  // `responsible` preenchido quando o cidadão é dependente (D33)
+  citizen: { id: string; name: string; responsible: CitizenResponsible | null };
   vaccine: { id: string; name: string };
   dose: { id: string; doseNumber: number; doseName: string };
   applicationDate: string;
@@ -51,11 +53,13 @@ export interface OverdueVaccine {
   pendingDoses: PendingDose[];
 }
 
-// O CPF já vem mascarado e não há `role`. `maxDaysOverdue` é null no grupo AGUARDANDO_CONFERENCIA
+// O CPF já vem mascarado e não há `role`. `maxDaysOverdue` é null no grupo AGUARDANDO_CONFERENCIA.
+// `responsible` preenchido quando a pessoa é dependente (D33), que pode não ter CPF
 export interface OverduePerson {
   id: string;
   name: string;
   cpf: string | null;
+  responsible: CitizenResponsible | null;
   maxDaysOverdue: number | null;
   vaccines: OverdueVaccine[];
 }

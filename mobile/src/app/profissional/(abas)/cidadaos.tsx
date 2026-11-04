@@ -18,7 +18,12 @@ import { onlyDigits } from '@/utils/format';
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_LENGTH = 100;
 
-const SEARCH_TIPS = ['Digite o nome sem abreviações', 'Confira a data de nascimento', 'Prefira o CPF, que é único'];
+const SEARCH_TIPS = [
+  'Digite o nome sem abreviações',
+  'Confira a data de nascimento',
+  'Prefira o CPF, que é único',
+  'Buscar pelo CPF do responsável lista também os dependentes',
+];
 
 interface SearchState {
   term: string;
@@ -128,7 +133,12 @@ function CitizenSearchContent() {
             </Text>
           </View>
           {results.map((citizen) => (
-            <CitizenResultCard key={citizen.id} citizen={citizen} isSelf={citizen.id === user?.id} />
+            <CitizenResultCard
+              key={citizen.id}
+              citizen={citizen}
+              isSelf={citizen.id === user?.id}
+              isOwnDependent={!!user && citizen.responsible?.id === user.id}
+            />
           ))}
           <Banner
             icon="shield-checkmark-outline"
@@ -157,7 +167,7 @@ function NotFound({ onClear }: { onClear: () => void }) {
       </Card>
       <Banner
         title="Antes de tentar novamente"
-        message="Confira se o nome está completo ou use o CPF. O cidadão precisa ter conta no Vacinei!?."
+        message="Confira se o nome está completo ou use o CPF. O cidadão precisa ter conta no Vacinei!? ou ser dependente de alguém que tenha."
       />
       <SearchTips />
     </>
