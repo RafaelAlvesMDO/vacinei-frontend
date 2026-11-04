@@ -49,15 +49,30 @@ export function CardScreen({ onBack }: Props) {
     { value: 'COMPLETA', label: 'Completas', count: countOf('COMPLETA') },
   ];
   const openRegistration = () => router.push(paths.record({}));
+  const openScan = () => router.push(paths.scan);
 
-  const registerButton = card && card.vaccines.length > 0 && (
+  const scanButton = (
     <Button
-      label="Cadastrar vacina"
-      icon="add-circle-outline"
-      variant="secondary"
-      accessibilityHint={`Abre o cadastro manual de uma dose ${texts.inCard}`}
-      onPress={openRegistration}
+      label="Digitalizar caderneta"
+      icon="camera-outline"
+      accessibilityHint={`Fotografe a caderneta física para ler as doses e salvá-las ${texts.inCard}`}
+      onPress={openScan}
+      style={styles.action}
     />
+  );
+
+  const registerButtons = card && card.vaccines.length > 0 && (
+    <View style={styles.actions}>
+      {scanButton}
+      <Button
+        label="Cadastrar vacina"
+        icon="add-circle-outline"
+        variant="secondary"
+        accessibilityHint={`Abre o cadastro manual de uma dose ${texts.inCard}`}
+        onPress={openRegistration}
+        style={styles.action}
+      />
+    </View>
   );
 
   return (
@@ -71,19 +86,15 @@ export function CardScreen({ onBack }: Props) {
       refreshing={isRefreshing}
       onRefresh={() => reload({ refreshing: true })}
     >
-      {isSelf ? (
-        <View style={styles.headingRow}>
-          <View style={styles.heading}>
-            <Text style={typography.title} accessibilityRole="header">
-              Caderneta
-            </Text>
-            {card && <Text style={typography.muted}>{card.citizen.name}</Text>}
-          </View>
-          {registerButton}
+      {isSelf && (
+        <View style={styles.heading}>
+          <Text style={typography.title} accessibilityRole="header">
+            Caderneta
+          </Text>
+          {card && <Text style={typography.muted}>{card.citizen.name}</Text>}
         </View>
-      ) : (
-        registerButton
       )}
+      {registerButtons}
 
       {!card ? (
         <CardLoadState error={error} onRetry={() => reload()} loadingTitle={texts.loadingTitle} />
@@ -97,6 +108,7 @@ export function CardScreen({ onBack }: Props) {
             message={texts.emptyMessage}
             action={{ label: 'Cadastrar vacina', icon: 'add-circle-outline', onPress: openRegistration }}
           />
+          <View style={styles.actions}>{scanButton}</View>
         </>
       ) : (
         <>
@@ -153,17 +165,18 @@ export function CardScreen({ onBack }: Props) {
 }
 
 const styles = StyleSheet.create({
-  // Título e botão lado a lado; com a fonte ampliada, o botão desce
-  headingRow: {
+  heading: {
+    gap: 2,
+  },
+  // Digitalizar e cadastrar lado a lado; em telas estreitas ou com a fonte ampliada, um embaixo do outro
+  actions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.md,
   },
-  heading: {
-    flexShrink: 1,
-    gap: 2,
+  action: {
+    flexGrow: 1,
+    flexBasis: 160,
   },
   clear: {
     minWidth: touchTarget,

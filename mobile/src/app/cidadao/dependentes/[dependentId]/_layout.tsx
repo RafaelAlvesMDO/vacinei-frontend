@@ -14,6 +14,7 @@ export default function DependentLayout() {
         <Stack.Screen name="caderneta" />
         <Stack.Screen name="vacina/[vaccineId]" />
         <Stack.Screen name="registro-vacina" />
+        <Stack.Screen name="digitalizar" options={{ gestureEnabled: false }} />
       </Stack>
     </VaccinationCardProvider>
   );

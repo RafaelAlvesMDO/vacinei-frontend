@@ -14,6 +14,8 @@ export interface CardPaths {
   card: Href;
   vaccine: (vaccineId: string) => Href;
   record: (params: { vaccineId?: string; recordId?: string }) => Href;
+  // Digitalizar a caderneta física (OCR, RF004)
+  scan: Href;
 }
 
 export interface VaccinationCardContextValue {
@@ -38,6 +40,7 @@ function getPaths(owner: CardOwner): CardPaths {
       card: '/cidadao/caderneta',
       vaccine: (vaccineId) => ({ pathname: '/cidadao/vacina/[vaccineId]', params: { vaccineId } }),
       record: (params) => ({ pathname: '/cidadao/registro-vacina', params }),
+      scan: '/cidadao/digitalizar',
     };
   }
   const dependentId = owner.id;
@@ -48,6 +51,7 @@ function getPaths(owner: CardOwner): CardPaths {
       params: { dependentId, vaccineId },
     }),
     record: (params) => ({ pathname: '/cidadao/dependentes/[dependentId]/registro-vacina', params: { dependentId, ...params } }),
+    scan: { pathname: '/cidadao/dependentes/[dependentId]/digitalizar', params: { dependentId } },
   };
 }
 

@@ -85,14 +85,18 @@ function collectFieldErrors(issue: ValidationIssue, path: string, fieldErrors: R
  */
 export function parseApiError(error: unknown, fallbackMessage: string): ParsedApiError {
   if (!isAxiosError<ApiErrorResponse>(error)) {
-    return { status: null, message: fallbackMessage, fieldErrors: {} };
+    return { status: null, message: fallbackMessage, fieldErrors: {}, code: null };
   }
 
   if (!error.response) {
+    const timedOut = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
     return {
       status: null,
-      message: 'Não foi possível conectar ao servidor da API. Verifique sua conexão.',
+      message: timedOut
+        ? 'O servidor demorou para responder. Verifique sua conexão e tente novamente.'
+        : 'Não foi possível conectar ao servidor da API. Verifique sua conexão.',
       fieldErrors: {},
+      code: timedOut ? 'TIMEOUT' : null,
     };
   }
 
@@ -109,5 +113,6 @@ export function parseApiError(error: unknown, fallbackMessage: string): ParsedAp
     status,
     message: data?.message || fallbackMessage,
     fieldErrors,
+    code: typeof data?.code === 'string' ? data.code : null,
   };
 }

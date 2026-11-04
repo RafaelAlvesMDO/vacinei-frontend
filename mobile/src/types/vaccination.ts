@@ -70,12 +70,15 @@ export interface CatalogVaccine {
   doses: CatalogDose[];
 }
 
-// POST e PUT /vaccination-records (cadastro manual pelo titular, D30). Sem o lote, ele fica nulo
+// POST e PUT /vaccination-records (cadastro manual pelo titular, D30). Sem o lote, ele fica nulo.
+// Doses lidas da caderneta (OCR) e conferidas pelo cidadão vão com `origin: "OCR_ICR"` e a confiança da leitura (D34)
 export interface ManualRecordPayload {
   vaccineId: string;
   doseId: string;
   applicationDate: string;
   lote?: string;
+  origin?: Extract<RecordOrigin, 'MANUAL' | 'OCR_ICR'>;
+  ocrConfidence?: number;
 }
 
 export interface SavedRecord {

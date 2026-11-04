@@ -4,7 +4,7 @@ import { normalizeSearch } from './format';
 
 // Caderneta sem vacinas. O cadastro manual já existe; a digitalização (etapa 8) ainda não
 export const EMPTY_CARD_MESSAGE =
-  'Você ainda não tem vacinas registradas. Cadastre as doses que já tomou. Em breve você também poderá digitalizar sua caderneta.';
+  'Você ainda não tem vacinas registradas. Digitalize a sua caderneta física ou cadastre as doses que já tomou.';
 
 export interface CardTexts {
   // "na sua caderneta" / "na caderneta de Lucas"
@@ -35,7 +35,7 @@ export function getCardTexts(isSelf: boolean, name?: string): CardTexts {
     inCard: `na ${of}`,
     fromCard: `da ${of}`,
     viewCard: `Ver ${of}`,
-    emptyMessage: `Nenhuma vacina registrada ${name ? `na ${of}` : 'ainda'}. Cadastre as doses já aplicadas, conferindo a caderneta física.`,
+    emptyMessage: `Nenhuma vacina registrada ${name ? `na ${of}` : 'ainda'}. Digitalize a caderneta física ou cadastre as doses já aplicadas.`,
     loadingTitle: 'Carregando a caderneta...',
   };
 }
