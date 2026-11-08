@@ -179,6 +179,14 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
   - **Falha (`ScanFailure`):** `manualFallback` (modelo não reconhecido ou nenhuma dose) e erros por `code` (`OCR_INDISPONIVEL`/`OCR_ERRO`, `OCR_TIMEOUT`, `IMAGEM_GRANDE`, `FORMATO_INVALIDO`/`IMAGEM_INVALIDA`/`IMAGEM_AUSENTE`/`UPLOAD_INVALIDO`, sem conexão) com mensagem própria, "Tentar outra foto" e "Cadastrar manualmente" (RNF12).
 - [x] **Salvar:** um `POST` por dose marcada, em sequência, pela rota do dono (`/vaccination-records` ou `/dependents/:id/vaccination-records`) com `origin: "OCR_ICR"` e o `ocrConfidence` da sugestão; aguardando conferência (D30). Botão com "Salvando X de N...". **Resultado (`SaveResults`):** cada dose como "Salva · aguardando conferência", "Já estava na caderneta" (`409`) ou "Não foi salva" com a mensagem da API; "Revisar as doses que falharam" volta à revisão só com elas; "Ver minha caderneta" recarrega e volta à caderneta.
 - [x] **Voltar:** o voltar do Android segue a etapa (foto → orientação, leitura → cancelar, editor → lista, resultado → caderneta). Sair da revisão pede confirmação ("Sair sem salvar?").
+- [x] **Ajustes na etapa "Conferir foto" (2026-11-08):**
+  - **Girar:** "Girar à esquerda" e "Girar à direita" (90°).
+  - **Recortar:** recorte livre, sem proporção fixa, numa tela própria (`CropStep`). Tem quatro alças nas bordas, arrastáveis (`PanResponder`, funciona no Expo Go e no APK) ou ajustáveis pelo leitor de tela (5% por vez). Sobra pelo menos 25% da foto em cada direção. O aviso diz: "Mantenha a página inteira no recorte; cortar demais impede o reconhecimento da caderneta."
+  - **Por que não o recorte nativo:** o do `expo-image-picker` só existe na hora de tirar ou escolher a foto e não serve para uma foto já na prévia ou já girada.
+  - **Desfazer ajustes:** volta à foto original.
+  - **Como os ajustes são aplicados:** ficam numa lista aplicada sempre à original, numa só renderização (`applyEdits` em `services/cardPhoto.ts`, sem recomprimir a cada giro), e valem para a prévia e para a imagem enviada.
+  - **Cache (LGPD):** a versão ajustada anterior é apagada a cada ajuste, e a de um ajuste ultrapassado também. Ao desfazer, refazer, enviar ou sair, as versões ajustadas são apagadas junto com a original e a reduzida.
+  - **Acessibilidade:** rótulos e dicas nos botões (girar só com ícone e rótulo para o leitor de tela), alvos de 48 px e anúncios "Foto girada para a esquerda/direita", "Foto recortada" e "Ajustes desfeitos".
 - **Diferenças intencionais do design:**
   - Câmera do sistema (`expo-image-picker`) no lugar da tela de captura com moldura, flash e "Documento detectado", que exigiriam o `expo-camera` com detecção de bordas. A prévia ("Conferir foto") foi mantida.
   - A leitura não mostra porcentagem (a API não informa o progresso) e diz "até 20 segundos", o limite do backend.
@@ -227,6 +235,8 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
   - O `AuthContext` cancela tudo ao sair, com a sessão expirada e na abertura sem sessão.
   - Testadas com relógio simulado: 13 cenários (7 dias antes, no dia, atraso, preferências, títulos e rotas do titular e do dependente).
 - [x] **Permissão:** `ConfirmDialog` "Ative os lembretes de vacina" ("Ativar lembretes" / "Agora não"), uma vez por conta, depois do login e com a caderneta carregada.
+  - **Correção depois da validação no APK (2026-11-08):** o modal não aparecia numa instalação nova. No Android 13+, a permissão nunca pedida volta como `denied` com `canAskAgain: true`, e a condição exigia `undetermined`. Agora basta "não concedida e o sistema ainda pode pedir"; o "uma vez por conta" continua pelo `prompted`. O modal abre 0,8 s depois de a condição valer, para não competir com a transição de tela do login.
+- **Validado no APK (2026-11-08):** login, notificação de teste, toque abrindo a caderneta (inclusive vindo da ala Profissional), interruptores do Perfil, pedido de câmera em português e OCR. Falta conferir de novo o modal depois da correção.
 - [x] **Toque:** `components/alerts/NotificationTapHandler` no navegador raiz abre o detalhe da vacina ou a caderneta filtrada (`?filtro=`), do titular ou do dependente. Trata também o toque que abriu o app fechado e troca o profissional para a ala Cidadão.
 - [x] **Perfil:** `NotificationSettingsCard` com "Alertas de vacina" e "Lembretes da próxima dose", e o aviso "Disponível no app instalado" no Expo Go. Também traz "Abrir configurações" quando a permissão está bloqueada e o botão de teste no APK `preview`. A Central mostra "Notificações desativadas · Ativar no Perfil".
 - **Gerar o APK (no computador, em `mobile/`):**
