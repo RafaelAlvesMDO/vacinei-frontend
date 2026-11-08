@@ -205,13 +205,39 @@ Consulte este arquivo antes de alterar qualquer regra de negócio.
 - **Limitação:** as notificações locais refletem a caderneta da última vez que o app foi aberto (ou atualizado). Uma dose confirmada depois disso só sai dos alertas quando o app abrir de novo, e o agendamento cobre um horizonte limitado de dias.
 - **Melhorias futuras:** Expo Push como complemento (avisos do servidor, `POST/DELETE /devices`) e envio diário por e-mail pelo backend (rotina agendada), porque os dois funcionam mesmo com o app fechado e usam a caderneta atual.
 - **Atualização (2026-10-28): notificações do sistema adiadas para a etapa final.** No Expo Go do Android (SDK 58), criar o canal de notificações falhava (NullPointerException no módulo nativo) e tocar na notificação fechava o app, sem erro no JavaScript. Para não deixar funcionalidade com erro no projeto, o `expo-notifications` foi retirado do app, com o agendamento, o pedido de permissão e as preferências no Perfil. Por agora, os alertas do RF007 ficam **dentro do app**: Central de notificações, avisos na Início e na Caderneta, com a regra do D32. Na etapa final, as notificações locais serão validadas num APK (EAS Build); se não funcionarem, entra o envio diário por e-mail pelo backend, sugerido pelo orientador. O código completo está no commit `840e50d` do repositório do front-end.
+- **Atualização (2026-11-08):** as notificações locais voltaram só no build instalável (APK), desligadas no Expo Go. Ver D36.
 - **Requisito:** RF007.
 
 ### D31 — Lembrete antecipado da próxima dose (ampliação do RF007)
 - **Decisão:** além do alerta de atraso, o app avisa **7 dias antes** e **no dia** da data prevista da próxima dose. Os lembretes entram na mesma notificação consolidada do dia (uma por dia, com todas as vacinas) e podem ser desligados no Perfil separadamente dos alertas de atraso.
 - **Situação atual (2026-10-28):** com as notificações do sistema adiadas para a etapa final (D24), o lembrete aparece **dentro do app**: a Central de notificações mostra a dose prevista para hoje e as previstas para os próximos 7 dias. A notificação consolidada e os interruptores no Perfil voltam na etapa final (no APK ou como parte do e-mail diário).
+- **Atualização (2026-11-08, D36):** a notificação consolidada e os dois interruptores do Perfil voltaram no APK, para o titular e os dependentes.
 - **Motivo:** sugestão dos professores: evitar o atraso, e não só avisar depois dele.
 - **Requisito:** RF007 (ampliação); D24.
+
+### D36 — Notificações do sistema só no APK, uma por pessoa por dia
+- **Decisão:** as notificações locais (`expo-notifications`) funcionam só no **build instalável** (APK do EAS Build, perfil `preview`). No **Expo Go** ficam desligadas: o app detecta o ambiente (`Constants.executionEnvironment === StoreClient`) e nem carrega o módulo nativo (`import()` sob demanda), porque lá o canal do Android falhava e o toque fechava o app (D24). No Expo Go, os avisos continuam dentro do app (Central, Início e Caderneta), e o Perfil explica que as notificações são do app instalado.
+- **Regras (D31, D32, D35):**
+  - **Conteúdo:** uma notificação consolidada **por pessoa por dia** (titular e cada dependente, D33), às 8h. Cada uma traz as doses atrasadas, as aguardando conferência e os lembretes de 7 dias antes e do dia da próxima dose. Nos dependentes, o primeiro nome abre o título ("Ana: 2 vacinas precisam de atenção").
+  - **Horizonte:** 30 dias, com teto de 60 agendamentos; os dias mais próximos têm prioridade.
+  - **Reagendamento (cancela tudo e agenda de novo, sem acumular):**
+    - ao carregar a caderneta do titular (abrir o app, registrar, editar ou excluir dose);
+    - ao carregar a caderneta de um dependente (o `VaccinationCardProvider` dele avisa o `DependentsContext`);
+    - quando a lista de dependentes muda;
+    - quando o app volta ao primeiro plano.
+  - Sem rede (caderneta ou dependentes sem carregar), os agendamentos anteriores ficam.
+  - **Cancelamento (LGPD):** tudo é cancelado e retirado da barra ao sair, com a sessão expirada e na abertura sem sessão.
+- **Permissão:** um modal no padrão do app (`ConfirmDialog`) explica os avisos antes do pedido do sistema. Ele aparece uma vez por conta, na ala Cidadão, depois do login e com a caderneta carregada; "Agora não" fica registrado.
+- **Perfil:** dois interruptores, "Alertas de vacina" (atrasadas e aguardando conferência) e "Lembretes da próxima dose" (D31). Ligar um deles sem permissão abre o pedido; com a permissão bloqueada, o Perfil mostra "Abrir configurações". O botão "Enviar notificação de teste" (dispara em 5 s a notificação de hoje da primeira pessoa com avisos) aparece em desenvolvimento e no APK `preview` (`EXPO_PUBLIC_NOTIFICATION_TEST=true` no `eas.json`), para a validação e o vídeo da apresentação.
+- **Toque (RF007 nota 4):** abre o detalhe da vacina (uma vacina) ou a caderneta filtrada (várias), do titular ou do dependente. O tratamento fica no navegador raiz, para valer também com o app fechado. O profissional na ala Profissional passa para a ala Cidadão antes.
+- **Concessão do protótipo: `usesCleartextTraffic`.** O APK de release do Android bloqueia HTTP sem TLS, e no protótipo a API roda em HTTP na rede local (`http://IP:3333`). Por isso o `app.json` liga o `usesCleartextTraffic` (plugin `expo-build-properties`). **Em produção**, a API usaria HTTPS e essa opção seria removida.
+- **`EXPO_PUBLIC_API_URL` no APK:** o valor é embutido no build e vem da variável de ambiente `preview` do EAS (`eas env:create`), não do `.env` local, que não é enviado. Se o IP do computador mudar, é preciso gerar outro APK.
+- **Limitações:**
+  - As notificações refletem a caderneta da última vez que o app foi aberto (D24).
+  - Na ala Profissional, nada é reagendado; valem os agendamentos da última vez na ala Cidadão.
+  - Fora do alarme exato, o Android pode atrasar a entrega em alguns minutos.
+- **Plano B:** se as notificações locais não funcionarem no APK, entra o **envio diário por e-mail pelo backend** (sugestão do orientador). Seria uma rotina agendada com as mesmas regras (D31, D32, D35), consolidada por pessoa, uma vez por dia e sem duplicar. Funciona com o app fechado e usa a caderneta atual.
+- **Requisito:** RF007 (notas 4, 5 e 8), D31; D24, D32, D33, D35.
 
 ### D25 — OCR como microsserviço Python chamado pelo backend
 - **Decisão:** o OCR da caderneta física roda em um microsserviço Python separado (OpenCV no pré-processamento + `pytesseract`). O app envia a foto ao backend, que chama o serviço e devolve as doses reconhecidas para revisão. Os registros são gravados com origem `OCR_ICR` e ficam pendentes de confirmação (D06). Se o OCR falhar, o app oferece o cadastro manual.
