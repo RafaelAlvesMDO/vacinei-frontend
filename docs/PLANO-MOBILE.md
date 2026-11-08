@@ -260,9 +260,25 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
   - A chegada às 8h (ou com o relógio do celular adiantado).
 - **Plano B (D36):** se as notificações não funcionarem no APK, entra o envio diário por e-mail pelo backend (sugestão do orientador): uma rotina agendada com os avisos do D32 e os lembretes do D31, consolidados por pessoa, uma vez por dia e sem duplicar.
 
-## Revisão final de acessibilidade
+## [x] Revisão final de acessibilidade (2026-11-08)
 
-- Conferir ícones com a fonte do sistema ampliada.
+Revisão de todas as telas das duas alas (TalkBack, fonte em 2x, alvos de 48 px, contraste e informação além da cor). Os tokens passam no AA (`muted` 4,7 a 5,3:1 nos fundos claros, `primary` 5,3:1 no branco, `warning` e `danger` nos fundos suaves, contorno `input` 3,2:1). Situações e badges sempre têm texto.
+
+- [x] **Foco no primeiro erro (`hooks/useFieldFocus`):** ao validar (no app ou pela API), anuncia "N campos precisam de atenção" e leva o foco do teclado e do TalkBack ao primeiro campo com erro, que lê o rótulo e a mensagem. A validação não mudou. Vale no login, cadastro, recuperação de senha, registro manual, editor do OCR, dependente e confirmação de dose. `SelectField`, `CodeInput` e `FilterChips` passaram a aceitar `ref`.
+- [x] **Barra inferior (`useTabScreenOptions`):** a altura acompanha a escala da fonte (antes era fixa e cortava o rótulo). O rótulo cresce até 1,3x e encolhe para caber na aba, sem truncar; o TalkBack lê o nome inteiro.
+- [x] **Fonte ampliada:** `AlertRow` põe a ação embaixo do texto a partir de 1,3x; o valor do `SelectField` quebra linha; caixas do código, do número do item do OCR e do contador do sino crescem com o texto; a data da lista da caderneta encolhe; iniciais dos círculos crescem só até 1,3x (`INITIALS_MAX_FONT_SCALE`, decorativas).
+- [x] **`SegmentedControl`:** borda `primary` na opção ativa (antes só a cor do texto a distinguia) e 48 px de altura.
+- [x] **TalkBack:** a revisão do OCR leva o foco ao primeiro item com problema; o status de verificação entra no rótulo da Ala Profissional (`RadioCard.extraLabel`); cabeçalhos nas seções da revisão da confirmação e nos nomes das vacinas da caderneta do cidadão; o rótulo "Como você usará o aplicativo?" não é lido duas vezes.
+- [x] **Perfil:** o texto das opções de notificação também alterna o interruptor.
+- **Limitações registradas (baixa gravidade, não corrigidas):**
+  - Botões desabilitados com 50% de opacidade e bordas claras (`border`) em chips e botões secundários: a WCAG isenta componentes inativos, e o texto identifica o controle.
+  - Ícones dentro de badges não crescem com a fonte (sem corte, só desproporção).
+  - E-mail da saudação da Início em uma linha.
+  - O resumo "N dependentes vinculados" agrupa o título e perde o papel de cabeçalho.
+  - Marcadores do mapa (WebView/Leaflet) inacessíveis ao TalkBack; a lista é a alternativa, e o rótulo do mapa avisa.
+  - No iOS, `accessibilityLiveRegion` não existe: banners não são anunciados ao aparecer (o alvo do TCC é Android/TalkBack). O foco no primeiro erro usa `announceForAccessibility`, que funciona nos dois.
+  - No Android, o fundo "Fechar" da lista de seleção e do diálogo pode receber o primeiro foco.
+- **Falta conferir no celular** (fonte do sistema no máximo e TalkBack), principalmente a barra inferior e o foco nos erros.
 
 ---
 
