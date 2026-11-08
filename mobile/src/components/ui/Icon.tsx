@@ -10,6 +10,8 @@ const COMMUNITY_ICONS = [
   'needle',
   'chevron-double-left',
   'chevron-double-right',
+  'rotate-left',
+  'rotate-right',
 ] as const;
 type CommunityIconName = (typeof COMMUNITY_ICONS)[number];
 
