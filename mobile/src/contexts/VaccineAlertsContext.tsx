@@ -34,6 +34,7 @@ export const VaccineAlertsContext = createContext<VaccineAlertsContextValue | nu
 
 // Espera as cargas da caderneta e dos dependentes assentarem antes de reagendar
 const RESCHEDULE_DELAY_MS = 500;
+const PROMPT_DELAY_MS = 800;
 
 /**
  * Notificações do sistema da ala Cidadão (RF007, D31, D36), só no build instalável: preferências, permissão
@@ -137,9 +138,25 @@ export function VaccineAlertsProvider({ children }: { children: ReactNode }) {
     [permission, updatePreferences],
   );
 
-  // Uma vez por conta, depois do login e com a caderneta na tela, enquanto o sistema ainda pode pedir
-  const shouldPrompt =
-    loaded && card !== null && !preferences.prompted && permission?.state === 'undetermined' && permission.canAskAgain;
+  // Uma vez por conta, depois do login e com a caderneta na tela, enquanto o sistema ainda pode pedir.
+  // Não exige `undetermined`: no Android 13+, numa instalação nova, a permissão nunca pedida volta como
+  // `denied` com `canAskAgain: true`, e o modal não aparecia (validação no APK, D36)
+  const canPrompt =
+    loaded &&
+    card !== null &&
+    !preferences.prompted &&
+    permission !== null &&
+    (permission.state === 'undetermined' || permission.state === 'denied') &&
+    permission.canAskAgain;
+
+  // Pequeno atraso, para o modal não abrir durante a transição de tela logo depois do login
+  const [promptReady, setPromptReady] = useState(false);
+  useEffect(() => {
+    if (!canPrompt) return;
+    const timer = setTimeout(() => setPromptReady(true), PROMPT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [canPrompt]);
+  const shouldPrompt = canPrompt && promptReady;
 
   const value = useMemo(
     () => ({ preferences, permission, people, setPreference }),
