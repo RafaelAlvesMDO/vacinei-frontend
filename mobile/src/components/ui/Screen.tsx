@@ -26,8 +26,6 @@ interface Props {
   onRefresh?: () => void;
   // Rolagem (ex.: voltar ao topo ao trocar de página)
   scrollRef?: Ref<ScrollViewInstance>;
-  // false em telas com arraste (ex.: recorte da foto), para o gesto não virar rolagem
-  scrollEnabled?: boolean;
 }
 
 /**
@@ -42,7 +40,6 @@ export function Screen({
   refreshing = false,
   onRefresh,
   scrollRef,
-  scrollEnabled = true,
 }: Props) {
   return (
     // Com cabeçalho, a área da barra de status fica branca como ele
@@ -51,7 +48,6 @@ export function Screen({
         {header}
         <ScrollView
           ref={scrollRef}
-          scrollEnabled={scrollEnabled}
           style={styles.scroll}
           contentContainerStyle={[styles.content, contentStyle]}
           keyboardShouldPersistTaps="handled"
