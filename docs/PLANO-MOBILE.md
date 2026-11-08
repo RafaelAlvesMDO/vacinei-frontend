@@ -182,6 +182,11 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 - [x] **Ajustes na etapa "Conferir foto" (2026-11-08):**
   - **Girar:** "Girar à esquerda" e "Girar à direita" (90°).
   - **Recortar:** recorte livre, sem proporção fixa, numa tela própria (`CropStep`). Tem quatro alças nas bordas, arrastáveis (`PanResponder`, funciona no Expo Go e no APK) ou ajustáveis pelo leitor de tela (5% por vez). Sobra pelo menos 25% da foto em cada direção. O aviso diz: "Mantenha a página inteira no recorte; cortar demais impede o reconhecimento da caderneta."
+  - **Layout sem rolagem (correção do teste no celular):** a tela não usa a `Screen`.
+    - A foto cabe inteira ("contain") no espaço medido entre o cabeçalho e o rodapé, usando a largura e a altura da foto atual (vertical, horizontal ou girada).
+    - O aviso e os botões ficam numa barra fixa, dentro da área segura.
+    - Com a fonte ampliada (escala ≥ 1,3), o aviso começa recolhido em "Ver aviso sobre o recorte". O leitor de tela lê o aviso completo no rótulo.
+    - O recorte fica em frações da foto, então as alças e o recorte enviado continuam certos quando a foto muda de tamanho na tela.
   - **Por que não o recorte nativo:** o do `expo-image-picker` só existe na hora de tirar ou escolher a foto e não serve para uma foto já na prévia ou já girada.
   - **Desfazer ajustes:** volta à foto original.
   - **Como os ajustes são aplicados:** ficam numa lista aplicada sempre à original, numa só renderização (`applyEdits` em `services/cardPhoto.ts`, sem recomprimir a cada giro), e valem para a prévia e para a imagem enviada.
