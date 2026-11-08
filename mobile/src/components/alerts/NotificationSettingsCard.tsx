@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Linking, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Banner, Button, Card, type BannerTone } from '@/components/ui';
 import type { VaccineAlertsContextValue } from '@/contexts/VaccineAlertsContext';
 import { sendTestVaccineAlert, showNotificationTest, type TestNotificationResult } from '@/services/vaccineNotifications';
@@ -59,16 +59,24 @@ export function NotificationSettingsCard({ alerts }: Props) {
       {OPTIONS.map((option) => {
         // Sem permissão, a opção aparece desligada até o sistema autorizar
         const isOn = preferences[option.key] && granted;
+        const disabled = pending !== null || blocked || unavailable || !permission;
         return (
           <View key={option.key} style={styles.row}>
-            <View style={styles.rowText}>
+            {/* O texto também alterna o interruptor (alvo maior). Para o leitor de tela, o interruptor já tem o
+                mesmo rótulo e a descrição como dica, então o texto não vira um segundo botão */}
+            <Pressable
+              accessible={false}
+              onPress={() => void toggle(option.key, !isOn)}
+              disabled={disabled}
+              style={styles.rowText}
+            >
               <Text style={typography.label}>{option.label}</Text>
               <Text style={typography.muted}>{option.description}</Text>
-            </View>
+            </Pressable>
             <Switch
               value={isOn}
               onValueChange={(value) => void toggle(option.key, value)}
-              disabled={pending !== null || blocked || unavailable || !permission}
+              disabled={disabled}
               accessibilityLabel={option.label}
               accessibilityHint={option.description}
               trackColor={{ false: colors.input, true: colors.primary }}
@@ -176,6 +184,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 2,
+    paddingVertical: spacing.xs,
   },
   test: {
     gap: spacing.sm,

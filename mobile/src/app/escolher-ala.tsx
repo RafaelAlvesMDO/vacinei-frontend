@@ -40,6 +40,7 @@ export default function ChooseAla() {
         title="Ala Profissional"
         description="Atendimento e confirmação de doses"
         onPress={() => chooseAla('profissional')}
+        extraLabel={verified ? undefined : VERIFICATION_LABELS[status]}
         extra={
           !verified && (
             <Badge
