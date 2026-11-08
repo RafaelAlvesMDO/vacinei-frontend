@@ -1,12 +1,13 @@
 import { router, Tabs } from 'expo-router';
-import { scanTabIcon, tabIcon, tabScreenOptions } from '@/components/navigation/tabScreenOptions';
+import { scanTabIcon, tabIcon, useTabScreenOptions } from '@/components/navigation/tabScreenOptions';
 import { colors } from '@/theme';
 
 // Abas da ala Cidadão. Os dependentes (D33) ficam no Perfil e no atalho da Início, sem aba própria.
 // "Digitalizar" é a aba central do design: abre o fluxo do OCR por cima das abas, sem trocar de aba
 export default function CitizenTabsLayout() {
+  const screenOptions = useTabScreenOptions();
   return (
-    <Tabs screenOptions={tabScreenOptions}>
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen name="inicio" options={{ title: 'Início', tabBarIcon: tabIcon('home-outline', 'home') }} />
       <Tabs.Screen name="caderneta" options={{ title: 'Caderneta', tabBarIcon: tabIcon('book-outline', 'book') }} />
       <Tabs.Screen

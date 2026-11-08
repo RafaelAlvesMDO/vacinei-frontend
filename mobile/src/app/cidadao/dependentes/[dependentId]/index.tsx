@@ -9,7 +9,7 @@ import { useReloadOnFocus } from '@/hooks/useReloadOnFocus';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { parseApiError } from '@/services/auth';
 import { deleteDependent } from '@/services/dependents';
-import { colors, fonts, radius, spacing, touchTarget, typography } from '@/theme';
+import { colors, fonts, INITIALS_MAX_FONT_SCALE, radius, spacing, touchTarget, typography } from '@/theme';
 import type { Dependent } from '@/types/dependent';
 import { formatCpf } from '@/utils/cpf';
 import { describeDependent, formatVaccineCount, RELATIONSHIP_LABELS, SEX_LABELS } from '@/utils/dependents';
@@ -150,7 +150,9 @@ function ProfileHero({ dependent }: { dependent: Dependent }) {
   return (
     <View style={styles.hero}>
       <View style={styles.avatar} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-        <Text style={styles.initials}>{getInitials(dependent.name)}</Text>
+        <Text style={styles.initials} maxFontSizeMultiplier={INITIALS_MAX_FONT_SCALE}>
+          {getInitials(dependent.name)}
+        </Text>
       </View>
       <View style={styles.heroText}>
         <Text style={styles.heroName} accessibilityRole="header">

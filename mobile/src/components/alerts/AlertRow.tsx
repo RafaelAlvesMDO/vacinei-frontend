@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Icon, type IconName } from '@/components/ui';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 
@@ -25,8 +25,19 @@ const TONES: Record<AlertTone, { background: string; text: string }> = {
 /**
  * Linha de um aviso de vacina (RF007): atrasada, aguardando conferência ou lembrete (D31). Abre a vacina
  */
+// A partir desta escala de fonte, a ação desce para baixo do texto (ao lado, espremia o nome da vacina)
+const STACK_FONT_SCALE = 1.3;
+
 export function AlertRow({ tone, icon, title, dose, detail, actionLabel, accessibilityHint, onPress }: Props) {
   const palette = TONES[tone];
+  const { fontScale } = useWindowDimensions();
+  const stacked = fontScale >= STACK_FONT_SCALE;
+  const action = (
+    <View style={[styles.actionRow, !stacked && styles.actionSide]}>
+      <Text style={styles.action}>{actionLabel}</Text>
+      <Icon name="chevron-forward" size={16} />
+    </View>
+  );
 
   return (
     <Pressable
@@ -45,9 +56,9 @@ export function AlertRow({ tone, icon, title, dose, detail, actionLabel, accessi
           {dose ? `${dose} · ` : ''}
           <Text style={[styles.detail, { color: palette.text }]}>{detail}</Text>
         </Text>
+        {stacked && action}
       </View>
-      <Text style={styles.action}>{actionLabel}</Text>
-      <Icon name="chevron-forward" size={16} />
+      {!stacked && action}
     </Pressable>
   );
 }
@@ -85,9 +96,17 @@ const styles = StyleSheet.create({
   detail: {
     fontFamily: fonts.medium,
   },
-  action: {
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  actionSide: {
     flexShrink: 0,
-    maxWidth: '35%',
+    maxWidth: '40%',
+  },
+  action: {
+    flexShrink: 1,
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: colors.primary,

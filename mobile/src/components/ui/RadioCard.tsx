@@ -12,17 +12,28 @@ interface Props {
   // 'radio' para escolha dentro de um formulário; 'button' quando o toque já executa a ação
   mode?: 'radio' | 'button';
   extra?: ReactNode;
+  // Texto do `extra` para o leitor de tela (ex.: o badge "Verificação pendente")
+  extraLabel?: string;
 }
 
 /**
  * Cartão de escolha (perfil no cadastro, ala do profissional)
  */
-export function RadioCard({ title, description, icon, selected = false, onPress, mode = 'radio', extra }: Props) {
+export function RadioCard({
+  title,
+  description,
+  icon,
+  selected = false,
+  onPress,
+  mode = 'radio',
+  extra,
+  extraLabel,
+}: Props) {
   return (
     <Pressable
       accessibilityRole={mode}
       accessibilityState={mode === 'radio' ? { checked: selected } : undefined}
-      accessibilityLabel={`${title}. ${description}`}
+      accessibilityLabel={[title, description, extraLabel].filter(Boolean).join('. ')}
       onPress={onPress}
       style={({ pressed }) => [styles.card, selected && styles.cardSelected, pressed && styles.cardPressed]}
     >

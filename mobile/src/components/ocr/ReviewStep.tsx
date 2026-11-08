@@ -1,6 +1,7 @@
 import { useRef } from 'react';
-import { AccessibilityInfo, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { Banner, Button, Icon, Screen, StepHeader } from '@/components/ui';
+import type { FocusableView } from '@/hooks/useFieldFocus';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { OcrResult } from '@/types/ocr';
 import type { CatalogVaccine, VaccinationCard } from '@/types/vaccination';
@@ -26,6 +27,9 @@ interface Props {
   onSave: () => void;
   onBack: () => void;
 }
+
+// Espera a rolagem animada até o item antes de mover o foco do leitor de tela
+const FOCUS_DELAY_MS = 500;
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`;
@@ -54,6 +58,7 @@ export function ReviewStep({
   const scrollRef = useRef<ScrollViewInstance>(null);
   const listY = useRef(0);
   const itemY = useRef<Record<string, number>>({});
+  const itemHeaders = useRef<Record<string, FocusableView | null>>({});
 
   const selectedCount = items.filter((item) => item.selected).length;
   const attentionKeys = items.filter((item) => item.selected && errors[item.key]).map((item) => item.key);
@@ -68,6 +73,14 @@ export function ReviewStep({
     AccessibilityInfo.announceForAccessibility(
       `${plural(attention, 'item precisa', 'itens precisam')} de atenção. Corrija os campos destacados ou desmarque o item.`,
     );
+    // Depois da rolagem, o leitor de tela vai para o título do primeiro item com problema
+    if (first !== undefined) {
+      setTimeout(() => {
+        const header = itemHeaders.current[first];
+        const handle = header ? findNodeHandle(header) : null;
+        if (handle) AccessibilityInfo.setAccessibilityFocus(handle);
+      }, FOCUS_DELAY_MS);
+    }
   };
 
   const saveLabel = `Salvar ${plural(selectedCount, 'dose', 'doses')}`;
@@ -146,6 +159,9 @@ export function ReviewStep({
               onEdit={() => onEdit(item.key)}
               onLayout={(event) => {
                 itemY.current[item.key] = event.nativeEvent.layout.y;
+              }}
+              headerRef={(node) => {
+                itemHeaders.current[item.key] = node;
               }}
             />
           );

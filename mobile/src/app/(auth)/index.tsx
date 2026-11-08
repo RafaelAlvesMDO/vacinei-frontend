@@ -1,10 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
-import { StyleSheet, Text, View, type TextInputInstance } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { BrandHeader } from '@/components/BrandHeader';
 import { Banner, Button, PasswordField, Screen, TextField, type BannerTone } from '@/components/ui';
 import { AdminAccessError } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useFieldFocus } from '@/hooks/useFieldFocus';
 import { API_URL } from '@/services/api';
 import { parseApiError } from '@/services/auth';
 import { colors, spacing, typography } from '@/theme';
@@ -24,6 +25,8 @@ interface Notice {
 }
 
 type FieldErrors = Partial<Record<'email' | 'password', string>>;
+
+const LOGIN_FIELDS = ['email', 'password'] as const;
 
 function getReturnNotice({ cadastro, senha }: LoginParams): Notice | null {
   if (cadastro === 'profissional') {
@@ -49,7 +52,7 @@ function getReturnNotice({ cadastro, senha }: LoginParams): Notice | null {
 export default function Login() {
   const params = useLocalSearchParams<LoginParams>();
   const { signIn, sessionExpired } = useAuth();
-  const passwordRef = useRef<TextInputInstance>(null);
+  const fieldFocus = useFieldFocus(LOGIN_FIELDS);
 
   const [email, setEmail] = useState(params.email ?? '');
   const [password, setPassword] = useState('');
@@ -84,7 +87,10 @@ export default function Login() {
     };
     setFieldErrors(errors);
     setError(null);
-    if (errors.email || errors.password) return;
+    if (errors.email || errors.password) {
+      fieldFocus.focusFirstError(errors);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -100,11 +106,15 @@ export default function Login() {
       if (status === 401) {
         setError({ tone: 'danger', title: 'Não foi possível entrar', message: 'E-mail ou senha inválidos.' });
         // Os dois campos, para não sugerir qual deles estava certo (D17)
-        setFieldErrors({ email: 'Confira o e-mail digitado.', password: 'Confira a senha digitada.' });
+        const credentialErrors = { email: 'Confira o e-mail digitado.', password: 'Confira a senha digitada.' };
+        setFieldErrors(credentialErrors);
+        fieldFocus.focusFirstError(credentialErrors);
       } else if (status === 403) {
         setError({ tone: 'danger', title: 'Conta desativada', message });
       } else if (status === 400 && (apiErrors.email || apiErrors.password)) {
-        setFieldErrors({ email: apiErrors.email, password: apiErrors.password });
+        const validationErrors = { email: apiErrors.email, password: apiErrors.password };
+        setFieldErrors(validationErrors);
+        fieldFocus.focusFirstError(validationErrors);
       } else {
         setError({ tone: 'danger', title: 'Não foi possível entrar', message });
       }
@@ -127,6 +137,7 @@ export default function Login() {
       {notice && <Banner tone={notice.tone} title={notice.title} message={notice.message} />}
 
       <TextField
+        ref={fieldFocus.inputRef('email')}
         label="E-mail"
         icon="mail-outline"
         value={email}
@@ -141,13 +152,13 @@ export default function Login() {
         autoComplete="email"
         textContentType="username"
         returnKeyType="next"
-        onSubmitEditing={() => passwordRef.current?.focus()}
+        onSubmitEditing={() => fieldFocus.focusField('password')}
         editable={!loading}
         error={fieldErrors.email}
       />
 
       <PasswordField
-        ref={passwordRef}
+        ref={fieldFocus.inputRef('password')}
         label="Senha"
         value={password}
         onChangeText={(text) => {

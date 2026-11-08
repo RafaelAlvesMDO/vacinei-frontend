@@ -38,7 +38,9 @@ export function CitizenVaccineItem({ item, canConfirm, onConfirmDose, onConfirmR
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.name}>{item.vaccine.name}</Text>
+        <Text style={styles.name} accessibilityRole="header">
+          {item.vaccine.name}
+        </Text>
         <Text style={[typography.muted, item.alert.status === 'ATRASADA' && styles.overdue]}>{getDoseLine(item)}</Text>
         <View style={styles.badge}>
           <Badge label={status.label} tone={status.tone} icon={status.icon} />

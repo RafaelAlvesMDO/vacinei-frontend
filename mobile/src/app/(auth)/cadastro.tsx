@@ -14,6 +14,7 @@ import {
   TextField,
   type SelectOption,
 } from '@/components/ui';
+import { useFieldFocus } from '@/hooks/useFieldFocus';
 import { parseApiError, registerUser } from '@/services/auth';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { RegisterPayload, RegisterRole } from '@/types/auth';
@@ -57,6 +58,8 @@ const INITIAL_VALUES: FormValues = {
 };
 
 const STEP_ONE_FIELDS: FieldName[] = ['name', 'phone', 'email', 'cpf', 'birthDate', 'password', 'confirmPassword'];
+// Ordem dos campos na tela, para o foco ir ao primeiro com erro
+const FIELD_ORDER: FieldName[] = [...STEP_ONE_FIELDS, 'category', 'registryNumber', 'uf'];
 
 // Erros do Zod (caminhos com ponto) → campos da tela
 const API_FIELD_MAP: Record<string, FieldName> = {
@@ -157,6 +160,7 @@ export default function SignUp() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const fieldFocus = useFieldFocus(FIELD_ORDER);
 
   const isProfessional = role === 'PROFISSIONAL_SAUDE';
   const totalSteps = isProfessional ? 2 : 1;
@@ -239,6 +243,7 @@ export default function SignUp() {
       setFieldErrors(errors);
       // Erro em campo da etapa 1 com a etapa 2 aberta: volta para mostrar o campo
       if (step === 2 && fields.some((field) => STEP_ONE_FIELDS.includes(field))) setStep(1);
+      fieldFocus.focusFirstError(errors);
     }
   };
 
@@ -247,6 +252,7 @@ export default function SignUp() {
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) {
       setError('Revise os campos destacados.');
+      fieldFocus.focusFirstError(errors);
       return;
     }
     setError(null);
@@ -257,7 +263,10 @@ export default function SignUp() {
   const handleStepTwo = () => {
     const errors = validateStepTwo(values);
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      fieldFocus.focusFirstError(errors);
+      return;
+    }
     void submit();
   };
 
@@ -285,7 +294,10 @@ export default function SignUp() {
       {step === 1 ? (
         <>
           <View style={styles.group} accessibilityRole="radiogroup" accessibilityLabel="Como você usará o aplicativo?">
-            <Text style={typography.label}>Como você usará o aplicativo?</Text>
+            {/* O grupo já tem este rótulo para o leitor de tela */}
+            <Text style={typography.label} importantForAccessibility="no" accessibilityElementsHidden>
+              Como você usará o aplicativo?
+            </Text>
             <RadioCard
               icon="person-outline"
               title="Cidadão"
@@ -303,6 +315,7 @@ export default function SignUp() {
           </View>
 
           <TextField
+            ref={fieldFocus.inputRef('name')}
             label="Nome completo"
             required
             hint={`Nome e sobrenome, com até ${NAME_MAX_LENGTH} caracteres.`}
@@ -316,6 +329,7 @@ export default function SignUp() {
             error={fieldErrors.name}
           />
           <TextField
+            ref={fieldFocus.inputRef('phone')}
             label="Celular"
             required
             icon="phone-portrait-outline"
@@ -331,6 +345,7 @@ export default function SignUp() {
             error={fieldErrors.phone}
           />
           <TextField
+            ref={fieldFocus.inputRef('email')}
             label="E-mail"
             required
             icon="mail-outline"
@@ -348,6 +363,7 @@ export default function SignUp() {
             error={fieldErrors.email}
           />
           <TextField
+            ref={fieldFocus.inputRef('cpf')}
             label="CPF"
             required
             icon="card-outline"
@@ -361,6 +377,7 @@ export default function SignUp() {
             error={fieldErrors.cpf}
           />
           <TextField
+            ref={fieldFocus.inputRef('birthDate')}
             label="Data de nascimento"
             required
             icon="calendar-outline"
@@ -375,6 +392,7 @@ export default function SignUp() {
             error={fieldErrors.birthDate}
           />
           <PasswordField
+            ref={fieldFocus.inputRef('password')}
             label="Senha"
             required
             hint="Não reutilize a senha de outro serviço."
@@ -387,6 +405,7 @@ export default function SignUp() {
           />
           <PasswordChecklist password={values.password} />
           <PasswordField
+            ref={fieldFocus.inputRef('confirmPassword')}
             label="Confirmar senha"
             required
             value={values.confirmPassword}
@@ -436,6 +455,7 @@ export default function SignUp() {
           />
 
           <SelectField
+            ref={fieldFocus.viewRef('category')}
             label="Categoria profissional"
             required
             value={values.category}
@@ -447,6 +467,7 @@ export default function SignUp() {
             error={fieldErrors.category}
           />
           <TextField
+            ref={fieldFocus.inputRef('registryNumber')}
             label="Número do registro"
             required
             icon="id-card-outline"
@@ -461,6 +482,7 @@ export default function SignUp() {
             error={fieldErrors.registryNumber}
           />
           <SelectField
+            ref={fieldFocus.viewRef('uf')}
             label="UF do registro"
             required
             value={values.uf}

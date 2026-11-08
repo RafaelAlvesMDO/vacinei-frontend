@@ -1,14 +1,15 @@
 import { Tabs } from 'expo-router';
-import { tabIcon, tabScreenOptions } from '@/components/navigation/tabScreenOptions';
+import { tabIcon, useTabScreenOptions } from '@/components/navigation/tabScreenOptions';
 import { useAuth } from '@/hooks/useAuth';
 
 // Abas da ala Profissional. Busca ativa e Cidadãos só aparecem para o profissional verificado (RS001)
 export default function ProfessionalTabsLayout() {
   const { user } = useAuth();
   const verified = !!user?.professionalRegistry?.isVerified;
+  const screenOptions = useTabScreenOptions();
 
   return (
-    <Tabs screenOptions={tabScreenOptions}>
+    <Tabs screenOptions={screenOptions}>
       <Tabs.Screen name="painel" options={{ title: 'Painel', tabBarIcon: tabIcon('grid-outline', 'grid') }} />
       <Tabs.Screen
         name="busca-ativa"

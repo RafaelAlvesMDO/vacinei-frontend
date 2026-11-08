@@ -14,6 +14,7 @@ import {
   TextField,
 } from '@/components/ui';
 import { useCountdown } from '@/hooks/useCountdown';
+import { useFieldFocus } from '@/hooks/useFieldFocus';
 import { forgotPassword, parseApiError, resetPassword } from '@/services/auth';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import { validateEmail } from '@/utils/email';
@@ -23,6 +24,8 @@ import { validatePassword } from '@/utils/password';
 type Step = 'email' | 'reset' | 'blocked';
 type FieldName = 'email' | 'code' | 'newPassword' | 'confirmPassword';
 type FieldErrors = Partial<Record<FieldName, string>>;
+
+const FIELD_ORDER: FieldName[] = ['email', 'code', 'newPassword', 'confirmPassword'];
 
 const CODE_LENGTH = 6;
 const RESEND_COOLDOWN_MS = 30 * 1000;
@@ -56,6 +59,12 @@ export default function RecoverPassword() {
   const blockRemaining = useCountdown(blockedUntil);
 
   const busy = loading || resending;
+  const fieldFocus = useFieldFocus(FIELD_ORDER);
+  // Mostra os erros dos campos e leva o foco ao primeiro deles
+  const showFieldErrors = (errors: FieldErrors) => {
+    setFieldErrors(errors);
+    fieldFocus.focusFirstError(errors);
+  };
 
   const backToLogin = () => {
     if (router.canGoBack()) router.back();
@@ -84,7 +93,7 @@ export default function RecoverPassword() {
     const emailError = validateEmail(email);
     setError(null);
     if (emailError) {
-      setFieldErrors({ email: emailError });
+      showFieldErrors({ email: emailError });
       return;
     }
 
@@ -100,7 +109,7 @@ export default function RecoverPassword() {
         err,
         'Não foi possível solicitar o código. Tente novamente mais tarde.'
       );
-      if (apiErrors.email) setFieldErrors({ email: apiErrors.email });
+      if (apiErrors.email) showFieldErrors({ email: apiErrors.email });
       else setError(message);
     } finally {
       setLoading(false);
@@ -132,7 +141,7 @@ export default function RecoverPassword() {
     if (!confirmPassword) errors.confirmPassword = 'Confirme a nova senha.';
     else if (confirmPassword !== newPassword) errors.confirmPassword = 'As senhas não coincidem.';
 
-    setFieldErrors(errors);
+    showFieldErrors(errors);
     setError(null);
     if (Object.keys(errors).length > 0) return;
 
@@ -159,10 +168,10 @@ export default function RecoverPassword() {
         setInfo(null);
         setStep('blocked');
       } else if (status === 400 && (apiErrors.code || apiErrors.newPassword)) {
-        setFieldErrors({ code: apiErrors.code, newPassword: apiErrors.newPassword });
+        showFieldErrors({ code: apiErrors.code, newPassword: apiErrors.newPassword });
       } else if (status === 400) {
         // Ex.: "Código inválido ou expirado."
-        setFieldErrors({ code: message });
+        showFieldErrors({ code: message });
       } else {
         setError(message);
       }
@@ -232,6 +241,7 @@ export default function RecoverPassword() {
         {error && <Banner tone="danger" title="Não foi possível enviar" message={error} />}
 
         <TextField
+          ref={fieldFocus.inputRef('email')}
           label="E-mail"
           required
           icon="mail-outline"
@@ -287,6 +297,7 @@ export default function RecoverPassword() {
       {info && !error && <Banner message={info} />}
 
       <CodeInput
+        ref={fieldFocus.inputRef('code')}
         label="Código de segurança"
         value={code}
         onChange={(value) => {
@@ -330,6 +341,7 @@ export default function RecoverPassword() {
       </View>
 
       <PasswordField
+        ref={fieldFocus.inputRef('newPassword')}
         label="Nova senha"
         required
         value={newPassword}
@@ -344,6 +356,7 @@ export default function RecoverPassword() {
       />
       <PasswordChecklist password={newPassword} />
       <PasswordField
+        ref={fieldFocus.inputRef('confirmPassword')}
         label="Confirmar nova senha"
         required
         hint="As duas senhas devem ser iguais."

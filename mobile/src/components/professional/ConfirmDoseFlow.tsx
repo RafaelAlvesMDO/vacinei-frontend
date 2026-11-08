@@ -13,6 +13,7 @@ import {
   TextField,
   type SelectOption,
 } from '@/components/ui';
+import { useFieldFocus } from '@/hooks/useFieldFocus';
 import { useForbiddenSync } from '@/hooks/useForbiddenSync';
 import { DependentOf } from './DependentOf';
 import { parseApiError } from '@/services/auth';
@@ -91,6 +92,7 @@ export function ConfirmDoseFlow({
   // Data da confirmação: definida pela API no envio, exibida só para conferência
   const [today] = useState(() => formatDate(new Date().toISOString()));
   useForbiddenSync(submitError?.status);
+  const fieldFocus = useFieldFocus(FIELDS);
 
   const statuses = getDoseStatuses(card.vaccines);
   const cardVaccine = card.vaccines.find((item) => item.vaccine.id === vaccineId);
@@ -132,12 +134,14 @@ export function ConfirmDoseFlow({
     setErrors(found);
     setSubmitError(isVaccineInactive ? { status: null, message: INACTIVE_VACCINE_MESSAGE } : null);
     if (Object.keys(found).length === 0 && !isVaccineInactive) setStep('review');
+    else fieldFocus.focusFirstError(found);
   };
 
   const backToForm = (message: string | null, status: number | null, fieldErrors: FieldErrors = {}) => {
     setSubmitError(message ? { status, message } : null);
     setErrors(fieldErrors);
     setStep('form');
+    fieldFocus.focusFirstError(fieldErrors);
   };
 
   const submit = async () => {
@@ -317,6 +321,7 @@ export function ConfirmDoseFlow({
       <>
         {isVaccineInactive && <Banner tone="warning" title="Vacina desativada" message={INACTIVE_VACCINE_MESSAGE} />}
         <SelectField
+          ref={fieldFocus.viewRef('vaccineId')}
           label="Vacina"
           required
           value={vaccine ? vaccineId : null}
@@ -332,6 +337,7 @@ export function ConfirmDoseFlow({
           }}
         />
         <SelectField
+          ref={fieldFocus.viewRef('doseId')}
           label="Dose"
           required
           value={doseId}
@@ -394,6 +400,7 @@ export function ConfirmDoseFlow({
         <ReadOnlyField label="Data de aplicação" value={applicationDate} hint={record ? 'Data informada pelo cidadão, mantida na confirmação.' : 'Data de hoje, registrada pelo sistema.'} />
 
         <TextField
+          ref={fieldFocus.inputRef('lote')}
           label="Lote"
           required
           placeholder="Ex.: FA26B317"
@@ -450,7 +457,9 @@ function ReadOnlyField({ label, value, hint }: { label: string; value: string; h
 function ReviewSection({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">
+        {title}
+      </Text>
       <View style={styles.sectionBox}>
         {rows.map(([label, value]) => (
           <ReviewRow key={label} label={label} value={value} />
