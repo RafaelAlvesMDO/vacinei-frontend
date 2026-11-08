@@ -282,6 +282,22 @@ Revisão de todas as telas das duas alas (TalkBack, fonte em 2x, alvos de 48 px,
   - No Android, o fundo "Fechar" da lista de seleção e do diálogo pode receber o primeiro foco.
 - **Falta conferir no celular** (fonte do sistema no máximo e TalkBack), principalmente a barra inferior e o foco nos erros. Ajustes que surgirem desse teste entram como correção de bug (D37).
 
+## [x] Sobre o aplicativo (2026-11-08)
+
+Design: `design-mobile/perfil/sobre.png`. Logos em `design-mobile/logos/`, copiados para `mobile/assets/images/sobre/` (`logo-citec.png` e `logo-medicina-cesmac.png`).
+
+- [x] **Tela `sobre`** (pública, como `privacidade`): aberta pela linha "Sobre o aplicativo" no Perfil das duas alas.
+- [x] **Conteúdo:**
+  - "Desenvolvido por": logos do CITEC e da Medicina CESMAC lado a lado, com rótulo para o leitor de tela.
+  - Professores, orientador, desenvolvedor responsável e designers.
+  - Aviso de projeto educacional (TCC), que não substitui a caderneta oficial nem orientação profissional.
+  - Rodapé: versão lida do `app.json` (`expo-constants`), link para a Política de privacidade e créditos do OpenStreetMap e do Tesseract OCR.
+- [x] **Acessibilidade:** títulos das seções como cabeçalho, rolagem pelo `Screen` e textos que crescem com a fonte.
+- **Diferenças intencionais em relação ao design:**
+  - Sem o botão de configurações do cabeçalho.
+  - Nomes reais no lugar dos de exemplo. A seção "Colaboração" saiu, e "Professores e Pesquisadores envolvidos" virou "Professores".
+  - Entraram o aviso educacional e o rodapé (versão, privacidade e créditos), que não estão no design.
+
 ## Congelamento do código (D37)
 
 - **De 11/11/2026 até a banca de 17/11/2026:** sem funcionalidades novas, mudanças de tela, de contrato da API ou de schema.

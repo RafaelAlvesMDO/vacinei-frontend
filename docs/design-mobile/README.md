@@ -24,6 +24,8 @@ Os designs são **referência visual**: o app só exibe dados que a API oferece.
 | `perfil/` | 8 |
 | **Total** | **60** |
 
+A pasta `logos/` guarda os logos das instituições (não são telas): ver o fim do índice.
+
 ## Índice
 
 ### auth
@@ -120,3 +122,12 @@ Os designs são **referência visual**: o app só exibe dados que a API oferece.
 | `perfil/sobre.png` | info-1.png | |
 | `perfil/excluir-conta-etapa-1.png` | Excluir conta — Etapa 1.png | |
 | `perfil/excluir-conta-etapa-2.png` | Excluir conta — Etapa 2.png | |
+
+### logos
+
+Logos usados na tela "Sobre o aplicativo" (`perfil/sobre.png`). O app usa cópias em `mobile/assets/images/sobre/`.
+
+| Arquivo | Cópia no app | Observações |
+| --- | --- | --- |
+| `logos/CITEC LOGO.png` | `logo-citec.png` | 199 × 186 px |
+| `logos/MEDICINA CESMAC LOGO.png` | `logo-medicina-cesmac.png` | 258 × 195 px |
