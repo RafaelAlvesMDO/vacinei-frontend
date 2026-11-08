@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SessionSplash } from '@/components/SessionSplash';
+import { NotificationTapHandler } from '@/components/alerts/NotificationTapHandler';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { colors, fontAssets } from '@/theme';
@@ -60,6 +61,7 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style="dark" />
+      <NotificationTapHandler />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         <Stack.Protected redirectTo={home} guard={!user}>
           <Stack.Screen name="(auth)" />

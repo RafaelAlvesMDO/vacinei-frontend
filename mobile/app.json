@@ -11,10 +11,13 @@
       "supportsTablet": false
     },
     "android": {
+      "package": "br.edu.cesmac.vacinei",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#087F6B",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -46,6 +49,21 @@
           "cameraPermission": "O Vacinei!? usa a câmera para fotografar a sua caderneta de vacinação e ler as doses. A foto não fica salva no aparelho nem no servidor.",
           "photosPermission": "O Vacinei!? usa a foto escolhida da caderneta de vacinação para ler as doses. A foto não fica salva no aparelho nem no servidor.",
           "microphonePermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#077A66"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],

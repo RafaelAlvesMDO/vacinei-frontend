@@ -1,5 +1,6 @@
 import type { Href } from 'expo-router';
-import { createContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { DependentsContext } from '@/contexts/DependentsContext';
 import { parseApiError } from '@/services/auth';
 import { getVaccinationCard } from '@/services/citizens';
 import { getDependentCard } from '@/services/dependents';
@@ -93,6 +94,8 @@ export function VaccinationCardProvider({ children, owner = SELF }: ProviderProp
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  // Na caderneta de um dependente, a carga nova vai para a lista de dependentes (resumo e notificações, D36)
+  const dependentCardLoaded = useContext(DependentsContext)?.cardLoaded;
 
   // Busca a caderneta; o estado só muda na resposta (a requisição anterior é cancelada)
   const fetchCard = useCallback(() => {
@@ -111,6 +114,7 @@ export function VaccinationCardProvider({ children, owner = SELF }: ProviderProp
         if (controller.signal.aborted) return;
         setCard(data);
         setError(null);
+        if (stableOwner.kind === 'dependent') dependentCardLoaded?.(stableOwner.id, data);
       })
       .catch((reason: unknown) => {
         if (!controller.signal.aborted) setError(getErrorMessage(reason, stableOwner));
@@ -120,7 +124,7 @@ export function VaccinationCardProvider({ children, owner = SELF }: ProviderProp
         setIsLoading(false);
         setIsRefreshing(false);
       });
-  }, [userId, stableOwner]);
+  }, [userId, stableOwner, dependentCardLoaded]);
 
   const reload = useCallback(
     (options?: { refreshing?: boolean }) => {

@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { AlertRow } from '@/components/alerts/AlertRow';
-import { Badge, Banner, Card, Icon, Screen, StepHeader } from '@/components/ui';
+import { Badge, Banner, Button, Card, Icon, Screen, StepHeader } from '@/components/ui';
 import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
+import { useOptionalVaccineAlerts } from '@/hooks/useVaccineAlerts';
 import { colors, radius, spacing, typography } from '@/theme';
 import {
   formatReminderWhen,
@@ -43,10 +44,18 @@ function openVaccine(vaccineId: string) {
 /**
  * Central de notificações (RF007, D31), dentro do app: os avisos de hoje (atrasadas, aguardando conferência e
  * lembretes) e as doses previstas para os próximos 7 dias, recalculados da caderneta. As notificações do
- * sistema ficam para a etapa final (D24)
+ * sistema (D36) usam as mesmas regras; desligadas, a Central avisa e leva ao Perfil
  */
 export default function NotificationCenter() {
   const { card, error, isRefreshing, reload } = useVaccinationCard();
+  const vaccineAlerts = useOptionalVaccineAlerts();
+  const permission = vaccineAlerts?.permission;
+  // No Expo Go (`unavailable`) não há o que ativar: os avisos ficam só aqui
+  const notificationsOff =
+    !!vaccineAlerts &&
+    !!permission &&
+    permission.state !== 'unavailable' &&
+    (permission.state !== 'granted' || (!vaccineAlerts.preferences.alerts && !vaccineAlerts.preferences.reminders));
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/cidadao/inicio'));
 
   const now = new Date();
@@ -75,6 +84,23 @@ export default function NotificationCenter() {
           />
         )}
       </View>
+
+      {notificationsOff && (
+        <View style={styles.off}>
+          <Banner
+            tone="warning"
+            icon="notifications-off-outline"
+            title="Notificações desativadas"
+            message="Os avisos continuam aqui no app. Para recebê-los no celular, ative-os no Perfil."
+          />
+          <Button
+            label="Ativar no Perfil"
+            variant="secondary"
+            icon="person-circle-outline"
+            onPress={() => router.navigate('/cidadao/perfil')}
+          />
+        </View>
+      )}
 
       {!card || !digest ? (
         <CardLoadState error={error} onRetry={() => reload()} />
@@ -194,6 +220,9 @@ function UpcomingSection({ upcoming }: { upcoming: ReminderAlert[] }) {
 }
 
 const styles = StyleSheet.create({
+  off: {
+    gap: spacing.sm,
+  },
   summary: {
     flexDirection: 'row',
     alignItems: 'center',
