@@ -97,6 +97,14 @@ export function ProfileScreen({ showDependents = false }: Props) {
       {/* As notificações são da caderneta pessoal e dos dependentes: só aparecem na ala Cidadão (D36) */}
       {vaccineAlerts && <NotificationSettingsCard alerts={vaccineAlerts} />}
 
+      <RadioCard
+        mode="button"
+        icon="information-circle-outline"
+        title="Sobre o aplicativo"
+        description="Equipe, instituições, versão e créditos"
+        onPress={() => router.push('/sobre')}
+      />
+
       <Card>
         <Button
           label="Política de privacidade"

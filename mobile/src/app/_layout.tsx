@@ -75,8 +75,9 @@ function RootNavigator() {
         <Stack.Protected redirectTo={home} guard={isProfessional && ala === 'profissional'}>
           <Stack.Screen name="profissional" />
         </Stack.Protected>
-        {/* Pública: aberta pelo cadastro e pelo Perfil */}
+        {/* Públicas: abertas pelo cadastro e pelo Perfil */}
         <Stack.Screen name="privacidade" />
+        <Stack.Screen name="sobre" />
       </Stack>
     </>
   );
