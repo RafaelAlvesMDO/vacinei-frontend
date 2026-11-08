@@ -1,13 +1,21 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { BackHandler, Linking } from 'react-native';
+import { AccessibilityInfo, BackHandler, Linking } from 'react-native';
 import { ConfirmDialog, Screen, StateMessage, StepHeader } from '@/components/ui';
 import { useDependents } from '@/hooks/useDependents';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { useVaccineCatalog } from '@/hooks/useVaccineCatalog';
 import { parseApiError } from '@/services/auth';
-import { discardPhoto, preparePhoto, type CardPhoto } from '@/services/cardPhoto';
+import {
+  addEdit,
+  applyEdits,
+  discardPhoto,
+  preparePhoto,
+  type CardPhoto,
+  type CropRect,
+  type PhotoEdit,
+} from '@/services/cardPhoto';
 import { createDependentRecord } from '@/services/dependents';
 import { createRecord, readCardPhoto } from '@/services/vaccinationRecords';
 import type { OcrResult } from '@/types/ocr';
@@ -24,8 +32,9 @@ import {
   type ScanMessage,
 } from '@/utils/ocr';
 import type { RecordFormValues } from '@/utils/vaccineRecord';
+import { CropStep } from './CropStep';
 import { ItemEditor } from './ItemEditor';
-import { PhotoPreview } from './PhotoPreview';
+import { PhotoPreview, type PhotoTool } from './PhotoPreview';
 import { ReadingStep } from './ReadingStep';
 import { ReviewStep } from './ReviewStep';
 import { SaveResults, type SaveOutcome } from './SaveResults';
@@ -37,6 +46,7 @@ type Source = 'camera' | 'gallery';
 type Step =
   | { name: 'guide' }
   | { name: 'preview'; source: Source }
+  | { name: 'crop'; source: Source }
   | { name: 'reading'; source: Source }
   | { name: 'failed'; failure: ScanMessage }
   | { name: 'review' }
@@ -74,7 +84,11 @@ export function ScanFlow({ card, onExit, onGuideBack }: Props) {
   const [busy, setBusy] = useState<Source | null>(null);
   const [cameraDenied, setCameraDenied] = useState<CameraDenied | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
+  // Foto original (câmera ou galeria) e, com ajustes, a versão girada/recortada que é mostrada e enviada
   const [photo, setPhoto] = useState<CardPhoto | null>(null);
+  const [adjusted, setAdjusted] = useState<{ photo: CardPhoto; edits: PhotoEdit[] } | null>(null);
+  const [editing, setEditing] = useState<PhotoTool | 'crop' | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<OcrResult | null>(null);
@@ -85,22 +99,84 @@ export function ScanFlow({ card, onExit, onGuideBack }: Props) {
   const [outcomes, setOutcomes] = useState<SaveOutcome[]>([]);
   const [confirmExit, setConfirmExit] = useState(false);
 
-  // Foto atual, para apagá-la ao sair da tela (LGPD), e a leitura em andamento, para cancelar
+  // Foto original e versão ajustada, para apagá-las ao sair da tela (LGPD), e a leitura em andamento, para cancelar
   const photoRef = useRef<string | null>(null);
+  const adjustedRef = useRef<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  // Cada ajuste tem um número: o resultado de um ajuste ultrapassado (foto trocada, desfeita ou tela fechada) é apagado
+  const editSeqRef = useRef(0);
 
   useEffect(
     () => () => {
       controllerRef.current?.abort();
+      editSeqRef.current += 1;
       discardPhoto(photoRef.current);
+      discardPhoto(adjustedRef.current);
     },
     [],
   );
 
+  // Troca a versão ajustada, apagando a anterior do cache (as intermediárias não ficam no aparelho)
+  const replaceAdjusted = (next: { photo: CardPhoto; edits: PhotoEdit[] } | null) => {
+    discardPhoto(adjustedRef.current);
+    adjustedRef.current = next?.photo.uri ?? null;
+    setAdjusted(next);
+  };
+
   const replacePhoto = (next: CardPhoto | null) => {
+    editSeqRef.current += 1;
+    replaceAdjusted(null);
+    setEditing(null);
+    setEditError(null);
     discardPhoto(photoRef.current);
     photoRef.current = next?.uri ?? null;
     setPhoto(next);
+  };
+
+  // A foto mostrada na prévia e enviada ao OCR
+  const currentPhoto = adjusted?.photo ?? photo;
+
+  const edit = async (change: PhotoEdit, tool: PhotoTool | 'crop', announcement: string) => {
+    if (!photo) return;
+    const edits = addEdit(adjusted?.edits ?? [], change);
+    const seq = ++editSeqRef.current;
+    setEditing(tool);
+    setEditError(null);
+    try {
+      // Giro que volta à posição original, sem recorte: é a própria original
+      const next = edits.length === 0 ? null : { photo: await applyEdits(photo, edits), edits };
+      if (seq !== editSeqRef.current) {
+        discardPhoto(next?.photo.uri);
+        return;
+      }
+      replaceAdjusted(next);
+      AccessibilityInfo.announceForAccessibility(announcement);
+    } catch {
+      if (seq === editSeqRef.current) setEditError('Tente de novo ou tire outra foto.');
+    } finally {
+      if (seq === editSeqRef.current) setEditing(null);
+    }
+  };
+
+  const rotate = (direction: 'left' | 'right') =>
+    void edit(
+      { type: 'rotate', degrees: direction === 'left' ? -90 : 90 },
+      direction === 'left' ? 'rotate-left' : 'rotate-right',
+      direction === 'left' ? 'Foto girada para a esquerda' : 'Foto girada para a direita',
+    );
+
+  // Volta à prévia mesmo se falhar: o aviso de erro fica lá
+  const applyCrop = async (source: Source, rect: CropRect | null) => {
+    if (rect) await edit({ type: 'crop', rect }, 'crop', 'Foto recortada');
+    setStep({ name: 'preview', source });
+  };
+
+  const undoEdits = () => {
+    editSeqRef.current += 1;
+    replaceAdjusted(null);
+    setEditing(null);
+    setEditError(null);
+    AccessibilityInfo.announceForAccessibility('Ajustes desfeitos. Foto original restaurada');
   };
 
   const errors = catalog ? validateScanItems(items, catalog, card) : {};
@@ -148,7 +224,7 @@ export function ScanFlow({ card, onExit, onGuideBack }: Props) {
   };
 
   const read = async (source: Source) => {
-    if (!photo) return;
+    if (!currentPhoto) return;
     const controller = new AbortController();
     controllerRef.current = controller;
     setPreviewError(null);
@@ -158,7 +234,7 @@ export function ScanFlow({ card, onExit, onGuideBack }: Props) {
     let prepared: CardPhoto | null = null;
     try {
       try {
-        prepared = await preparePhoto(photo);
+        prepared = await preparePhoto(currentPhoto);
       } catch {
         if (controller.signal.aborted) return;
         setPreviewError('Tente de novo ou escolha outra foto.');
@@ -276,7 +352,12 @@ export function ScanFlow({ card, onExit, onGuideBack }: Props) {
           onGuideBack();
           return true;
         case 'preview':
+          if (editing) return true;
           backToGuide();
+          return true;
+        case 'crop':
+          if (editing) return true;
+          setStep({ name: 'preview', source: step.source });
           return true;
         case 'reading':
           cancelReading(step.source);
@@ -316,14 +397,34 @@ export function ScanFlow({ card, onExit, onGuideBack }: Props) {
 
   switch (step.name) {
     case 'preview':
-      return photo ? (
+      return currentPhoto ? (
         <PhotoPreview
-          photo={photo}
+          photo={currentPhoto}
           subtitle={subtitle}
           error={previewError}
+          editError={editError}
+          edited={adjusted !== null}
+          editing={editing === 'crop' ? null : editing}
+          onRotate={rotate}
+          onCrop={() => {
+            setEditError(null);
+            setStep({ name: 'crop', source: step.source });
+          }}
+          onUndo={undoEdits}
           onRetake={() => pick(step.source)}
           onUse={() => read(step.source)}
           onBack={backToGuide}
+        />
+      ) : null;
+
+    case 'crop':
+      return currentPhoto ? (
+        <CropStep
+          photo={currentPhoto}
+          subtitle={subtitle}
+          applying={editing === 'crop'}
+          onCancel={() => setStep({ name: 'preview', source: step.source })}
+          onApply={(rect) => void applyCrop(step.source, rect)}
         />
       ) : null;
 

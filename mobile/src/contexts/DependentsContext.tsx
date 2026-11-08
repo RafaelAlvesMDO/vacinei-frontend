@@ -21,6 +21,9 @@ export interface DependentsContextValue {
   saved: (dependent: Dependent) => void;
   // Tira da lista na hora o dependente removido
   removed: (id: string) => void;
+  // Caderneta de um dependente recarregada nas telas dele (ex.: dose registrada): atualiza o resumo e as
+  // notificações (D36) sem buscar tudo de novo
+  cardLoaded: (id: string, card: VaccinationCard) => void;
 }
 
 export const DependentsContext = createContext<DependentsContextValue | null>(null);
@@ -101,14 +104,23 @@ export function DependentsProvider({ children }: { children: ReactNode }) {
     [fetchAll],
   );
 
+  const cardLoaded = useCallback((id: string, card: VaccinationCard) => {
+    setDependents((current) => {
+      const item = current?.find((entry) => entry.dependent.id === id);
+      // A mesma caderneta (ex.: a carga que já veio daqui) não gera nova renderização
+      if (!current || !item || item.card === card) return current;
+      return current.map((entry) => (entry.dependent.id === id ? { ...entry, card } : entry));
+    });
+  }, []);
+
   useEffect(() => {
     fetchAll();
     return () => controllerRef.current?.abort();
   }, [fetchAll]);
 
   const value = useMemo(
-    () => ({ dependents, isLoading, isRefreshing, error, reload, saved, removed }),
-    [dependents, isLoading, isRefreshing, error, reload, saved, removed],
+    () => ({ dependents, isLoading, isRefreshing, error, reload, saved, removed, cardLoaded }),
+    [dependents, isLoading, isRefreshing, error, reload, saved, removed, cardLoaded],
   );
 
   return <DependentsContext.Provider value={value}>{children}</DependentsContext.Provider>;

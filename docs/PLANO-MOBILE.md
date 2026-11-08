@@ -179,6 +179,19 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
   - **Falha (`ScanFailure`):** `manualFallback` (modelo não reconhecido ou nenhuma dose) e erros por `code` (`OCR_INDISPONIVEL`/`OCR_ERRO`, `OCR_TIMEOUT`, `IMAGEM_GRANDE`, `FORMATO_INVALIDO`/`IMAGEM_INVALIDA`/`IMAGEM_AUSENTE`/`UPLOAD_INVALIDO`, sem conexão) com mensagem própria, "Tentar outra foto" e "Cadastrar manualmente" (RNF12).
 - [x] **Salvar:** um `POST` por dose marcada, em sequência, pela rota do dono (`/vaccination-records` ou `/dependents/:id/vaccination-records`) com `origin: "OCR_ICR"` e o `ocrConfidence` da sugestão; aguardando conferência (D30). Botão com "Salvando X de N...". **Resultado (`SaveResults`):** cada dose como "Salva · aguardando conferência", "Já estava na caderneta" (`409`) ou "Não foi salva" com a mensagem da API; "Revisar as doses que falharam" volta à revisão só com elas; "Ver minha caderneta" recarrega e volta à caderneta.
 - [x] **Voltar:** o voltar do Android segue a etapa (foto → orientação, leitura → cancelar, editor → lista, resultado → caderneta). Sair da revisão pede confirmação ("Sair sem salvar?").
+- [x] **Ajustes na etapa "Conferir foto" (2026-11-08):**
+  - **Girar:** "Girar à esquerda" e "Girar à direita" (90°).
+  - **Recortar:** recorte livre, sem proporção fixa, numa tela própria (`CropStep`). Tem quatro alças nas bordas, arrastáveis (`PanResponder`, funciona no Expo Go e no APK) ou ajustáveis pelo leitor de tela (5% por vez). Sobra pelo menos 25% da foto em cada direção. O aviso diz: "Mantenha a página inteira no recorte; cortar demais impede o reconhecimento da caderneta."
+  - **Layout sem rolagem (correção do teste no celular):** a tela não usa a `Screen`.
+    - A foto cabe inteira ("contain") no espaço medido entre o cabeçalho e o rodapé, usando a largura e a altura da foto atual (vertical, horizontal ou girada).
+    - O aviso e os botões ficam numa barra fixa, dentro da área segura.
+    - Com a fonte ampliada (escala ≥ 1,3), o aviso começa recolhido em "Ver aviso sobre o recorte". O leitor de tela lê o aviso completo no rótulo.
+    - O recorte fica em frações da foto, então as alças e o recorte enviado continuam certos quando a foto muda de tamanho na tela.
+  - **Por que não o recorte nativo:** o do `expo-image-picker` só existe na hora de tirar ou escolher a foto e não serve para uma foto já na prévia ou já girada.
+  - **Desfazer ajustes:** volta à foto original.
+  - **Como os ajustes são aplicados:** ficam numa lista aplicada sempre à original, numa só renderização (`applyEdits` em `services/cardPhoto.ts`, sem recomprimir a cada giro), e valem para a prévia e para a imagem enviada.
+  - **Cache (LGPD):** a versão ajustada anterior é apagada a cada ajuste, e a de um ajuste ultrapassado também. Ao desfazer, refazer, enviar ou sair, as versões ajustadas são apagadas junto com a original e a reduzida.
+  - **Acessibilidade:** rótulos e dicas nos botões (girar só com ícone e rótulo para o leitor de tela), alvos de 48 px e anúncios "Foto girada para a esquerda/direita", "Foto recortada" e "Ajustes desfeitos".
 - **Diferenças intencionais do design:**
   - Câmera do sistema (`expo-image-picker`) no lugar da tela de captura com moldura, flash e "Documento detectado", que exigiriam o `expo-camera` com detecção de bordas. A prévia ("Conferir foto") foi mantida.
   - A leitura não mostra porcentagem (a API não informa o progresso) e diz "até 20 segundos", o limite do backend.
@@ -211,14 +224,41 @@ Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ai
 
 ---
 
-## [ ] Etapa final: Notificações do sistema
+## [~] Etapa final: Notificações do sistema e APK (implementada; falta validar no APK)
 
-- **Código de referência:** o commit `840e50dbedb0f48525dc1adbaefe053a8f140995` (`840e50d`, branch `dev`) é o último com as notificações locais completas. Para recuperar um arquivo: `git show 840e50d:mobile/src/services/vaccineNotifications.ts`.
-  - `services/vaccineNotifications.ts`: agendamento diário às 8h nos próximos 30 dias, cancelando os anteriores a cada carga da caderneta (nota 5), canal Android "Alertas de vacina", notificação de teste (`__DEV__`) e `isExpoGo`.
-  - `utils/vaccineAlerts.ts`: `buildDailyDigest` (com o lembrete 7 dias antes e no dia, D31) e `formatDigestNotification` (notificação consolidada, nota 8, e destino do toque, nota 4), testados com relógio simulado (16 cenários).
-  - `contexts/VaccineAlertsContext`, `services/notificationPreferences.ts`, `components/alerts/NotificationPrompt` (permissão explicada), `NotificationSettingsCard` (interruptores no Perfil) e o cancelamento no `AuthContext` ao sair (LGPD).
-- **1. Validar as notificações locais num APK (EAS Build):** gerar o build instalável e conferir o pedido de permissão, a chegada diária, o canal "Alertas de vacina" nas configurações do app e a navegação ao tocar (detalhe da vacina ou Caderneta filtrada), com o app fechado e aberto.
-- **2. Se não funcionarem, envio diário por e-mail pelo backend** (sugestão do orientador): rotina agendada que calcula os avisos do D32 (atrasadas e aguardando conferência, consolidados por pessoa, uma vez por dia e sem duplicar) e os lembretes do D31. Funciona com o app fechado e usa a caderneta atual.
+- **Base:** o código do commit `840e50d`, adaptado para os dependentes e desligado no Expo Go. Regras na **D36**.
+- [x] **APK (EAS Build):**
+  - `eas.json` com o perfil `preview` (APK, `distribution: internal`, ambiente `preview` e `EXPO_PUBLIC_NOTIFICATION_TEST=true`).
+  - `app.json`: `android.package` `br.edu.cesmac.vacinei`, `versionCode` 1, microfone bloqueado e plugin `expo-notifications` (ícone monocromático `assets/images/notification-icon.png`, gerado a partir do primeiro plano do ícone adaptativo, e cor `#077A66`).
+  - `expo-build-properties` com `usesCleartextTraffic` (concessão do protótipo, D36: em produção, HTTPS).
+  - Nome, ícone, splash e textos de permissão em pt-BR já estavam coerentes.
+- [x] **Ambiente:** `services/vaccineNotifications.ts` carrega o `expo-notifications` com `import()` só fora do Expo Go (`notificationsAvailable`). No Expo Go, as funções não fazem nada e a permissão volta como `unavailable`.
+- [x] **Regras (D31, D36):**
+  - `buildDailyDigest` (alertas e lembretes de 7 dias antes e do dia, conforme as preferências) e `formatDigestNotification(digest, target)`, com título e rotas por pessoa (`SELF_TARGET`, `getDependentTarget`). O `getTodayNotices` da Central e da Início continua sem as preferências.
+  - Uma notificação por pessoa por dia, às 8h, 30 dias, teto de 60.
+  - `contexts/VaccineAlertsContext` (na ala Cidadão, dentro do `DependentsProvider`) reagenda ao carregar a caderneta do titular ou de um dependente (`DependentsContext.cardLoaded`), ao mudar os dependentes e ao voltar ao primeiro plano.
+  - O `AuthContext` cancela tudo ao sair, com a sessão expirada e na abertura sem sessão.
+  - Testadas com relógio simulado: 13 cenários (7 dias antes, no dia, atraso, preferências, títulos e rotas do titular e do dependente).
+- [x] **Permissão:** `ConfirmDialog` "Ative os lembretes de vacina" ("Ativar lembretes" / "Agora não"), uma vez por conta, depois do login e com a caderneta carregada.
+  - **Correção depois da validação no APK (2026-11-08):** o modal não aparecia numa instalação nova. No Android 13+, a permissão nunca pedida volta como `denied` com `canAskAgain: true`, e a condição exigia `undetermined`. Agora basta "não concedida e o sistema ainda pode pedir"; o "uma vez por conta" continua pelo `prompted`. O modal abre 0,8 s depois de a condição valer, para não competir com a transição de tela do login.
+- **Validado no APK (2026-11-08):** login, notificação de teste, toque abrindo a caderneta (inclusive vindo da ala Profissional), interruptores do Perfil, pedido de câmera em português e OCR. Falta conferir de novo o modal depois da correção.
+- [x] **Toque:** `components/alerts/NotificationTapHandler` no navegador raiz abre o detalhe da vacina ou a caderneta filtrada (`?filtro=`), do titular ou do dependente. Trata também o toque que abriu o app fechado e troca o profissional para a ala Cidadão.
+- [x] **Perfil:** `NotificationSettingsCard` com "Alertas de vacina" e "Lembretes da próxima dose", e o aviso "Disponível no app instalado" no Expo Go. Também traz "Abrir configurações" quando a permissão está bloqueada e o botão de teste no APK `preview`. A Central mostra "Notificações desativadas · Ativar no Perfil".
+- **Gerar o APK (no computador, em `mobile/`):**
+  1. `npm install -g eas-cli` e `eas login` (conta Expo).
+  2. `eas init`: cria o projeto no Expo e grava o `extra.eas.projectId` (e o `owner`) no `app.json`. Commitar essa mudança.
+  3. `eas env:create --environment preview --name EXPO_PUBLIC_API_URL --value http://<IP-do-computador>:3333 --visibility plaintext`. O valor é embutido no APK, e o `.env` local não vai para o build.
+  4. `eas build -p android --profile preview`: o build roda na nuvem do Expo. No fim, o link e o QR baixam o APK; no celular, permitir a instalação de fontes desconhecidas.
+  5. Celular e computador na mesma rede, backend (e serviço de OCR) rodando e o firewall liberando a porta 3333. Se o IP mudar, atualizar a variável (`eas env:update`) e gerar outro build.
+- **Validar no APK (roteiro do vídeo):**
+  - O modal aparece depois do login e abre o pedido do sistema.
+  - O canal "Alertas de vacina" aparece nas configurações do app.
+  - "Enviar notificação de teste" chega em 5 s, com o app aberto e em segundo plano.
+  - O toque abre o detalhe da vacina ou a caderneta filtrada, inclusive com o app fechado e num dependente.
+  - Os interruptores do Perfil funcionam.
+  - Ao sair, a barra é limpa.
+  - A chegada às 8h (ou com o relógio do celular adiantado).
+- **Plano B (D36):** se as notificações não funcionarem no APK, entra o envio diário por e-mail pelo backend (sugestão do orientador): uma rotina agendada com os avisos do D32 e os lembretes do D31, consolidados por pessoa, uma vez por dia e sem duplicar.
 
 ## Revisão final de acessibilidade
 
@@ -253,6 +293,7 @@ Itens que aparecem em `docs/design-mobile/`, mas não têm suporte na API ou est
 | UBS próximas (`GET /ubs` com coordenadas) e catálogo de vacinas | Pronto |
 | Ala profissional: busca, confirmação, busca ativa e indicadores | Pronto |
 | Alertas dentro do app | Pronto (usa a caderneta) |
+| Notificações do sistema (locais, D36) | Pronto no app (sem endpoint; falta validar no APK) |
 | Logout (`POST /auth/logout`) | Pronto |
 | Registro manual de vacina (`POST/PUT/DELETE /vaccination-records`) | Pronto |
 | Dependentes (CRUD, caderneta, confirmação, busca) | Pronto |

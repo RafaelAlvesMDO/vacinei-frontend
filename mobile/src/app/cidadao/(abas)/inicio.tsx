@@ -25,7 +25,7 @@ export default function CitizenHome() {
   const { card, error, isRefreshing, reload } = useVaccinationCard();
   if (!user) return null;
 
-  // Avisos do dia, calculados da caderneta (RF007 dentro do app; as notificações do sistema ficam para a etapa final)
+  // Avisos do dia, calculados da caderneta (RF007 dentro do app; as notificações do sistema seguem o D36)
   const digest = card ? getTodayNotices(card.vaccines, new Date()) : null;
   const noticeCount = digest ? getDigestVaccineIds(digest).length : 0;
 
