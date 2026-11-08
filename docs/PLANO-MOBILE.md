@@ -4,6 +4,8 @@ Roteiro das etapas do aplicativo (`mobile/`). O contrato da API está em [`API.m
 
 Legenda: `[x]` concluída · `[ ]` pendente · **Backend novo:** endpoint que ainda não existe na API.
 
+> **Código congelado a partir de 11/11/2026 até a banca de 17/11 (D37).** Não entram funcionalidades novas, mudanças de tela, de contrato da API ou de schema. Podem entrar correções de bugs encontrados em teste, a calibração do OCR no `ocr-service` do backend (sem mudar o formato da resposta e sem novo APK) e documentação, seed e textos. Mudanças em commit `fix:`, `docs:` ou `chore:` na `dev`, com PR para a `main`.
+
 ---
 
 ## Base técnica
@@ -278,7 +280,12 @@ Revisão de todas as telas das duas alas (TalkBack, fonte em 2x, alvos de 48 px,
   - Marcadores do mapa (WebView/Leaflet) inacessíveis ao TalkBack; a lista é a alternativa, e o rótulo do mapa avisa.
   - No iOS, `accessibilityLiveRegion` não existe: banners não são anunciados ao aparecer (o alvo do TCC é Android/TalkBack). O foco no primeiro erro usa `announceForAccessibility`, que funciona nos dois.
   - No Android, o fundo "Fechar" da lista de seleção e do diálogo pode receber o primeiro foco.
-- **Falta conferir no celular** (fonte do sistema no máximo e TalkBack), principalmente a barra inferior e o foco nos erros.
+- **Falta conferir no celular** (fonte do sistema no máximo e TalkBack), principalmente a barra inferior e o foco nos erros. Ajustes que surgirem desse teste entram como correção de bug (D37).
+
+## Congelamento do código (D37)
+
+- **De 11/11/2026 até a banca de 17/11/2026:** sem funcionalidades novas, mudanças de tela, de contrato da API ou de schema.
+- **Ainda pendente e permitido:** validar no APK o modal de lembretes depois da correção e a revisão de acessibilidade; testes do OCR com fotos reais, com calibração só no `ocr-service` (sem novo APK); correções de bugs que esses testes encontrarem.
 
 ---
 

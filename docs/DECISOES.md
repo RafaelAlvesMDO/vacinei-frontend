@@ -311,3 +311,17 @@ Consulte este arquivo antes de alterar qualquer regra de negócio.
 ### D09 — Dependentes ainda não implementados (resolvido pelo D33)
 - **Decisão original:** quando o módulo de dependentes fosse implementado, as doses de dependentes deveriam entrar nas métricas agregadas, na busca do profissional e no fluxo de confirmação (D06).
 - **Situação:** resolvido pelo D33. Os dependentes entram na busca, na busca ativa, nas doses recentes, nas métricas e na confirmação. O Gerenciador Web e o app mostram "Dependente de <nome>".
+
+## Processo
+
+### D37 — Congelamento do código a partir de 11/11/2026
+- **Decisão:** de 11/11/2026 até a banca de 17/11/2026, o código (backend, Gerenciador Web e app) fica congelado.
+  - **Não entram:** funcionalidades novas, mudanças de tela, mudanças no contrato da API (`API.md`) ou no schema do banco.
+  - **Podem entrar:**
+    - Correções de bugs encontrados em teste.
+    - Calibração do OCR restrita ao `ocr-service` no backend: `cells.json`, limiares de identificação, alinhamento e densidade de tinta e o pré-processamento, sem mudar o formato da resposta (D34).
+    - Documentação, seed e textos.
+  - **APK:** a calibração do OCR roda no servidor, então não exige gerar um novo APK.
+  - **Fluxo:** toda mudança depois do congelamento vai em commit `fix:`, `docs:` ou `chore:` na `dev`, com PR para a `main`.
+- **Motivo:** apresentar na banca uma versão estável e já testada (APK validado, revisão de acessibilidade concluída), sem risco de regressão de última hora. A calibração do OCR depende dos testes com fotos reais e não afeta o app nem o contrato.
+- **Requisito:** cronograma do TCC (banca em 17/11/2026); D25, D34.
