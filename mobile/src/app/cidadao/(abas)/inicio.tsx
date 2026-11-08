@@ -7,10 +7,12 @@ import { CardLoadState } from '@/components/vaccination/CardLoadState';
 import { SummaryCard } from '@/components/vaccination/SummaryCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
-import { colors, fonts, radius, spacing, touchTarget, typography } from '@/theme';
+import { colors, fonts, INITIALS_MAX_FONT_SCALE, radius, spacing, touchTarget, typography } from '@/theme';
 import { getFirstName, getInitials } from '@/utils/roles';
 import { getDigestVaccineIds, getTodayNotices, type DailyDigest } from '@/utils/vaccineAlerts';
 import { AWAITING_MESSAGE, EMPTY_CARD_MESSAGE, formatOverdue, formatPendingDoses } from '@/utils/vaccination';
+
+const BADGE_MAX_FONT_SCALE = 1.5;
 
 function openVaccine(vaccineId: string) {
   router.push({ pathname: '/cidadao/vacina/[vaccineId]', params: { vaccineId } });
@@ -54,7 +56,10 @@ export default function CitizenHome() {
           <Icon name="notifications-outline" color={colors.primaryDark} />
           {noticeCount > 0 && (
             <View style={styles.bellBadge}>
-              <Text style={styles.bellBadgeText}>{noticeCount > 9 ? '9+' : noticeCount}</Text>
+              {/* Decorativo (o rótulo do botão já diz a quantidade): cresce até 1,5x para caber no sino */}
+              <Text style={styles.bellBadgeText} maxFontSizeMultiplier={BADGE_MAX_FONT_SCALE}>
+                {noticeCount > 9 ? '9+' : noticeCount}
+              </Text>
             </View>
           )}
         </Pressable>
@@ -68,7 +73,9 @@ export default function CitizenHome() {
           </Text>
         </View>
         <View style={styles.avatar} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-          <Text style={styles.initials}>{getInitials(user.name)}</Text>
+          <Text style={styles.initials} maxFontSizeMultiplier={INITIALS_MAX_FONT_SCALE}>
+            {getInitials(user.name)}
+          </Text>
         </View>
       </Card>
 
@@ -205,7 +212,7 @@ const styles = StyleSheet.create({
     top: 4,
     right: 4,
     minWidth: 18,
-    height: 18,
+    minHeight: 18,
     borderRadius: radius.full,
     backgroundColor: colors.danger,
     paddingHorizontal: 4,

@@ -5,7 +5,7 @@ import { NotificationSettingsCard } from '@/components/alerts/NotificationSettin
 import { Badge, Button, Card, ConfirmDialog, RadioCard, Screen } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { useOptionalVaccineAlerts } from '@/hooks/useVaccineAlerts';
-import { colors, fonts, radius, spacing, typography } from '@/theme';
+import { colors, fonts, INITIALS_MAX_FONT_SCALE, radius, spacing, typography } from '@/theme';
 import type { Ala } from '@/types/auth';
 import { ALA_LABELS, getInitials, ROLE_LABELS, VERIFICATION_LABELS } from '@/utils/roles';
 
@@ -47,7 +47,9 @@ export function ProfileScreen({ showDependents = false }: Props) {
 
       <Card style={styles.account}>
         <View style={styles.avatar} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-          <Text style={styles.initials}>{getInitials(user.name)}</Text>
+          <Text style={styles.initials} maxFontSizeMultiplier={INITIALS_MAX_FONT_SCALE}>
+            {getInitials(user.name)}
+          </Text>
         </View>
         <View style={styles.accountText}>
           <Text style={typography.subtitle}>{user.name}</Text>

@@ -18,3 +18,7 @@ export const radius = {
 
 // Alvo de toque mínimo (RNF04) e altura dos campos (~48px, DESIGN.md)
 export const touchTarget = 48;
+
+// Iniciais nos círculos de tamanho fixo (decorativas, ocultas do leitor de tela): crescem só até este limite,
+// para as letras não vazarem do círculo com a fonte ampliada
+export const INITIALS_MAX_FONT_SCALE = 1.3;

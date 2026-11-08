@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Icon } from '@/components/ui';
 import type { DependentOverview } from '@/contexts/DependentsContext';
-import { colors, fonts, radius, spacing, typography } from '@/theme';
+import { colors, fonts, INITIALS_MAX_FONT_SCALE, radius, spacing, typography } from '@/theme';
 import { describeDependent, formatVaccineCount, getCardSituation, getSituationBadges } from '@/utils/dependents';
 import { getInitials } from '@/utils/roles';
 import { SituationBadges } from './SituationBadges';
@@ -32,7 +32,9 @@ export function DependentListItem({ overview }: { overview: DependentOverview })
     >
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.initials}>{getInitials(dependent.name)}</Text>
+          <Text style={styles.initials} maxFontSizeMultiplier={INITIALS_MAX_FONT_SCALE}>
+            {getInitials(dependent.name)}
+          </Text>
         </View>
         <View style={styles.title}>
           <Text style={styles.name}>{dependent.name}</Text>

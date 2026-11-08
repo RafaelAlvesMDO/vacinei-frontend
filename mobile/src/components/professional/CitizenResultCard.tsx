@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Badge, Button, Card } from '@/components/ui';
-import { colors, fonts, radius, spacing, typography } from '@/theme';
+import { colors, fonts, INITIALS_MAX_FONT_SCALE, radius, spacing, typography } from '@/theme';
 import type { CitizenSearchResult } from '@/types/citizen';
 import { formatCalendarDate } from '@/utils/format';
 import { getInitials } from '@/utils/roles';
@@ -26,7 +26,9 @@ export function CitizenResultCard({ citizen, isSelf, isOwnDependent }: Props) {
     <Card style={styles.card}>
       <View style={styles.header}>
         <View style={styles.avatar} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-          <Text style={styles.initials}>{getInitials(citizen.name)}</Text>
+          <Text style={styles.initials} maxFontSizeMultiplier={INITIALS_MAX_FONT_SCALE}>
+            {getInitials(citizen.name)}
+          </Text>
         </View>
         <View style={styles.title}>
           <Text style={styles.name}>{citizen.name}</Text>

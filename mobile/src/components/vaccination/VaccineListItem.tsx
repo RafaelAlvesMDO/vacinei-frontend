@@ -71,7 +71,9 @@ export function VaccineListItem({ item }: Props) {
       <View style={styles.footer}>
         <View style={styles.date}>
           <Icon name="calendar-outline" size={16} color={colors.muted} />
-          <Text style={typography.muted}>{lastDate ? `Última: ${lastDate}` : 'Nenhuma dose registrada'}</Text>
+          <Text style={[typography.muted, styles.dateText]}>
+            {lastDate ? `Última: ${lastDate}` : 'Nenhuma dose registrada'}
+          </Text>
         </View>
         {recordBadge && <Badge label={recordBadge.label} tone={recordBadge.tone} icon={recordBadge.icon} />}
       </View>
@@ -114,9 +116,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
+  // Encolhe e quebra linha com a fonte ampliada, sem sair do cartão em telas estreitas
   date: {
+    flexShrink: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  dateText: {
+    flexShrink: 1,
   },
 });

@@ -10,7 +10,7 @@ import { SummaryCard } from '@/components/vaccination/SummaryCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useCitizenCard } from '@/hooks/useCitizenCard';
 import { useReloadOnFocus } from '@/hooks/useReloadOnFocus';
-import { colors, fonts, radius, spacing, typography } from '@/theme';
+import { colors, fonts, INITIALS_MAX_FONT_SCALE, radius, spacing, typography } from '@/theme';
 import type { VaccinationCard } from '@/types/vaccination';
 import { getAge } from '@/utils/confirmDose';
 import { formatCalendarDate } from '@/utils/format';
@@ -76,7 +76,9 @@ function CardContent({ card, isOwnCard, userId }: CardContentProps) {
     <>
       <Card style={styles.citizen}>
         <View style={styles.avatar} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-          <Text style={styles.initials}>{getInitials(citizen.name)}</Text>
+          <Text style={styles.initials} maxFontSizeMultiplier={INITIALS_MAX_FONT_SCALE}>
+            {getInitials(citizen.name)}
+          </Text>
         </View>
         <View style={styles.citizenText}>
           <Text style={typography.subtitle} accessibilityRole="header">

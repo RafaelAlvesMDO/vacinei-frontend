@@ -46,15 +46,21 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     gap: spacing.xs,
   },
+  // Borda transparente nas inativas para o texto não pular ao trocar de opção
   segment: {
     flex: 1,
-    minHeight: touchTarget - 4,
+    minHeight: touchTarget,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
     paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
+  // A borda `primary` marca a opção ativa sem depender só da cor do texto (WCAG 1.4.1 e 1.4.11)
   segmentSelected: {
+    borderColor: colors.primary,
     backgroundColor: colors.white,
     shadowColor: colors.primaryDark,
     shadowOpacity: 0.08,
@@ -63,6 +69,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   text: {
+    textAlign: 'center',
     fontFamily: fonts.medium,
     fontSize: 15,
     lineHeight: 22,

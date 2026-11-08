@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Badge, Button } from '@/components/ui';
-import { colors, fonts, radius, spacing, typography } from '@/theme';
+import { colors, fonts, INITIALS_MAX_FONT_SCALE, radius, spacing, typography } from '@/theme';
 import type { OverdueGroup, OverduePerson, OverdueVaccine } from '@/types/dashboard';
 import { formatCalendarDate } from '@/utils/format';
 import { getInitials } from '@/utils/roles';
@@ -33,7 +33,9 @@ export function OverduePersonCard({ person, group }: Props) {
     <View style={[styles.card, !isOverdue && styles.cardAwaiting]}>
       <View style={styles.header}>
         <View style={styles.avatar} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-          <Text style={styles.initials}>{getInitials(person.name)}</Text>
+          <Text style={styles.initials} maxFontSizeMultiplier={INITIALS_MAX_FONT_SCALE}>
+            {getInitials(person.name)}
+          </Text>
         </View>
         <View style={styles.title}>
           <Text style={styles.name}>{person.name}</Text>
