@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState, type Ref } from 'react';
+import { StyleSheet, Text, TextInput, View, type TextInputInstance } from 'react-native';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import { onlyDigits } from '@/utils/format';
 
@@ -10,13 +10,14 @@ interface Props {
   length?: number;
   error?: string;
   editable?: boolean;
+  ref?: Ref<TextInputInstance>;
 }
 
 /**
  * Código numérico em caixas (recuperação de senha). Um único TextInput transparente, por cima das caixas,
  * recebe o toque, a digitação e a colagem do código; as caixas só desenham os dígitos
  */
-export function CodeInput({ label, value, onChange, length = 6, error, editable = true }: Props) {
+export function CodeInput({ label, value, onChange, length = 6, error, editable = true, ref }: Props) {
   const [focused, setFocused] = useState(false);
   const activeIndex = Math.min(value.length, length - 1);
 
@@ -42,6 +43,7 @@ export function CodeInput({ label, value, onChange, length = 6, error, editable 
           ))}
         </View>
         <TextInput
+          ref={ref}
           accessibilityLabel={`${label}, ${length} dígitos`}
           accessibilityHint={error}
           value={value}
@@ -75,9 +77,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
   },
+  // Altura mínima: com a fonte ampliada, a caixa cresce com o dígito em vez de cortá-lo
   box: {
     flex: 1,
-    height: 56,
+    minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.white,

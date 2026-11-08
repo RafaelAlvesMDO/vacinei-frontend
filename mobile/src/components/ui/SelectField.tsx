@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { FocusableView } from '@/hooks/useFieldFocus';
 import { colors, fonts, radius, spacing, touchTarget, typography } from '@/theme';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -23,6 +24,8 @@ interface Props<T extends string> {
   hint?: string;
   error?: string;
   disabled?: boolean;
+  // Para levar o foco do leitor de tela ao campo com erro (useFieldFocus)
+  ref?: Ref<FocusableView>;
 }
 
 /**
@@ -39,6 +42,7 @@ export function SelectField<T extends string>({
   hint,
   error,
   disabled = false,
+  ref,
 }: Props<T>) {
   const [open, setOpen] = useState(false);
   const selected = options.find((option) => option.value === value);
@@ -51,6 +55,7 @@ export function SelectField<T extends string>({
       </Text>
 
       <Pressable
+        ref={ref}
         accessibilityRole="button"
         accessibilityLabel={`${label}${required ? ', obrigatório' : ''}: ${selected?.label ?? 'nenhuma opção selecionada'}`}
         accessibilityHint={error ?? hint ?? 'Abre a lista de opções'}
@@ -59,7 +64,8 @@ export function SelectField<T extends string>({
         onPress={() => setOpen(true)}
         style={[styles.field, !!error && styles.fieldError, disabled && styles.fieldDisabled]}
       >
-        <Text style={[styles.value, !selected && styles.placeholder]} numberOfLines={1}>
+        {/* Quebra linha com a fonte ampliada, em vez de cortar o valor escolhido */}
+        <Text style={[styles.value, !selected && styles.placeholder]}>
           {selected?.label ?? placeholder}
         </Text>
         <Icon name="chevron-down" color={colors.muted} />
@@ -153,6 +159,8 @@ const styles = StyleSheet.create({
   },
   value: {
     flex: 1,
+    minWidth: 0,
+    paddingVertical: spacing.sm,
     fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.primaryDark,

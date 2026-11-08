@@ -1,5 +1,7 @@
+import type { Ref } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Badge, Button, Card, Checkbox, Icon, TextField } from '@/components/ui';
+import type { FocusableView } from '@/hooks/useFieldFocus';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import { formatDateInput } from '@/utils/format';
 import type { ScanItem } from '@/utils/ocr';
@@ -18,13 +20,27 @@ interface Props {
   onChange: (patch: Partial<RecordFormValues>) => void;
   onEdit: () => void;
   onLayout?: (event: LayoutChangeEvent) => void;
+  // Título do item, para o leitor de tela ir ao primeiro item com problema
+  headerRef?: Ref<FocusableView>;
 }
 
 /**
  * Uma dose sugerida pela leitura (RF004): vacina e dose, recorte da célula e data e lote editáveis ao lado dos
  * recortes. Vacina e dose sem `id` são escolhidas no editor completo. Item desmarcado não é enviado
  */
-export function ScanItemCard({ item, position, vaccineName, doseName, errors, inCard, onToggle, onChange, onEdit, onLayout }: Props) {
+export function ScanItemCard({
+  item,
+  position,
+  vaccineName,
+  doseName,
+  errors,
+  inCard,
+  onToggle,
+  onChange,
+  onEdit,
+  onLayout,
+  headerRef,
+}: Props) {
   const { suggestion, values, selected } = item;
   const hasErrors = selected && errors !== undefined;
   const missingIdentity = !values.vaccineId || !values.doseId;
@@ -38,7 +54,12 @@ export function ScanItemCard({ item, position, vaccineName, doseName, errors, in
           <View style={[styles.number, hasErrors && styles.numberError]}>
             <Text style={[styles.numberText, hasErrors && styles.numberTextError]}>{number}</Text>
           </View>
-          <View style={styles.flex} accessible accessibilityLabel={`Dose ${position}: ${vaccineName}, ${doseName}`}>
+          <View
+            ref={headerRef}
+            style={styles.flex}
+            accessible
+            accessibilityLabel={`Dose ${position}: ${vaccineName}, ${doseName}${hasErrors ? '. Precisa de atenção' : ''}`}
+          >
             <Text style={styles.title}>{vaccineName}</Text>
             <Text style={typography.muted}>{doseName}</Text>
             <Text style={styles.printed}>Na caderneta: {suggestion.printedLabel}</Text>
@@ -150,9 +171,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: spacing.md,
   },
+  // Altura mínima: com a fonte ampliada, a caixa cresce com o número
   number: {
     minWidth: 36,
-    height: 32,
+    minHeight: 32,
     borderRadius: radius.sm,
     backgroundColor: colors.surface,
     alignItems: 'center',

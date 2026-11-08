@@ -1,4 +1,6 @@
+import type { Ref } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { FocusableView } from '@/hooks/useFieldFocus';
 import { colors, fonts, radius, spacing, touchTarget } from '@/theme';
 
 export interface FilterOption<T extends string> {
@@ -12,15 +14,17 @@ interface Props<T extends string> {
   selected: T;
   onChange: (value: T) => void;
   accessibilityLabel: string;
+  // Para levar o foco do leitor de tela ao grupo com erro (useFieldFocus)
+  ref?: Ref<FocusableView>;
 }
 
 /**
  * Filtros em pílulas (ex.: Todas, Em dia, Atrasadas). A selecionada fica em `primary` cheio.
  * Quebram linha em telas estreitas, sem rolagem horizontal
  */
-export function FilterChips<T extends string>({ options, selected, onChange, accessibilityLabel }: Props<T>) {
+export function FilterChips<T extends string>({ options, selected, onChange, accessibilityLabel, ref }: Props<T>) {
   return (
-    <View style={styles.container} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
+    <View ref={ref} style={styles.container} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
       {options.map((option) => {
         const isSelected = option.value === selected;
         const text = option.count === undefined ? option.label : `${option.label} (${option.count})`;

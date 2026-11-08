@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Ref } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   Banner,
@@ -10,6 +10,7 @@ import {
   TextField,
   type FilterOption,
 } from '@/components/ui';
+import { useFieldFocus, type FocusableView } from '@/hooks/useFieldFocus';
 import { parseApiError } from '@/services/auth';
 import { createDependent, updateDependent } from '@/services/dependents';
 import { colors, fonts, spacing, typography } from '@/theme';
@@ -32,6 +33,7 @@ import {
 import { formatDateInput } from '@/utils/format';
 import { NAME_MAX_LENGTH } from '@/utils/name';
 
+// Também é a ordem dos campos na tela (foco no primeiro com erro)
 const API_FIELDS: DependentField[] = ['name', 'birthDate', 'sex', 'cpf', 'relationship'];
 
 const SEX_OPTIONS: FilterOption<Sex | ''>[] = SEXES.map((sex) => ({ value: sex, label: SEX_LABELS[sex] }));
@@ -60,6 +62,7 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const fieldFocus = useFieldFocus(API_FIELDS);
 
   const setField = <K extends DependentField>(field: K, value: DependentFormValues[K]) => {
     setValues((current) => ({ ...current, [field]: value }));
@@ -89,7 +92,10 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
     }
 
     setErrors(fieldErrors);
-    if (Object.keys(fieldErrors).length > 0) setError('Confira os campos destacados.');
+    if (Object.keys(fieldErrors).length > 0) {
+      setError('Confira os campos destacados.');
+      fieldFocus.focusFirstError(fieldErrors);
+    }
   };
 
   const submit = async () => {
@@ -97,6 +103,7 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
     setErrors(found);
     if (Object.keys(found).length > 0) {
       setError('Confira os campos destacados.');
+      fieldFocus.focusFirstError(found);
       return;
     }
     setError(null);
@@ -139,6 +146,7 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
       {error && <Banner tone="danger" title="Não foi possível salvar" message={error} />}
 
       <TextField
+        ref={fieldFocus.inputRef('name')}
         label="Nome completo"
         required
         icon="person-outline"
@@ -153,6 +161,7 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
       />
 
       <TextField
+        ref={fieldFocus.inputRef('birthDate')}
         label="Data de nascimento"
         required
         icon="calendar-outline"
@@ -171,6 +180,7 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
       />
 
       <ChoiceField
+        ref={fieldFocus.viewRef('sex')}
         label="Sexo"
         options={SEX_OPTIONS}
         selected={values.sex ?? ''}
@@ -179,6 +189,7 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
       />
 
       <TextField
+        ref={fieldFocus.inputRef('cpf')}
         label="CPF"
         icon="card-outline"
         hint="Opcional. Crianças sem CPF podem ser cadastradas sem ele."
@@ -192,6 +203,7 @@ export function DependentForm({ dependent = null, onSaved, onExit }: Props) {
       />
 
       <ChoiceField
+        ref={fieldFocus.viewRef('relationship')}
         label="Parentesco"
         options={RELATIONSHIP_OPTIONS}
         selected={values.relationship ?? ''}
@@ -227,10 +239,11 @@ interface ChoiceFieldProps<T extends string> {
   onChange: (value: T | '') => void;
   error?: string;
   hint?: string;
+  ref?: Ref<FocusableView>;
 }
 
 // Escolha obrigatória em pílulas (sexo e parentesco), com rótulo e erro no padrão do TextField
-function ChoiceField<T extends string>({ label, options, selected, onChange, error, hint }: ChoiceFieldProps<T>) {
+function ChoiceField<T extends string>({ label, options, selected, onChange, error, hint, ref }: ChoiceFieldProps<T>) {
   return (
     <View style={styles.choice}>
       <Text style={typography.label} importantForAccessibility="no" accessibilityElementsHidden>
@@ -238,6 +251,7 @@ function ChoiceField<T extends string>({ label, options, selected, onChange, err
         <Text style={styles.required}> *</Text>
       </Text>
       <FilterChips
+        ref={ref}
         accessibilityLabel={error ? `${label}, obrigatório. ${error}` : `${label}, obrigatório`}
         options={options}
         selected={selected}

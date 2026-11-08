@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Screen, StateMessage, StepHeader } from '@/components/ui';
 import { VaccineRecordForm } from '@/components/vaccination/VaccineRecordForm';
+import { useFieldFocus } from '@/hooks/useFieldFocus';
 import { spacing } from '@/theme';
 import type { CatalogVaccine, VaccinationCard } from '@/types/vaccination';
 import { validateScanItems, type ScanItem } from '@/utils/ocr';
 import { suggestDose, getTakenDoseIds, type RecordField, type RecordFormErrors, type RecordFormValues } from '@/utils/vaccineRecord';
 import { CropImage } from './CropImage';
+
+// Ordem dos campos no formulário (foco no primeiro com erro)
+const RECORD_FIELDS: RecordField[] = ['vaccineId', 'doseId', 'applicationDate', 'lote'];
 
 interface Props {
   items: ScanItem[];
@@ -28,6 +32,7 @@ export function ItemEditor({ items, itemKey, position, catalog, catalogError, on
   const item = items.find((candidate) => candidate.key === itemKey);
   const [draft, setDraft] = useState<RecordFormValues | null>(item?.values ?? null);
   const [errors, setErrors] = useState<RecordFormErrors>({});
+  const fieldFocus = useFieldFocus(RECORD_FIELDS);
 
   // O voltar do Android é tratado pelo fluxo (volta à lista, como o "Cancelar")
   if (!item || !draft) return null;
@@ -57,6 +62,7 @@ export function ItemEditor({ items, itemKey, position, catalog, catalogError, on
     const found = validateScanItems(updated, catalog, card)[itemKey] ?? {};
     setErrors(found);
     if (Object.keys(found).length === 0) onDone(values);
+    else fieldFocus.focusFirstError(found);
   };
 
   return (
@@ -85,6 +91,7 @@ export function ItemEditor({ items, itemKey, position, catalog, catalogError, on
           catalog={catalog}
           cardVaccines={card.vaccines}
           editingRecordId={null}
+          fieldFocus={fieldFocus}
           fieldAddons={{
             vaccineId:
               suggestion.kind === 'FREE' ? (

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Banner, FilterChips, Icon, SelectField, TextField, type FilterOption, type SelectOption } from '@/components/ui';
+import type { FieldFocus } from '@/hooks/useFieldFocus';
 import { colors, spacing, touchTarget, typography } from '@/theme';
 import type { CardVaccine, CatalogVaccine } from '@/types/vaccination';
 import { formatDateInput } from '@/utils/format';
@@ -9,6 +10,7 @@ import {
   LOTE_MAX_LENGTH,
   matchesCatalogSearch,
   normalizeLote,
+  type RecordField,
   type RecordFormErrors,
   type RecordFormValues,
 } from '@/utils/vaccineRecord';
@@ -29,6 +31,8 @@ interface Props {
   editable?: boolean;
   // Conteúdo exibido logo acima de um campo (ex.: o recorte da foto da caderneta na conferência do OCR)
   fieldAddons?: Partial<Record<'vaccineId' | 'applicationDate' | 'lote', ReactNode>>;
+  // Refs dos campos, para quem valida levar o foco ao primeiro com erro
+  fieldFocus?: FieldFocus<RecordField>;
 }
 
 /**
@@ -44,6 +48,7 @@ export function VaccineRecordForm({
   editingRecordId,
   editable = true,
   fieldAddons = {},
+  fieldFocus,
 }: Props) {
   const selected = catalog.find((vaccine) => vaccine.id === values.vaccineId);
   const [query, setQuery] = useState(selected?.name ?? '');
@@ -84,6 +89,7 @@ export function VaccineRecordForm({
       <View style={styles.group}>
         {fieldAddons.vaccineId}
         <TextField
+          ref={fieldFocus?.inputRef('vaccineId')}
           label="Nome da vacina"
           required
           placeholder="Busque pelo nome ou pela doença"
@@ -135,6 +141,7 @@ export function VaccineRecordForm({
       <View style={styles.row}>
         <View style={styles.rowItem}>
           <SelectField
+            ref={fieldFocus?.viewRef('doseId')}
             label="Dose"
             required
             value={values.doseId}
@@ -147,6 +154,7 @@ export function VaccineRecordForm({
         </View>
         <View style={styles.rowItem}>
           <TextField
+            ref={fieldFocus?.inputRef('applicationDate')}
             label="Data de aplicação"
             required
             placeholder="DD/MM/AAAA"
@@ -164,6 +172,7 @@ export function VaccineRecordForm({
 
       {fieldAddons.lote}
       <TextField
+        ref={fieldFocus?.inputRef('lote')}
         label="Lote (opcional)"
         placeholder="Ex.: TV88321"
         hint="Está na caderneta, ao lado da vacina. Só letras e números."

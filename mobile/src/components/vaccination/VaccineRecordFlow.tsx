@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { BackHandler, StyleSheet, Text, View } from 'react-native';
 import { Badge, Banner, Button, Card, Icon, Screen, StateMessage, StepHeader } from '@/components/ui';
+import { useFieldFocus } from '@/hooks/useFieldFocus';
 import { useVaccinationCard } from '@/hooks/useVaccinationCard';
 import { useVaccineCatalog } from '@/hooks/useVaccineCatalog';
 import { parseApiError } from '@/services/auth';
@@ -57,6 +58,7 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState<SavedRecord | null>(null);
+  const fieldFocus = useFieldFocus(RECORD_FIELDS);
 
   const isEditing = editingId !== null;
   const vaccine = vaccines?.find((item) => item.id === draft.vaccineId);
@@ -92,12 +94,14 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
     setErrors(found);
     setError(null);
     if (Object.keys(found).length === 0) setStep('summary');
+    else fieldFocus.focusFirstError(found);
   };
 
   const backToForm = (message: string | null, fieldErrors: RecordFormErrors = {}) => {
     setError(message);
     setErrors(fieldErrors);
     setStep('form');
+    fieldFocus.focusFirstError(fieldErrors);
   };
 
   const save = async () => {
@@ -244,6 +248,7 @@ export function VaccineRecordFlow({ card, initialValues, recordId = null, title,
           catalog={vaccines}
           cardVaccines={card.vaccines}
           editingRecordId={editingId}
+          fieldFocus={fieldFocus}
         />
       ) : catalogError ? (
         <StateMessage
