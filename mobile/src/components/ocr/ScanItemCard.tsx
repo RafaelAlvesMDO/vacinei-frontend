@@ -1,4 +1,4 @@
-import type { Ref } from 'react';
+import { useRef, useState, type Ref } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Badge, Button, Card, Checkbox, Icon, TextField } from '@/components/ui';
 import type { FocusableView } from '@/hooks/useFieldFocus';
@@ -22,7 +22,15 @@ interface Props {
   onLayout?: (event: LayoutChangeEvent) => void;
   // Título do item, para o leitor de tela ir ao primeiro item com problema
   headerRef?: Ref<FocusableView>;
+  // Linha (recorte + campo) da data ou do lote que ganhou ou perdeu o foco, para a tela rolar até ela
+  onFieldFocus?: (row: FocusableView | null) => void;
+  onFieldBlur?: (row: FocusableView | null) => void;
 }
+
+type FocusedField = 'date' | 'lote';
+
+// Recorte do campo em foco (o padrão do CropImage é 64)
+const FOCUSED_CROP_HEIGHT = 96;
 
 /**
  * Uma dose sugerida pela leitura (RF004): vacina e dose, recorte da célula e data e lote editáveis ao lado dos
@@ -40,12 +48,29 @@ export function ScanItemCard({
   onEdit,
   onLayout,
   headerRef,
+  onFieldFocus,
+  onFieldBlur,
 }: Props) {
   const { suggestion, values, selected } = item;
   const hasErrors = selected && errors !== undefined;
   const missingIdentity = !values.vaccineId || !values.doseId;
   const identityError = errors?.vaccineId ?? errors?.doseId;
   const number = String(position).padStart(2, '0');
+
+  // Campo em foco: o recorte dele vai para cima do campo, na largura do card e maior, para ler enquanto digita
+  const [focused, setFocused] = useState<FocusedField | null>(null);
+  const dateRow = useRef<FocusableView>(null);
+  const loteRow = useRef<FocusableView>(null);
+
+  const focus = (field: FocusedField, row: FocusableView | null) => {
+    setFocused(field);
+    onFieldFocus?.(row);
+  };
+
+  const blur = (field: FocusedField, row: FocusableView | null) => {
+    setFocused((current) => (current === field ? null : current));
+    onFieldBlur?.(row);
+  };
 
   return (
     <View onLayout={onLayout}>
@@ -102,14 +127,15 @@ export function ScanItemCard({
               </View>
             )}
 
-            <View style={styles.fieldRow}>
+            <View ref={dateRow} style={[styles.fieldRow, focused === 'date' && styles.fieldRowFocused]}>
               <CropImage
                 uri={suggestion.applicationDate.crop}
                 label="Recorte da data de aplicação na foto"
                 caption="Data na foto"
-                style={styles.crop}
+                height={focused === 'date' ? FOCUSED_CROP_HEIGHT : undefined}
+                style={focused === 'date' ? styles.stacked : styles.crop}
               />
-              <View style={styles.field}>
+              <View style={focused === 'date' ? styles.stacked : styles.field}>
                 <TextField
                   label="Data de aplicação"
                   required
@@ -120,15 +146,25 @@ export function ScanItemCard({
                   keyboardType="number-pad"
                   maxLength={10}
                   error={errors?.applicationDate}
+                  onFocus={() => focus('date', dateRow.current)}
+                  onBlur={() => blur('date', dateRow.current)}
                 />
               </View>
             </View>
 
-            <View style={styles.fieldRow}>
-              <CropImage uri={suggestion.lote.crop} label="Recorte do lote na foto" caption="Lote na foto" style={styles.crop} />
-              <View style={styles.field}>
+            <View ref={loteRow} style={[styles.fieldRow, focused === 'lote' && styles.fieldRowFocused]}>
+              <CropImage
+                uri={suggestion.lote.crop}
+                label="Recorte do lote na foto"
+                caption="Lote na foto"
+                height={focused === 'lote' ? FOCUSED_CROP_HEIGHT : undefined}
+                style={focused === 'lote' ? styles.stacked : styles.crop}
+              />
+              <View style={focused === 'lote' ? styles.stacked : styles.field}>
                 <TextField
                   label="Lote (opcional)"
+                  onFocus={() => focus('lote', loteRow.current)}
+                  onBlur={() => blur('lote', loteRow.current)}
                   placeholder="Ex.: TV88321"
                   hint={suggestion.lote.value ? 'Lido da foto. Confira com o recorte.' : 'Só letras e números.'}
                   value={values.lote}
@@ -232,6 +268,19 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'flex-start',
     gap: spacing.md,
+  },
+  // Em foco: recorte e campo empilhados, na largura toda (o flexBasis da linha viraria altura na coluna)
+  fieldRowFocused: {
+    flexDirection: 'column',
+    flexWrap: 'nowrap',
+    alignItems: 'stretch',
+    gap: spacing.sm,
+  },
+  stacked: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
+    minWidth: 0,
   },
   crop: {
     flexGrow: 1,
