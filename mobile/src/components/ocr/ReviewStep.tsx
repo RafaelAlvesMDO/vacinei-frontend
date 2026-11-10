@@ -1,7 +1,8 @@
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, StyleSheet, Text, View, type ScrollViewInstance } from 'react-native';
 import { Banner, Button, Icon, Screen, StepHeader } from '@/components/ui';
 import type { FocusableView } from '@/hooks/useFieldFocus';
+import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { colors, fonts, radius, spacing, typography } from '@/theme';
 import type { OcrResult } from '@/types/ocr';
 import type { CatalogVaccine, VaccinationCard } from '@/types/vaccination';
@@ -30,6 +31,10 @@ interface Props {
 
 // Espera a rolagem animada até o item antes de mover o foco do leitor de tela
 const FOCUS_DELAY_MS = 500;
+// Espera o teclado abrir e a tela se ajustar antes de rolar até o campo em foco
+const REVEAL_DELAY_MS = 150;
+// Folga entre a linha em foco e as bordas da área visível
+const REVEAL_MARGIN = spacing.md;
 
 function plural(count: number, singular: string, pluralForm: string): string {
   return `${count} ${count === 1 ? singular : pluralForm}`;
@@ -64,6 +69,49 @@ export function ReviewStep({
   const attentionKeys = items.filter((item) => item.selected && errors[item.key]).map((item) => item.key);
   const attention = attentionKeys.length;
   const readyCount = selectedCount - attention;
+
+  // Linha (recorte + campo) em foco: fica visível acima do teclado, com o recorte logo acima do campo
+  const focusedRow = useRef<FocusableView | null>(null);
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const revealFocusedRow = useCallback(() => {
+    const row = focusedRow.current;
+    const scroll = scrollRef.current;
+    const content = scroll?.getInnerViewRef();
+    if (!row || !scroll || !content) return;
+    scroll.measure((_x, _y, _width, viewportHeight) => {
+      row.measureLayout(content, (_left, top, _rowWidth, rowHeight) => {
+        // Cabe inteira: recorte no topo da área visível. Senão (fonte ampliada), prioriza o campo, embaixo
+        const y = rowHeight + REVEAL_MARGIN * 2 <= viewportHeight ? top - REVEAL_MARGIN : top + rowHeight + REVEAL_MARGIN - viewportHeight;
+        scroll.scrollTo({ y: Math.max(0, y), animated: true });
+      });
+    });
+  }, []);
+
+  // Espera a tela encolher (teclado aberto e rodapé escondido) antes de medir
+  const revealLater = useCallback(() => {
+    if (revealTimer.current) clearTimeout(revealTimer.current);
+    revealTimer.current = setTimeout(revealFocusedRow, REVEAL_DELAY_MS);
+  }, [revealFocusedRow]);
+
+  useEffect(
+    () => () => {
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+    },
+    [],
+  );
+
+  // Com o teclado aberto, o rodapé fixo sai para não cobrir o campo e o recorte
+  const keyboardVisible = useKeyboardVisible(revealLater);
+
+  const onFieldFocus = (row: FocusableView | null) => {
+    focusedRow.current = row;
+    revealLater();
+  };
+
+  const onFieldBlur = (row: FocusableView | null) => {
+    if (focusedRow.current === row) focusedRow.current = null;
+  };
 
   const goToFirstProblem = () => {
     const first = attentionKeys[0];
@@ -113,7 +161,7 @@ export function ReviewStep({
     <Screen
       scrollRef={scrollRef}
       header={<StepHeader title="Conferir doses" subtitle={subtitle} onBack={onBack} step={{ current: 4, total: 4 }} />}
-      footer={footer}
+      footer={keyboardVisible ? undefined : footer}
     >
       <View style={styles.found} accessible>
         <View style={styles.foundIcon}>
@@ -157,6 +205,8 @@ export function ReviewStep({
               onToggle={(selected) => onToggle(item.key, selected)}
               onChange={(patch) => onChange(item.key, patch)}
               onEdit={() => onEdit(item.key)}
+              onFieldFocus={onFieldFocus}
+              onFieldBlur={onFieldBlur}
               onLayout={(event) => {
                 itemY.current[item.key] = event.nativeEvent.layout.y;
               }}
